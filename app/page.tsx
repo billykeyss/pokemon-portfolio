@@ -28,8 +28,8 @@ import {
 type Experience = {
   title: string;
   role: string;
-  date: string;
-  pokemon: string;
+  startDate: string;
+  endDate: string;
   details: string[];
   link?: string;
 };
@@ -66,7 +66,8 @@ export default function Component() {
       {
         title: "Sesh",
         role: "Founder",
-        date: "January 2024 - Present",
+        startDate: "2023-01",
+        endDate: "Present",
         details: [
           "Founded and launched an e-commerce platform specializing in premium climbing gear and accessories.",
           "Designed and developed product line including chalk bags, chalk buckets, brushes, and training equipment.",
@@ -79,7 +80,8 @@ export default function Component() {
       {
         title: "Keplar",
         role: "Founding Engineer",
-        date: "April 2024 - Present",
+        startDate: "2024-04",
+        endDate: "Present",
         details: [
           "Developing a platform for AI-powered audience simulation services.",
         ],
@@ -88,7 +90,8 @@ export default function Component() {
       {
         title: "Amazon Lab 126, Astro",
         role: "Senior Software Development Engineer",
-        date: "April 2023 - Present",
+        startDate: "2023-04",
+        endDate: "2024-04",
         details: [
           "Championed the complete lifecycle of multiple feature developments, orchestrating cross-functional collaboration with QA, TPM, and PM teams.",
           "Delegated tasks among team members, optimizing productivity. Directed onboarding of 12 consumer development teams.",
@@ -102,7 +105,8 @@ export default function Component() {
       {
         title: "Amazon Lab 126, Astro",
         role: "Software Development Engineer II",
-        date: "April 2020 - April 2023",
+        startDate: "2020-04",
+        endDate: "2023-04",
         details: [
           "Developed Amazon Astro Robot's core platform and services using C++, Java, Python, Ruby, Javascript, ROS.",
           "Developed novel phone battery notifier feature for Astro.",
@@ -113,7 +117,8 @@ export default function Component() {
       {
         title: "Amazon Lab 126, FireTV",
         role: "Software Development Engineer I",
-        date: "August 2018 - April 2020",
+        startDate: "2018-08",
+        endDate: "2020-04",
         details: [
           "Led development on FireTV news application, creating system architecture.",
           "Engineered high-performing application for 11 FireTV platforms.",
@@ -125,7 +130,8 @@ export default function Component() {
       {
         title: "Amazon Lab 126, FireTV",
         role: "Software Development Engineering Intern",
-        date: "Sept 2017 - December 2017",
+        startDate: "2017-09",
+        endDate: "2017-12",
         details: [
           "Developed Amazon Video Application for Echo devices and tablets.",
           "Created production-ready web video application with third-party integrations.",
@@ -135,7 +141,8 @@ export default function Component() {
       {
         title: "Connected Lab",
         role: "Solutions Architect Engineering Intern",
-        date: "Jan 2017 - April 2017",
+        startDate: "2017-01",
+        endDate: "2017-04",
         details: [
           "Implemented programmable chatbot interface using Watson API (NLP).",
           "Prototyped experimental android application with face recognition.",
@@ -145,7 +152,8 @@ export default function Component() {
       {
         title: "Connected Lab",
         role: "Software Engineering Intern",
-        date: "Jan 2016 - April 2016",
+        startDate: "2016-01",
+        endDate: "2016-04",
         details: [
           "Built resource allocation tool using ReactJS and Node.",
           "Developed core server functionality with Redux.",
@@ -156,7 +164,8 @@ export default function Component() {
       {
         title: "nanoPay",
         role: "Frontend Developer Intern",
-        date: "May 2015 - August 2015",
+        startDate: "2015-05",
+        endDate: "2015-08",
         details: [
           "Implemented UI/UX of Android app and AngularJS responsive website.",
           "Integrated REST APIs and payment processing systems.",
@@ -500,7 +509,9 @@ export default function Component() {
                           )}
                         </div>
                         <p>{exp.role}</p>
-                        <p className="text-sm text-gray-600">{exp.date}</p>
+                        <p className="text-sm text-gray-600">
+                          {exp.startDate} - {exp.endDate}
+                        </p>
                         <button
                           onClick={() =>
                             setExpandedExperience(
