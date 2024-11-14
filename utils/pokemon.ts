@@ -91,29 +91,29 @@ export const getRandomPokemonName = (generation?: 1 | 2 | 3): string => {
     return ALL_POKEMON[Math.floor(Math.random() * ALL_POKEMON.length)];
 };
 
-export const getTypeColor = (type: string): string => {
-    const colors = {
-        fire: "bg-red-500",
-        water: "bg-blue-500",
-        grass: "bg-green-500",
-        electric: "bg-yellow-500",
-        psychic: "bg-purple-500",
-        fighting: "bg-orange-500",
-        normal: "bg-gray-500",
-        ground: "bg-amber-700",
-        rock: "bg-stone-600",
-        bug: "bg-lime-500",
-        ghost: "bg-indigo-500",
-        steel: "bg-slate-400",
-        dragon: "bg-violet-600",
-        fairy: "bg-pink-400",
-        ice: "bg-cyan-300",
-        poison: "bg-fuchsia-500",
-        dark: "bg-neutral-800",
-        flying: "bg-sky-300",
-    } as const;
+export const getTypeColor = (type: string) => {
+    const typeColors = {
+        normal: "bg-gray-400 dark:bg-gray-500",
+        fire: "bg-red-500 dark:bg-red-600",
+        water: "bg-blue-500 dark:bg-blue-600",
+        electric: "bg-yellow-400 dark:bg-yellow-500",
+        grass: "bg-green-500 dark:bg-green-600",
+        ice: "bg-blue-300 dark:bg-blue-400",
+        fighting: "bg-red-600 dark:bg-red-700",
+        poison: "bg-purple-500 dark:bg-purple-600",
+        ground: "bg-yellow-600 dark:bg-yellow-700",
+        flying: "bg-indigo-400 dark:bg-indigo-500",
+        psychic: "bg-pink-500 dark:bg-pink-600",
+        bug: "bg-lime-500 dark:bg-lime-600",
+        rock: "bg-yellow-700 dark:bg-yellow-800",
+        ghost: "bg-purple-600 dark:bg-purple-700",
+        dragon: "bg-indigo-600 dark:bg-indigo-700",
+        dark: "bg-gray-700 dark:bg-gray-800",
+        steel: "bg-gray-500 dark:bg-gray-600",
+        fairy: "bg-pink-400 dark:bg-pink-500",
+    };
 
-    return colors[type as keyof typeof colors] || "bg-gray-500";
+    return typeColors[type as keyof typeof typeColors];
 };
 
 export const getPokemonSprite = (pokemonName: string): string => {
@@ -125,4 +125,12 @@ export const fetchRandomPokemonSprite = async (): Promise<string> => {
     const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`);
     const data = await response.json();
     return data.sprites.front_default;
+};
+
+// Add this utility function to get sprite dimensions
+export const getPokemonSpriteSize = (pokemonName: string): { width: number; height: number } => {
+    // Default size for most Pokemon
+    const defaultSize = { width: 128, height: 128 };
+
+    return defaultSize;
 }; 

@@ -36,7 +36,8 @@ export const Hobbies = () => {
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ duration: 0.3, delay: index * 0.1 }}
-            className="bg-gray-100 p-4 rounded-lg shadow-md flex items-center space-x-4"
+            className="bg-gray-100 dark:bg-gray-700 p-3 md:p-4 rounded-lg shadow-md 
+              hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center space-x-4"
           >
             <img
               src={getPokemonSprite(hobby.pokemon)}
@@ -44,11 +45,13 @@ export const Hobbies = () => {
               className="w-16 h-16 pixelated"
             />
             <div>
-              <h3 className="font-bold">{hobby.name}</h3>
+              <h3 className="font-bold">
+                {hobby.name} {getTypeColor(hobby.type)}
+              </h3>
               <span
-                className={`inline-block px-2 py-1 rounded text-xs text-white ${getTypeColor(
-                  hobby.type
-                )}`}
+                className={`inline-block px-2 py-1 rounded text-[10px] md:text-xs
+                  text-gray-900 dark:text-white ${getTypeColor(hobby.type)} 
+                  transition-colors duration-200`}
               >
                 {hobby.type}
               </span>

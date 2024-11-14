@@ -8,17 +8,12 @@ type SkillCategory = {
 export const Skills = () => {
   const skills: SkillCategory = {
     languages: [
-      "C++",
+      "JavaScript/TypeScript",
       "Java",
       "Python",
-      "JavaScript/TypeScript",
       "Kotlin",
       "Go",
-      "Rust",
-      "Swift",
-      "Ruby",
-      "Scala",
-      "PHP",
+      "C++",
       "C#",
       "Dart",
     ],
@@ -28,18 +23,11 @@ export const Skills = () => {
       "HTML/CSS",
       "Tailwind CSS",
       "Flutter",
-      "Vue.js",
-      "Angular",
-      "Svelte",
       "Redux",
       "Sass/SCSS",
-      "WebGL",
       "Three.js",
-      "D3.js",
       "Material-UI",
-      "Chakra UI",
       "Webpack",
-      "Vite",
     ],
     mobile: [
       "Native Android Development",
@@ -48,12 +36,6 @@ export const Skills = () => {
       "iOS Development",
       "Kotlin Multiplatform",
       "Jetpack Compose",
-      "SwiftUI",
-      "Xamarin",
-      "Progressive Web Apps",
-      "Mobile Testing (Appium)",
-      "Firebase",
-      "App Store Optimization",
     ],
     backend: [
       "Node.js",
@@ -61,17 +43,11 @@ export const Skills = () => {
       "REST APIs",
       "GraphQL",
       "Go Services",
-      "Django",
       "Spring Boot",
-      "FastAPI",
       "NestJS",
-      "Laravel",
       "PostgreSQL",
       "MongoDB",
-      "Redis",
-      "RabbitMQ",
       "Kafka",
-      "gRPC",
       "Microservices",
       "WebSockets",
       "OAuth/JWT",
@@ -84,13 +60,9 @@ export const Skills = () => {
       "Kubernetes",
       "Vertex AI",
       "Terraform",
-      "Ansible",
       "Jenkins",
       "GitHub Actions",
-      "CircleCI",
-      "Prometheus",
       "Grafana",
-      "ELK Stack",
       "Serverless",
       "CloudFront/CDN",
       "Load Balancing",
@@ -104,12 +76,7 @@ export const Skills = () => {
       "SLAM",
       "Gazebo",
       "OpenCV",
-      "PCL",
-      "MoveIt",
-      "Navigation Stack",
       "Robot Control",
-      "Sensor Fusion",
-      "Machine Vision",
       "Deep Learning for Robotics",
       "Real-time Systems",
       "Embedded Systems",
@@ -123,21 +90,9 @@ export const Skills = () => {
       "RAG Systems",
       "LLM Integration",
       "ElasticSearch",
-      "PyTorch",
-      "TensorFlow",
-      "Scikit-learn",
       "Hugging Face",
-      "Computer Vision",
-      "NLP",
       "Reinforcement Learning",
-      "MLOps",
-      "Data Pipeline",
-      "Feature Engineering",
       "Model Deployment",
-      "Vector Databases",
-      "Langchain",
-      "Neural Networks",
-      "Transfer Learning",
     ],
   };
 
@@ -147,7 +102,7 @@ export const Skills = () => {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
-      <h2 className="text-2xl font-bold mb-4 flex items-center">
+      <h2 className="text-2xl font-bold mb-4 flex items-center text-gray-800 dark:text-gray-200">
         <Star className="mr-2" />
         Skills
       </h2>
@@ -157,17 +112,36 @@ export const Skills = () => {
             key={category}
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="bg-gray-100 p-4 rounded-lg"
+            className="bg-gray-100 dark:bg-gray-900/60 p-4 rounded-lg shadow-md
+              border border-transparent dark:border-gray-700
+              hover:bg-gray-200 dark:hover:bg-gray-900/80 
+              transition-all duration-200"
           >
-            <h3 className="font-bold text-lg mb-2 capitalize">{category}</h3>
+            <h3 className="font-bold text-lg mb-2 capitalize text-gray-800 dark:text-gray-200">
+              {category}
+            </h3>
             <div className="flex flex-wrap gap-2">
               {skillList.map((skill, index) => (
-                <span
+                <motion.span
                   key={index}
-                  className="bg-red-500 text-white px-3 py-1 rounded-full text-sm"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 260,
+                    damping: 20,
+                    delay: index * 0.05,
+                  }}
+                  className="bg-red-500 dark:bg-red-600 text-white dark:text-gray-100 
+                    px-3 py-1 rounded-full text-sm shadow-sm
+                    hover:bg-red-600 dark:hover:bg-red-700 
+                    hover:scale-105 transition-all duration-200
+                    cursor-default"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                 >
                   {skill}
-                </span>
+                </motion.span>
               ))}
             </div>
           </motion.div>

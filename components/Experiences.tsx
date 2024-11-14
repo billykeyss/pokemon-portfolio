@@ -2,7 +2,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Briefcase, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { getPokemonSprite, getRandomPokemonName } from "@/utils/pokemon";
+import {
+  getPokemonSprite,
+  getRandomPokemonName,
+  getPokemonSpriteSize,
+} from "@/utils/pokemon";
 
 type Experience = {
   title: string;
@@ -29,6 +33,33 @@ const useIsMobile = () => {
   }, []);
 
   return isMobile;
+};
+
+// Add this utility function for formatting dates
+const formatDate = (dateString: string): string => {
+  if (dateString === "Present") return "Present";
+
+  const date = new Date(dateString + "-01"); // Add day for proper parsing
+  return new Intl.DateTimeFormat("en-US", {
+    year: "numeric",
+    month: "short",
+  }).format(date);
+};
+
+// Add a duration display
+const getDuration = (startDate: string, endDate: string): string => {
+  const start = new Date(startDate + "-01");
+  const end = endDate === "Present" ? new Date() : new Date(endDate + "-01");
+  const months =
+    (end.getFullYear() - start.getFullYear()) * 12 +
+    (end.getMonth() - start.getMonth());
+
+  const years = Math.floor(months / 12);
+  const remainingMonths = months % 12;
+
+  if (years === 0) return `${remainingMonths} mo`;
+  if (remainingMonths === 0) return `${years} yr`;
+  return `${years} yr ${remainingMonths} mo`;
 };
 
 export const Experiences = () => {
@@ -63,7 +94,7 @@ export const Experiences = () => {
       details: [
         "Developing a platform for AI-powered audience simulation services.",
       ],
-      link: "keplar.io",
+      link: "https://www.keplar.io/",
     },
     {
       title: "Amazon Lab 126, Astro",
@@ -112,7 +143,7 @@ export const Experiences = () => {
       title: "Amazon Lab 126, FireTV",
       timelineTitle: "FireTV",
       role: "Software Development Engineering Intern",
-      startDate: "2017-09",
+      startDate: "2017-08",
       endDate: "2017-12",
       details: [
         "Developed Amazon Video Application for Echo devices and tablets.",
@@ -125,7 +156,7 @@ export const Experiences = () => {
       timelineTitle: "Connected",
       role: "Solutions Architect Engineering Intern",
       startDate: "2017-01",
-      endDate: "2017-04",
+      endDate: "2017-05",
       details: [
         "Implemented programmable chatbot interface using Watson API (NLP).",
         "Prototyped experimental android application with face recognition.",
@@ -137,7 +168,7 @@ export const Experiences = () => {
       timelineTitle: "Connected",
       role: "Software Engineering Intern",
       startDate: "2016-01",
-      endDate: "2016-04",
+      endDate: "2016-05",
       details: [
         "Built resource allocation tool using ReactJS and Node.",
         "Developed core server functionality with Redux.",
@@ -150,7 +181,7 @@ export const Experiences = () => {
       timelineTitle: "nanoPay",
       role: "Frontend Developer Intern",
       startDate: "2015-05",
-      endDate: "2015-08",
+      endDate: "2015-09",
       details: [
         "Implemented UI/UX of Android app and AngularJS responsive website.",
         "Integrated REST APIs and payment processing systems.",
@@ -195,13 +226,13 @@ export const Experiences = () => {
       {/* Year markers and Timeline - hidden on mobile */}
       <div className="hidden md:block">
         {/* Year markers */}
-        {Array.from({ length: 9 }).map((_, i) => {
+        {Array.from({ length: 12 }).map((_, i) => {
           const year = new Date().getFullYear() - i;
           const position = i * 120;
           return (
             <div
               key={`year-${year}`}
-              className="absolute -left-16 text-sm text-gray-400"
+              className="absolute -left-16 text-sm text-gray-400 dark:text-gray-500"
               style={{ top: `${position}px` }}
             >
               {year}
@@ -210,7 +241,7 @@ export const Experiences = () => {
         })}
 
         {/* Timeline */}
-        <div className="absolute left-0 top-0 bottom-0 w-1 bg-gray-300 shadow-sm">
+        <div className="absolute left-0 top-0 bottom-0 w-1 bg-gray-300 dark:bg-gray-600 shadow-sm">
           {experiences.map((exp, index) => {
             const startY = getTimelinePosition(exp.startDate);
             const endY = getTimelinePosition(exp.endDate);
@@ -231,11 +262,11 @@ export const Experiences = () => {
             return (
               <div
                 key={`timeline-${index}`}
-                className={`absolute ${timelineColors[colorIndex]} shadow-md`}
+                className={`absolute ${timelineColors[colorIndex]} shadow-md dark:opacity-80`}
                 style={{
                   top: `${endY}px`,
                   height: `${startY - endY}px`,
-                  left: `${-8 + offset}px`,
+                  left: `${4 + offset}px`,
                   width: "16px",
                   borderRight: "2px solid",
                   borderTop: "2px solid",
@@ -245,7 +276,7 @@ export const Experiences = () => {
                 }}
               >
                 <div
-                  className={`absolute text-xs text-gray-600 font-bold ${
+                  className={`absolute text-xs text-gray-600 dark:text-gray-100 font-bold ${
                     isSesh ? "writing-vertical" : ""
                   }`}
                   style={{
@@ -272,11 +303,9 @@ export const Experiences = () => {
         </div>
       </div>
 
-      {/* Experience Cards - adjusted margin for mobile */}
+      {/* Experience Cards */}
       <div className="md:ml-24 ml-4">
-        {" "}
-        {/* Reduced left margin on mobile */}
-        <h2 className="text-2xl font-bold mb-4 flex items-center">
+        <h2 className="text-2xl font-bold mb-4 flex items-center text-gray-800 dark:text-gray-200">
           <Briefcase className="mr-2" />
           Experiences
         </h2>
@@ -286,54 +315,88 @@ export const Experiences = () => {
             initial={{ x: -50, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             transition={{ delay: index * 0.1 }}
-            className="mb-8 p-4 bg-gray-100 rounded relative"
+            className="mb-8 p-3 md:p-4 bg-gray-100 dark:bg-gray-900/60 rounded-lg shadow-md relative
+              hover:bg-gray-200 dark:hover:bg-gray-900/80 
+              border border-transparent dark:border-gray-700
+              transition-all duration-200"
           >
             <div className="flex justify-between items-start">
-              <div className="flex-grow">
-                <div className="flex items-center gap-2 mb-1">
-                  <h3 className="font-bold">{exp.title}</h3>
+              <div className="flex-grow space-y-1 md:space-y-2">
+                {/* Title and External Link */}
+                <div className="flex items-start justify-between gap-2">
+                  <h3 className="font-bold text-base md:text-lg text-gray-900 dark:text-gray-100">
+                    {exp.title}
+                  </h3>
                   {exp.link && (
                     <Link
                       href={exp.link}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-blue-600 hover:text-blue-800 transition-colors"
+                      className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 
+                        transition-colors flex-shrink-0"
                     >
                       <ExternalLink className="w-4 h-4" />
                     </Link>
                   )}
                 </div>
-                <p>{exp.role}</p>
-                <p className="text-sm text-gray-600">
-                  {exp.startDate} - {exp.endDate}
+
+                {/* Role */}
+                <p className="text-sm md:text-base text-gray-800 dark:text-gray-200 font-medium">
+                  {exp.role}
                 </p>
+
+                {/* Date Range */}
+                <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 flex items-center gap-2">
+                  <span>
+                    {formatDate(exp.startDate)} - {formatDate(exp.endDate)}
+                  </span>
+                  <span className="text-gray-400 dark:text-gray-500">·</span>
+                  <span>{getDuration(exp.startDate, exp.endDate)}</span>
+                </p>
+
+                {/* More Info Button */}
                 <button
                   onClick={() =>
                     setExpandedExperience(
                       expandedExperience === index ? null : index
                     )
                   }
-                  className="mt-2 text-red-500 flex items-center"
+                  className="text-sm md:text-base text-red-500 dark:text-red-400 
+                    hover:text-red-600 dark:hover:text-red-300 
+                    flex items-center transition-colors focus:outline-none focus:ring-2 
+                    focus:ring-red-500 dark:focus:ring-red-400 rounded-md
+                    hover:bg-gray-200 dark:hover:bg-gray-800/60 px-2 py-1"
                   aria-expanded={expandedExperience === index}
                   aria-controls={`experience-details-${index}`}
                 >
                   {expandedExperience === index ? (
                     <>
-                      Less info <ChevronUp className="ml-1" />
+                      Less info <ChevronUp className="ml-1 w-4 h-4" />
                     </>
                   ) : (
                     <>
-                      More info <ChevronDown className="ml-1" />
+                      More info <ChevronDown className="ml-1 w-4 h-4" />
                     </>
                   )}
                 </button>
               </div>
-              <img
-                src={getPokemonSprite(experiencePokemons[index])}
-                alt={`Pokemon sprite`}
-                className="w-16 h-16 pixelated"
-              />
+
+              {/* Pokemon sprite - hidden on mobile */}
+              <div className="relative flex-shrink-0 hidden md:block">
+                <img
+                  src={getPokemonSprite(experiencePokemons[index])}
+                  alt={`Pokemon sprite`}
+                  style={{
+                    imageRendering: "pixelated",
+                    ...getPokemonSpriteSize(experiencePokemons[index]),
+                    transform: "scale(0.5)",
+                  }}
+                  className="object-contain transition-transform duration-200 hover:scale-110"
+                />
+              </div>
             </div>
+
+            {/* Details Section */}
             <AnimatePresence>
               {expandedExperience === index && (
                 <motion.ul
@@ -341,10 +404,13 @@ export const Experiences = () => {
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: "auto", opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
-                  className="mt-2 list-disc list-inside"
+                  className="mt-3 md:mt-4 list-disc list-inside text-sm md:text-base 
+                    text-gray-700 dark:text-gray-300 pl-2 md:pl-4 space-y-2"
                 >
                   {exp.details.map((detail, i) => (
-                    <li key={i}>{detail}</li>
+                    <li key={i} className="mt-1">
+                      <span className="ml-[-4px]">{detail}</span>
+                    </li>
                   ))}
                 </motion.ul>
               )}

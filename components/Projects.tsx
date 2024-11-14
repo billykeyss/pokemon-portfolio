@@ -156,7 +156,7 @@ export const Projects = () => {
       transition={{ duration: 0.5 }}
     >
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-bold flex items-center">
+        <h2 className="text-2xl font-bold flex items-center text-gray-800 dark:text-gray-200">
           <Code className="mr-2" />
           Projects
         </h2>
@@ -166,7 +166,9 @@ export const Projects = () => {
               prev === "desc" ? "asc" : "desc"
             )
           }
-          className="text-sm text-red-500 flex items-center"
+          className="text-sm text-red-500 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300 
+            flex items-center transition-colors px-2 py-1 rounded-md
+            hover:bg-gray-100 dark:hover:bg-gray-800/60"
         >
           Sort by Year {projectSortDirection === "desc" ? "↓" : "↑"}
         </button>
@@ -177,19 +179,30 @@ export const Projects = () => {
           initial={{ x: -50, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ delay: index * 0.1 }}
-          className="mb-4 p-4 bg-gray-100 rounded"
+          className="mb-4 p-4 bg-gray-100 dark:bg-gray-900/60 rounded-lg shadow-md
+            hover:bg-gray-200 dark:hover:bg-gray-900/80 
+            border border-transparent dark:border-gray-700
+            transition-all duration-200"
         >
           <div className="flex flex-col">
             <div className="flex items-center justify-between mb-1">
-              <h3 className="font-bold text-lg">{project.title}</h3>
-              <span className="text-sm text-gray-600">{project.year}</span>
+              <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100">
+                {project.title}
+              </h3>
+              <span className="text-sm text-gray-600 dark:text-gray-400">
+                {project.year}
+              </span>
             </div>
-            <p className="text-sm mb-2">{project.description}</p>
+            <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
+              {project.description}
+            </p>
             <div className="flex flex-wrap gap-2 mb-2">
               {project.techStack.map((tech, i) => (
                 <span
                   key={i}
-                  className="bg-red-500 text-white px-3 py-1 rounded-full text-sm"
+                  className="bg-red-500 dark:bg-red-600 text-white dark:text-gray-100 
+                    px-3 py-1 rounded-full text-sm shadow-sm
+                    hover:bg-red-600 dark:hover:bg-red-700 transition-colors"
                 >
                   {tech}
                 </span>
@@ -200,7 +213,10 @@ export const Projects = () => {
                 onClick={() =>
                   setExpandedProject(expandedProject === index ? null : index)
                 }
-                className="text-red-500 flex items-center mr-4"
+                className="text-red-500 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300 
+                  flex items-center mr-4 transition-colors focus:outline-none focus:ring-2 
+                  focus:ring-red-500 dark:focus:ring-red-400 rounded-md
+                  hover:bg-gray-200 dark:hover:bg-gray-800/60 px-2 py-1"
                 aria-expanded={expandedProject === index}
                 aria-controls={`project-details-${index}`}
               >
@@ -219,7 +235,9 @@ export const Projects = () => {
                   href={project.link}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-blue-600 hover:underline flex items-center"
+                  className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 
+                    hover:underline flex items-center transition-colors
+                    hover:bg-gray-200 dark:hover:bg-gray-800/60 px-2 py-1 rounded-md"
                 >
                   View Project <ExternalLink className="w-4 h-4 ml-1" />
                 </Link>
@@ -233,14 +251,17 @@ export const Projects = () => {
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: "auto", opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
-                className="mt-2"
+                className="mt-2 space-y-4"
               >
                 <img
                   src={project.image}
                   alt={project.title}
-                  className="w-full h-40 object-cover rounded-md mb-4"
+                  className="w-full h-40 object-cover rounded-md mb-4 
+                    dark:opacity-90 shadow-md"
                 />
-                <p>{project.details}</p>
+                <p className="text-gray-700 dark:text-gray-300">
+                  {project.details}
+                </p>
               </motion.div>
             )}
           </AnimatePresence>
