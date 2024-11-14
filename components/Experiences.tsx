@@ -14,7 +14,25 @@ type Experience = {
   link?: string;
 };
 
+// Add a utility function to check if we're on mobile
+const useIsMobile = () => {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768); // 768px is typical md breakpoint
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  return isMobile;
+};
+
 export const Experiences = () => {
+  const isMobile = useIsMobile();
   const [expandedExperience, setExpandedExperience] = useState<number | null>(
     null
   );
@@ -174,85 +192,90 @@ export const Experiences = () => {
       transition={{ duration: 0.5 }}
       className="relative min-h-[1000px]"
     >
-      {/* Year markers */}
-      {Array.from({ length: 9 }).map((_, i) => {
-        const year = new Date().getFullYear() - i;
-        const position = i * 120;
-        return (
-          <div
-            key={`year-${year}`}
-            className="absolute -left-16 text-sm text-gray-400"
-            style={{ top: `${position}px` }}
-          >
-            {year}
-          </div>
-        );
-      })}
-
-      {/* Timeline */}
-      <div className="absolute left-0 top-0 bottom-0 w-1 bg-gray-300 shadow-sm">
-        {experiences.map((exp, index) => {
-          const startY = getTimelinePosition(exp.startDate);
-          const endY = getTimelinePosition(exp.endDate);
-          const colorIndex = index % timelineColors.length;
-          const offset =
-            experiences.slice(0, index).filter((prevExp) => {
-              const prevStart = getTimelinePosition(prevExp.startDate);
-              const prevEnd = getTimelinePosition(prevExp.endDate);
-              return (
-                (startY >= prevEnd && startY <= prevStart) ||
-                (endY >= prevEnd && endY <= prevStart) ||
-                (startY <= prevEnd && endY >= prevStart)
-              );
-            }).length * 20;
-
-          const isSesh = exp.timelineTitle === "Sesh";
-
+      {/* Year markers and Timeline - hidden on mobile */}
+      <div className="hidden md:block">
+        {/* Year markers */}
+        {Array.from({ length: 9 }).map((_, i) => {
+          const year = new Date().getFullYear() - i;
+          const position = i * 120;
           return (
             <div
-              key={`timeline-${index}`}
-              className={`absolute ${timelineColors[colorIndex]} shadow-md`}
-              style={{
-                top: `${endY}px`,
-                height: `${startY - endY}px`,
-                left: `${-8 + offset}px`,
-                width: "16px",
-                borderRight: "2px solid",
-                borderTop: "2px solid",
-                borderBottom: "2px solid",
-                borderTopRightRadius: "4px",
-                borderBottomRightRadius: "4px",
-              }}
+              key={`year-${year}`}
+              className="absolute -left-16 text-sm text-gray-400"
+              style={{ top: `${position}px` }}
             >
-              <div
-                className={`absolute text-xs text-gray-600 font-bold ${
-                  isSesh ? "writing-vertical" : ""
-                }`}
-                style={{
-                  top: "50%",
-                  transform: "translateY(-50%)",
-                  ...(isSesh
-                    ? {
-                        right: "16px",
-                        writingMode: "vertical-lr",
-                        textOrientation: "upright",
-                        letterSpacing: "0.1em",
-                        height: "fit-content",
-                      }
-                    : {
-                        left: "24px",
-                      }),
-                }}
-              >
-                {exp.timelineTitle || exp.title}
-              </div>
+              {year}
             </div>
           );
         })}
+
+        {/* Timeline */}
+        <div className="absolute left-0 top-0 bottom-0 w-1 bg-gray-300 shadow-sm">
+          {experiences.map((exp, index) => {
+            const startY = getTimelinePosition(exp.startDate);
+            const endY = getTimelinePosition(exp.endDate);
+            const colorIndex = index % timelineColors.length;
+            const offset =
+              experiences.slice(0, index).filter((prevExp) => {
+                const prevStart = getTimelinePosition(prevExp.startDate);
+                const prevEnd = getTimelinePosition(prevExp.endDate);
+                return (
+                  (startY >= prevEnd && startY <= prevStart) ||
+                  (endY >= prevEnd && endY <= prevStart) ||
+                  (startY <= prevEnd && endY >= prevStart)
+                );
+              }).length * 20;
+
+            const isSesh = exp.timelineTitle === "Sesh";
+
+            return (
+              <div
+                key={`timeline-${index}`}
+                className={`absolute ${timelineColors[colorIndex]} shadow-md`}
+                style={{
+                  top: `${endY}px`,
+                  height: `${startY - endY}px`,
+                  left: `${-8 + offset}px`,
+                  width: "16px",
+                  borderRight: "2px solid",
+                  borderTop: "2px solid",
+                  borderBottom: "2px solid",
+                  borderTopRightRadius: "4px",
+                  borderBottomRightRadius: "4px",
+                }}
+              >
+                <div
+                  className={`absolute text-xs text-gray-600 font-bold ${
+                    isSesh ? "writing-vertical" : ""
+                  }`}
+                  style={{
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    ...(isSesh
+                      ? {
+                          right: "0px",
+                          writingMode: "vertical-lr",
+                          textOrientation: "upright",
+                          letterSpacing: "0.1em",
+                          height: "fit-content",
+                        }
+                      : {
+                          left: "24px",
+                        }),
+                  }}
+                >
+                  {exp.timelineTitle || exp.title}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
-      {/* Experience Cards */}
-      <div className="ml-24">
+      {/* Experience Cards - adjusted margin for mobile */}
+      <div className="md:ml-24 ml-4">
+        {" "}
+        {/* Reduced left margin on mobile */}
         <h2 className="text-2xl font-bold mb-4 flex items-center">
           <Briefcase className="mr-2" />
           Experiences

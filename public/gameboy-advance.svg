@@ -1,0 +1,19 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Main Body -->
+  <rect x="8" y="16" width="48" height="32" fill="#8B8B8B"/>
+  <rect x="12" y="20" width="40" height="24" fill="#2C2C2C"/>
+  
+  <!-- Screen -->
+  <rect x="16" y="24" width="32" height="16" fill="#565656"/>
+  
+  <!-- D-Pad -->
+  <rect x="12" y="44" width="12" height="4" fill="#565656"/>
+  <rect x="16" y="40" width="4" height="12" fill="#565656"/>
+  
+  <!-- Buttons -->
+  <circle cx="44" cy="44" r="4" fill="#A93671"/>
+  <circle cx="36" cy="44" r="4" fill="#A93671"/>
+  
+  <!-- Power LED -->
+  <circle cx="14" cy="18" r="2" fill="#FF0000"/>
+</svg> 
