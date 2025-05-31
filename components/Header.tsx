@@ -6,14 +6,15 @@ import { useTheme } from "next-themes";
 
 export const Header = () => {
   const [isPlaying, setIsPlaying] = useState(true);
-  const [dpadDirection, setDpadDirection] = useState<string | null>(null);
   const { theme } = useTheme();
 
   return (
     <header className="text-center mb-8 w-full max-w-4xl mx-auto px-4">
       {/* Rest of header content */}
-      <h1 className="text-2xl md:text-4xl font-bold mt-4">Yichen Huang</h1>
-      <p className="text-lg md:text-xl mb-4">Software Development Engineer</p>
+      <h1 className="text-2xl md:text-4xl font-bold mt-4">
+        Bill (Yichen) Huang
+      </h1>
+      <p className="text-lg md:text-xl mb-4">AI Focused Software Engineer</p>
       <div className="max-w-2xl mx-auto text-center px-4">
         <p className="mb-2 text-sm md:text-base">
           Passionate software engineer with expertise in full-stack development,
@@ -49,51 +50,54 @@ export const Header = () => {
         initial={{ y: -100 }}
         animate={{ y: 0 }}
         transition={{ type: "spring", stiffness: 100 }}
-        className="relative w-full aspect-[2/1] max-w-[600px] mx-auto"
+        className="relative w-full aspect-[2/3] max-w-[400px] mx-auto"
         onClick={() => setIsPlaying(!isPlaying)}
         style={{ cursor: "pointer" }}
       >
         <svg
           className="w-full h-full"
-          viewBox="0 0 250 150"
+          viewBox="0 0 200 300"
           fill="none"
           preserveAspectRatio="xMidYMid meet"
           xmlns="http://www.w3.org/2000/svg"
         >
-          {/* Main Body with rounded corners */}
+          {/* Main Body - Classic Game Boy style */}
           <rect
             x="10"
             y="10"
-            width="250"
-            height="130"
-            rx="15"
-            fill="#013598"
+            width="180"
+            height="280"
+            rx="20"
+            fill="#D4D4AA"
             className="dark:opacity-90"
           />
           <rect
             x="15"
             y="15"
-            width="240"
-            height="120"
-            rx="12"
-            fill="#002A88"
+            width="170"
+            height="270"
+            rx="15"
+            fill="#E8E8C0"
             className="dark:opacity-90"
           />
 
-          {/* Screen bezel - centered and taller */}
-          <rect x="60" y="20" width="140" height="95" rx="4" fill="#1A1B1E" />
+          {/* Top bezel/border */}
+          <rect x="20" y="20" width="160" height="15" rx="3" fill="#B8B8A0" />
+
+          {/* Screen bezel - classic Game Boy position */}
+          <rect x="40" y="45" width="120" height="90" rx="8" fill="#1A1B1E" />
 
           {/* Screen frame */}
           <rect
-            x="65"
-            y="25"
-            width="130"
-            height="85"
+            x="45"
+            y="50"
+            width="110"
+            height="80"
             fill={theme === "dark" ? "#1A1B1E" : "#232323"}
           />
 
           {/* Screen Container */}
-          <foreignObject x="70" y="30" width="120" height="75">
+          <foreignObject x="50" y="55" width="100" height="70">
             <div className="w-full h-full relative overflow-hidden rounded">
               {isPlaying ? (
                 <video
@@ -102,68 +106,25 @@ export const Header = () => {
                   muted
                   loop
                   playsInline
-                  className="absolute top-0 left-0 w-full h-full object-contain pixelated bg-[#565656]"
+                  className="absolute top-0 left-0 w-full h-full object-contain pixelated bg-[#9BBB0F]"
+                  style={{
+                    filter:
+                      "sepia(1) hue-rotate(60deg) saturate(2) contrast(1.2)",
+                  }}
                 >
                   <source src="/pokemon-red-start.mp4" type="video/mp4" />
                   Your browser does not support the video tag.
                 </video>
               ) : (
-                <div className="w-full h-full bg-[#565656]" />
+                <div className="w-full h-full bg-[#9BBB0F]" />
               )}
             </div>
           </foreignObject>
 
-          {/* D-Pad - adjusted for centered screen */}
-          <g transform="translate(30, 55)">
-            {/* D-pad base/shadow */}
-            <path
-              d="M0 4h12v12h12v12h-12v12h-12v-12h-12v-12h12v-12z"
-              fill="#1a1a1a"
-            />
-            {/* D-pad main cross */}
-            <path
-              d="M1 5h11v11h11v11h-11v11h-11v-11h-11v-11h11v-11z"
-              fill={dpadDirection ? "#A0A0A0" : "#D0D0D0"}
-            />
-            {/* D-pad center piece */}
-            <rect x="3" y="17" width="8" height="8" fill="#B0B0B0" />
-            {/* D-pad directional indicators */}
-            <path d="M6.5 7l3 3h-6l3-3z" fill="#9a9a9a" /> {/* Up */}
-            <path d="M6.5 32l3-3h-6l3 3z" fill="#9a9a9a" /> {/* Down */}
-            <path d="M19 21l-3 3v-6l3 3z" fill="#9a9a9a" /> {/* Right */}
-            <path d="M-7 21l3 3v-6l-3 3z" fill="#9a9a9a" /> {/* Left */}
-          </g>
-
-          {/* A/B Buttons - adjusted for centered screen */}
-          <g transform="translate(240, 75)">
-            <circle cx="0" cy="0" r="10" fill="#A93671" />
-            <text x="-3" y="3" fill="white" fontSize="8">
-              A
-            </text>
-          </g>
-          <g transform="translate(217, 85)">
-            <circle cx="0" cy="0" r="10" fill="#A93671" />
-            <text x="-3" y="3" fill="white" fontSize="8">
-              B
-            </text>
-          </g>
-
-          {/* Start/Select buttons */}
-          <g transform="translate(110, 125)">
-            <rect x="0" y="0" width="20" height="6" rx="3" fill="#D0D0D0" />
-            <rect x="25" y="0" width="20" height="6" rx="3" fill="#D0D0D0" />
-            <text x="3" y="-2" fill="#697796" fontSize="4">
-              SELECT
-            </text>
-            <text x="30" y="-2" fill="#697796" fontSize="4">
-              START
-            </text>
-          </g>
-
           {/* Power LED */}
           <motion.circle
-            cx="25"
-            cy="25"
+            cx="165"
+            cy="55"
             r="3"
             fill="#FF0000"
             animate={
@@ -183,21 +144,124 @@ export const Header = () => {
               ease: "linear",
             }}
           />
-          {/* Speaker grills */}
-          <g transform="translate(230, 115)">
-            <rect x="0" y="0" width="3" height="10" fill="#002A88" />
-            <rect x="6" y="0" width="3" height="10" fill="#002A88" />
-            <rect x="12" y="0" width="3" height="10" fill="#002A88" />
+
+          {/* Power text */}
+          <text x="165" y="75" fill="#808080" fontSize="6" textAnchor="middle">
+            POWER
+          </text>
+
+          {/* Speaker grills - top of device */}
+          <g transform="translate(70, 25)">
+            <rect x="0" y="0" width="2" height="8" fill="#A0A090" />
+            <rect x="4" y="0" width="2" height="8" fill="#A0A090" />
+            <rect x="8" y="0" width="2" height="8" fill="#A0A090" />
+            <rect x="12" y="0" width="2" height="8" fill="#A0A090" />
+            <rect x="16" y="0" width="2" height="8" fill="#A0A090" />
+            <rect x="20" y="0" width="2" height="8" fill="#A0A090" />
+            <rect x="24" y="0" width="2" height="8" fill="#A0A090" />
+            <rect x="28" y="0" width="2" height="8" fill="#A0A090" />
+            <rect x="32" y="0" width="2" height="8" fill="#A0A090" />
+            <rect x="36" y="0" width="2" height="8" fill="#A0A090" />
+            <rect x="40" y="0" width="2" height="8" fill="#A0A090" />
+            <rect x="44" y="0" width="2" height="8" fill="#A0A090" />
+            <rect x="48" y="0" width="2" height="8" fill="#A0A090" />
+            <rect x="52" y="0" width="2" height="8" fill="#A0A090" />
+            <rect x="56" y="0" width="2" height="8" fill="#A0A090" />
+            <rect x="60" y="0" width="2" height="8" fill="#A0A090" />
           </g>
-          {/* Nintendo text */}
+
+          {/* Nintendo text above screen */}
           <text
-            x="20"
-            y="135"
-            fill="#697796"
-            fontSize="5"
+            x="100"
+            y="145"
+            fill="#666666"
+            fontSize="8"
+            textAnchor="middle"
+            style={{ fontFamily: "sans-serif", fontWeight: "normal" }}
+          >
+            Nintendo
+          </text>
+
+          {/* Game Boy text above screen */}
+          <text
+            x="100"
+            y="155"
+            fill="#333333"
+            fontSize="12"
+            textAnchor="middle"
+            style={{ fontFamily: "sans-serif", fontWeight: "bold" }}
+          >
+            GAME BOY
+          </text>
+
+          {/* D-Pad - positioned on bottom left */}
+          <g transform="translate(55, 190)">
+            {/* D-pad base/shadow */}
+            <path
+              d="M0 4h12v12h12v12h-12v12h-12v-12h-12v-12h12v-12z"
+              fill="#A0A090"
+            />
+            {/* D-pad main cross */}
+            <path
+              d="M1 5h11v11h11v11h-11v11h-11v-11h-11v-11h11v-11z"
+              fill="#D0D0C0"
+            />
+            {/* D-pad center piece */}
+            <rect x="6" y="17" width="6" height="6" fill="#B8B8A8" />
+          </g>
+
+          {/* A/B Buttons - positioned on bottom right */}
+          <g transform="translate(130, 200)">
+            <circle cx="0" cy="0" r="12" fill="#A0A090" />
+            <circle cx="0" cy="0" r="10" fill="#D0D0C0" />
+            <text
+              x="0"
+              y="3"
+              fill="#666666"
+              fontSize="8"
+              textAnchor="middle"
+              fontWeight="bold"
+            >
+              A
+            </text>
+          </g>
+          <g transform="translate(110, 220)">
+            <circle cx="0" cy="0" r="12" fill="#A0A090" />
+            <circle cx="0" cy="0" r="10" fill="#D0D0C0" />
+            <text
+              x="0"
+              y="3"
+              fill="#666666"
+              fontSize="8"
+              textAnchor="middle"
+              fontWeight="bold"
+            >
+              B
+            </text>
+          </g>
+
+          {/* Start/Select buttons - bottom center */}
+          <g transform="translate(75, 255)">
+            <rect x="0" y="0" width="20" height="8" rx="4" fill="#B8B8A8" />
+            <rect x="30" y="0" width="20" height="8" rx="4" fill="#B8B8A8" />
+            <text x="10" y="12" fill="#666666" fontSize="5" textAnchor="middle">
+              SELECT
+            </text>
+            <text x="40" y="12" fill="#666666" fontSize="5" textAnchor="middle">
+              START
+            </text>
+          </g>
+
+          {/* Bottom Nintendo branding */}
+          <text
+            x="100"
+            y="280"
+            fill="#999999"
+            fontSize="6"
+            textAnchor="middle"
             style={{ fontFamily: "monospace" }}
           >
-            Nintendo GAME BOY advance
+            Nintendo GAME BOY TM
           </text>
         </svg>
 
