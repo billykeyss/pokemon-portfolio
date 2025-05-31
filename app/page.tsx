@@ -9,8 +9,7 @@ import { Portfolio } from "@/components/Portfolio";
 import { Projects } from "@/components/Projects";
 import { Skills } from "@/components/Skills";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { getRandomPokemonName } from "@/utils/pokemon";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 export default function Component() {
   const [activeSection, setActiveSection] = useState("experiences");

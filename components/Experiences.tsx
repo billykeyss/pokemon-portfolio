@@ -63,7 +63,6 @@ const getDuration = (startDate: string, endDate: string): string => {
 };
 
 export const Experiences = () => {
-  const isMobile = useIsMobile();
   const [expandedExperience, setExpandedExperience] = useState<number | null>(
     null
   );
@@ -84,6 +83,21 @@ export const Experiences = () => {
         "Established social media presence across Facebook, Instagram, and TikTok platforms.",
       ],
       link: "https://climbingsesh.com/",
+    },
+    {
+      title: "V12 Resole",
+      timelineTitle: "V12 Resole",
+      role: "CTO",
+      startDate: "2024-10",
+      endDate: "Present",
+      details: [
+        "Founded and launched an e-commerce platform specializing in premium climbing gear and accessories.",
+        "Designed and developed product line including chalk bags, chalk buckets, brushes, and training equipment.",
+        "Built full e-commerce platform with Shopify integration, payment processing, and inventory management.",
+        "Implemented international shipping capabilities supfporting both USD and CAD currencies.",
+        "Established social media presence across Facebook, Instagram, and TikTok platforms.",
+      ],
+      link: "https://www.v12resole.com/",
     },
     {
       title: "Keplar",
