@@ -9,8 +9,8 @@ import {
   ChevronDown,
   ChevronUp,
   ExternalLink,
-  Star,
-  Mountain,
+  Calendar,
+  Clock,
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -52,11 +52,194 @@ const getDuration = (startDate: string, endDate: string): string => {
   return `${years} yr ${remainingMonths} mo`;
 };
 
+// Enhanced timeline utilities
+const getTimelineColors = (index: number, isSpecial: boolean = false) => {
+  const colors = [
+    {
+      primary: "from-blue-500 to-indigo-600",
+      light: "from-blue-100 to-indigo-100",
+      dark: "from-blue-900/30 to-indigo-900/30",
+      glow: "shadow-blue-500/30",
+      text: "text-blue-600 dark:text-blue-400",
+      cardBg:
+        "bg-gradient-to-br from-blue-50/80 to-indigo-50/80 dark:from-blue-900/20 dark:to-indigo-900/20",
+      cardBorder: "border-blue-200 dark:border-indigo-400/50",
+      cardHover: "hover:shadow-blue-500/20 dark:hover:shadow-indigo-500/20",
+      cardRing: "ring-blue-400",
+      textPrimary: "text-blue-900 dark:text-indigo-300",
+      textSecondary: "text-blue-800 dark:text-indigo-200",
+      textTertiary: "text-blue-700 dark:text-indigo-300",
+      bgAccent: "bg-blue-50 dark:bg-blue-900/30",
+      buttonColors:
+        "text-blue-600 dark:text-indigo-400 hover:text-blue-700 dark:hover:text-indigo-300 focus:ring-blue-500 dark:focus:ring-indigo-400 hover:bg-blue-100 dark:hover:bg-indigo-900/30",
+      detailsBg: "bg-blue-50/50 dark:bg-blue-900/20 border-blue-400",
+      detailsText: "text-blue-800 dark:text-indigo-200",
+      bulletColor: "bg-blue-500",
+      glowOverlay: "from-blue-500/5 to-indigo-500/5",
+    },
+    {
+      primary: "from-emerald-500 to-teal-600",
+      light: "from-emerald-100 to-teal-100",
+      dark: "from-emerald-900/30 to-teal-900/30",
+      glow: "shadow-emerald-500/30",
+      text: "text-emerald-600 dark:text-emerald-400",
+      cardBg:
+        "bg-gradient-to-br from-emerald-50/80 to-teal-50/80 dark:from-emerald-900/20 dark:to-teal-900/20",
+      cardBorder: "border-emerald-200 dark:border-teal-400/50",
+      cardHover: "hover:shadow-emerald-500/20 dark:hover:shadow-teal-500/20",
+      cardRing: "ring-emerald-400",
+      textPrimary: "text-emerald-900 dark:text-teal-300",
+      textSecondary: "text-emerald-800 dark:text-teal-200",
+      textTertiary: "text-emerald-700 dark:text-teal-300",
+      bgAccent: "bg-emerald-50 dark:bg-emerald-900/30",
+      buttonColors:
+        "text-emerald-600 dark:text-teal-400 hover:text-emerald-700 dark:hover:text-teal-300 focus:ring-emerald-500 dark:focus:ring-teal-400 hover:bg-emerald-100 dark:hover:bg-teal-900/30",
+      detailsBg: "bg-emerald-50/50 dark:bg-emerald-900/20 border-emerald-400",
+      detailsText: "text-emerald-800 dark:text-teal-200",
+      bulletColor: "bg-emerald-500",
+      glowOverlay: "from-emerald-500/5 to-teal-500/5",
+    },
+    {
+      primary: "from-purple-500 to-violet-600",
+      light: "from-purple-100 to-violet-100",
+      dark: "from-purple-900/30 to-violet-900/30",
+      glow: "shadow-purple-500/30",
+      text: "text-purple-600 dark:text-purple-400",
+      cardBg:
+        "bg-gradient-to-br from-purple-50/80 to-violet-50/80 dark:from-purple-900/20 dark:to-violet-900/20",
+      cardBorder: "border-purple-200 dark:border-violet-400/50",
+      cardHover: "hover:shadow-purple-500/20 dark:hover:shadow-violet-500/20",
+      cardRing: "ring-purple-400",
+      textPrimary: "text-purple-900 dark:text-violet-300",
+      textSecondary: "text-purple-800 dark:text-violet-200",
+      textTertiary: "text-purple-700 dark:text-violet-300",
+      bgAccent: "bg-purple-50 dark:bg-purple-900/30",
+      buttonColors:
+        "text-purple-600 dark:text-violet-400 hover:text-purple-700 dark:hover:text-violet-300 focus:ring-purple-500 dark:focus:ring-violet-400 hover:bg-purple-100 dark:hover:bg-violet-900/30",
+      detailsBg: "bg-purple-50/50 dark:bg-purple-900/20 border-purple-400",
+      detailsText: "text-purple-800 dark:text-violet-200",
+      bulletColor: "bg-purple-500",
+      glowOverlay: "from-purple-500/5 to-violet-500/5",
+    },
+    {
+      primary: "from-rose-500 to-pink-600",
+      light: "from-rose-100 to-pink-100",
+      dark: "from-rose-900/30 to-pink-900/30",
+      glow: "shadow-rose-500/30",
+      text: "text-rose-600 dark:text-rose-400",
+      cardBg:
+        "bg-gradient-to-br from-rose-50/80 to-pink-50/80 dark:from-rose-900/20 dark:to-pink-900/20",
+      cardBorder: "border-rose-200 dark:border-pink-400/50",
+      cardHover: "hover:shadow-rose-500/20 dark:hover:shadow-pink-500/20",
+      cardRing: "ring-rose-400",
+      textPrimary: "text-rose-900 dark:text-pink-300",
+      textSecondary: "text-rose-800 dark:text-pink-200",
+      textTertiary: "text-rose-700 dark:text-pink-300",
+      bgAccent: "bg-rose-50 dark:bg-rose-900/30",
+      buttonColors:
+        "text-rose-600 dark:text-pink-400 hover:text-rose-700 dark:hover:text-pink-300 focus:ring-rose-500 dark:focus:ring-pink-400 hover:bg-rose-100 dark:hover:bg-pink-900/30",
+      detailsBg: "bg-rose-50/50 dark:bg-rose-900/20 border-rose-400",
+      detailsText: "text-rose-800 dark:text-pink-200",
+      bulletColor: "bg-rose-500",
+      glowOverlay: "from-rose-500/5 to-pink-500/5",
+    },
+    {
+      primary: "from-amber-500 to-orange-600",
+      light: "from-amber-100 to-orange-100",
+      dark: "from-amber-900/30 to-orange-900/30",
+      glow: "shadow-amber-500/30",
+      text: "text-amber-600 dark:text-amber-400",
+      cardBg:
+        "bg-gradient-to-br from-amber-50/80 to-orange-50/80 dark:from-amber-900/20 dark:to-orange-900/20",
+      cardBorder: "border-amber-200 dark:border-orange-400/50",
+      cardHover: "hover:shadow-amber-500/20 dark:hover:shadow-orange-500/20",
+      cardRing: "ring-amber-400",
+      textPrimary: "text-amber-900 dark:text-orange-300",
+      textSecondary: "text-amber-800 dark:text-orange-200",
+      textTertiary: "text-amber-700 dark:text-orange-300",
+      bgAccent: "bg-amber-50 dark:bg-amber-900/30",
+      buttonColors:
+        "text-amber-600 dark:text-orange-400 hover:text-amber-700 dark:hover:text-orange-300 focus:ring-amber-500 dark:focus:ring-orange-400 hover:bg-amber-100 dark:hover:bg-orange-900/30",
+      detailsBg: "bg-amber-50/50 dark:bg-amber-900/20 border-amber-400",
+      detailsText: "text-amber-800 dark:text-orange-200",
+      bulletColor: "bg-amber-500",
+      glowOverlay: "from-amber-500/5 to-orange-500/5",
+    },
+    {
+      primary: "from-cyan-500 to-blue-600",
+      light: "from-cyan-100 to-blue-100",
+      dark: "from-cyan-900/30 to-blue-900/30",
+      glow: "shadow-cyan-500/30",
+      text: "text-cyan-600 dark:text-cyan-400",
+      cardBg:
+        "bg-gradient-to-br from-cyan-50/80 to-blue-50/80 dark:from-cyan-900/20 dark:to-blue-900/20",
+      cardBorder: "border-cyan-200 dark:border-blue-400/50",
+      cardHover: "hover:shadow-cyan-500/20 dark:hover:shadow-blue-500/20",
+      cardRing: "ring-cyan-400",
+      textPrimary: "text-cyan-900 dark:text-blue-300",
+      textSecondary: "text-cyan-800 dark:text-blue-200",
+      textTertiary: "text-cyan-700 dark:text-blue-300",
+      bgAccent: "bg-cyan-50 dark:bg-cyan-900/30",
+      buttonColors:
+        "text-cyan-600 dark:text-blue-400 hover:text-cyan-700 dark:hover:text-blue-300 focus:ring-cyan-500 dark:focus:ring-blue-400 hover:bg-cyan-100 dark:hover:bg-blue-900/30",
+      detailsBg: "bg-cyan-50/50 dark:bg-cyan-900/20 border-cyan-400",
+      detailsText: "text-cyan-800 dark:text-blue-200",
+      bulletColor: "bg-cyan-500",
+      glowOverlay: "from-cyan-500/5 to-blue-500/5",
+    },
+  ];
+
+  if (isSpecial) {
+    return {
+      primary: "from-gradient-to-r from-blue-600 via-purple-600 to-teal-600",
+      light: "from-blue-50 via-purple-50 to-teal-50",
+      dark: "from-blue-900/20 via-purple-900/20 to-teal-900/20",
+      glow: "shadow-blue-500/40",
+      text: "text-blue-600 dark:text-teal-400",
+      cardBg:
+        "bg-gradient-to-br from-blue-50/80 via-purple-50/80 to-teal-50/80 dark:from-blue-900/20 dark:via-purple-900/20 dark:to-teal-900/20",
+      cardBorder: "border-blue-200 dark:border-teal-400/50",
+      cardHover: "hover:shadow-blue-500/20 dark:hover:shadow-teal-500/20",
+      cardRing: "ring-blue-400",
+      textPrimary: "text-blue-900 dark:text-teal-300",
+      textSecondary: "text-blue-800 dark:text-teal-200",
+      textTertiary: "text-blue-700 dark:text-teal-300",
+      bgAccent: "bg-blue-50 dark:bg-blue-900/30",
+      buttonColors:
+        "text-blue-600 dark:text-teal-400 hover:text-blue-700 dark:hover:text-teal-300 focus:ring-blue-500 dark:focus:ring-teal-400 hover:bg-blue-100 dark:hover:bg-teal-900/30",
+      detailsBg: "bg-blue-50/50 dark:bg-blue-900/20 border-blue-400",
+      detailsText: "text-blue-800 dark:text-teal-200",
+      bulletColor: "bg-blue-500",
+      glowOverlay: "from-blue-500/5 via-purple-500/5 to-teal-500/5",
+    };
+  }
+
+  return colors[index % colors.length];
+};
+
+const getTimelinePosition = (
+  date: string,
+  startYear: number = 2015
+): number => {
+  const now = new Date();
+  const targetDate = date === "Present" ? now : new Date(date + "-01");
+  const yearDiff = targetDate.getFullYear() - startYear;
+  const monthDiff = targetDate.getMonth();
+  const dateMonths = yearDiff * 12 + monthDiff;
+
+  // Reversed: older dates (2015) at bottom, newer dates (present) at top
+  // Increased spacing: 16px per month for better visual spacing
+  return dateMonths * 16;
+};
+
 export const Experiences = () => {
   const [expandedExperience, setExpandedExperience] = useState<number | null>(
     null
   );
   const [experiencePokemons, setExperiencePokemons] = useState<string[]>([]);
+  const [hoveredExperience, setHoveredExperience] = useState<number | null>(
+    null
+  );
 
   const experiences: Experience[] = [
     {
@@ -79,30 +262,33 @@ export const Experiences = () => {
       title: "Sesh",
       timelineTitle: "Sesh",
       role: "Founder",
-      startDate: "2023-03",
+      startDate: "2022-10",
       endDate: "Present",
       details: [
-        "Founded and launched an e-commerce platform specializing in premium climbing gear and accessories.",
-        "Partnering with local gyms for local pop up events and sales.",
-        "Designed and developed product line including chalk bags, chalk buckets, brushes, and training equipment.",
-        "Built full e-commerce platform with Shopify integration, payment processing, and inventory management.",
-        "Implemented international shipping capabilities supfporting both USD and CAD currencies.",
-        "Established social media presence across Facebook, Instagram, and TikTok platforms.",
+        "Launched Sesh Climbing (climbingsesh.com), a direct-to-consumer brand for premium climbing gear—from concept and naming to Shopify storefront, 3PL workflows, and multi-currency checkout in USD & CAD.",
+        "Designed and released a 10-SKU product line including chalk buckets, modular chalk bags, boar-hair brushes, 3D-printed training blocks, and pure magnesium-carbonate chalk, all produced with local suppliers and in-house additive manufacturing.",
+        "Maintained a 4.8-star-plus customer rating across the store, with the flagship BOLDER SESH chalk bucket earning a 4.86/5 average from 14 verified reviews.",
+        "Secured partnerships with six regional climbing gyms to host pop-up events, doubling the email list and driving 30% month-over-month revenue lifts during campaign weeks.",
+        "Built an end-to-end commerce stack—Shopify Liquid customizations, Klaviyo automations, Stripe & Shop Pay integration, and Pirate Ship for cross-border fulfillment—cutting average dispatch time to 48 hours and keeping returns under 1%.",
+        "Grew social presence from zero to 3k+ followers in six months on Instagram, TikTok, and Facebook through product-demo reels and user-generated content challenges, reaching 150k organic impressions per quarter.",
+        "Led brand identity and packaging design (logo, print collateral, unboxing experience), boosting on-site conversion to 14% and enabling repeat-purchase email flows that now account for 25% of revenue.",
       ],
       link: "https://climbingsesh.com/",
     },
     {
       title: "V12 Resole",
       timelineTitle: "V12 Resole",
-      role: "CTO",
-      startDate: "2024-10",
+      role: "CTO (Consultant → Full-time)",
+      startDate: "2023-10",
       endDate: "Present",
       details: [
-        "Founded and launched an e-commerce platform specializing in premium climbing gear and accessories.",
-        "Designed and developed product line including chalk bags, chalk buckets, brushes, and training equipment.",
-        "Built full e-commerce platform with Shopify integration, payment processing, and inventory management.",
-        "Implemented international shipping capabilities supfporting both USD and CAD currencies.",
-        "Established social media presence across Facebook, Instagram, and TikTok platforms.",
+        "Transitioned from technical consultant to CTO, leading full-stack development and hardware engineering initiatives for a climbing shoe resole service.",
+        "Engineered an end-to-end Resole Service Management (RSM) platform in Node.js + TypeScript (NX monorepo), React, PostgreSQL, and Docker, integrating Square & Shopify POS APIs for order intake, invoicing, and inventory sync. → 65% cut in manual admin time and 3× order-throughput capacity without extra head-count.",
+        'Designed a 24/7 "Smart Drop-Box" for contact-free pick-up/drop-off: Raspberry Pi + GPIO-controlled electronic lock, QR-code reader, LCD, and an Express/Tailscale VPN backend for secure remote updates. → 28% growth in monthly shoe intakes and lost-item rate < 1%.',
+        "Built a real-time production dashboard (React Flow + MUI) with drag-and-drop Kanban stages, barcode scanning, and live metrics. → 50% reduction in workshop search time and <5 min average status update latency.",
+        'Authored a TypeScript "SquareService" SDK wrapping 14 critical endpoints (orders, payments, customers) and a Shopify webhook processor; now drives 100% of financial transactions with < 0.2% sync errors.',
+        "Launched an AI-powered cobbler training portal (OpenAI GPT based RAG over internal videos & SOPs) that auto-generates step-by-step repair guidance and quizzes. → On-the-tools proficiency time cut from 6 weeks to 2 weeks for new hires.",
+        "Implemented CI/CD on Render with blue-green deploys; maintains 99.9% uptime and < 5 min rollback windows.",
       ],
       link: "https://www.v12resole.com/",
     },
@@ -206,322 +392,415 @@ export const Experiences = () => {
     setExperiencePokemons(pokemons);
   }, []);
 
-  const getTimelinePosition = (date: string): number => {
-    const startYear = 2015;
-    const now = new Date();
-    const targetDate = date === "Present" ? now : new Date(date + "-01");
-    const yearDiff = targetDate.getFullYear() - startYear;
-    const monthDiff = targetDate.getMonth();
-    const totalMonths =
-      (new Date().getFullYear() - startYear) * 12 + new Date().getMonth();
-    const dateMonths = yearDiff * 12 + monthDiff;
-    return (totalMonths - dateMonths) * 10;
-  };
+  const startYear = 2015;
+  const currentYear = new Date().getFullYear();
+  const yearRange = currentYear - startYear + 1;
 
-  const timelineColors = [
-    "border-blue-500",
-    "border-green-500",
-    "border-purple-500",
-    "border-orange-500",
-    "border-pink-500",
-  ];
+  // Calculate the total height needed to span all experience cards
+  const calculateTimelineHeight = () => {
+    // Get the maximum timeline position (current year/present)
+    const maxTimelinePosition = getTimelinePosition("Present", startYear);
+    // Estimate: each experience card is roughly 200px + spacing
+    const estimatedCardHeight = 220; // including margin
+    const totalCardsHeight = experiences.length * estimatedCardHeight;
+
+    // Use the larger of the two to ensure timeline spans the full content
+    return Math.max(totalCardsHeight, maxTimelinePosition + 500); // Small bottom padding only
+  };
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className="relative min-h-[1000px]"
+      className="relative"
     >
-      {/* Year markers and Timeline - hidden on mobile */}
-      <div className="hidden md:block">
-        {/* Year markers */}
-        {Array.from({ length: 12 }).map((_, i) => {
-          const year = new Date().getFullYear() - i;
-          const position = i * 120;
-          return (
-            <div
-              key={`year-${year}`}
-              className="absolute -left-16 text-sm text-gray-400 dark:text-gray-500"
-              style={{ top: `${position}px` }}
-            >
-              {year}
-            </div>
-          );
-        })}
+      {/* Enhanced Timeline - visible on medium screens and up */}
+      <div className="hidden lg:block">
+        {/* Modern Year Markers - Now positioned from bottom to top */}
+        <div className="absolute -left-20 top-0">
+          {Array.from({ length: yearRange }).map((_, i) => {
+            const year = startYear + i; // Changed: start from 2015 and go up
+            const maxPosition = getTimelinePosition("Present", startYear);
+            const yearPosition = getTimelinePosition(`${year}-01`, startYear);
+            const timelineHeight = calculateTimelineHeight();
 
-        {/* Timeline */}
-        <div className="absolute left-0 top-0 bottom-0 w-1 bg-gray-300 dark:bg-gray-600 shadow-sm">
-          {experiences.map((exp, index) => {
-            const startY = getTimelinePosition(exp.startDate);
-            const endY = getTimelinePosition(exp.endDate);
-            const colorIndex = index % timelineColors.length;
-            const offset =
-              experiences.slice(0, index).filter((prevExp) => {
-                const prevStart = getTimelinePosition(prevExp.startDate);
-                const prevEnd = getTimelinePosition(prevExp.endDate);
-                return (
-                  (startY >= prevEnd && startY <= prevStart) ||
-                  (endY >= prevEnd && endY <= prevStart) ||
-                  (startY <= prevEnd && endY >= prevStart)
-                );
-              }).length * 20;
-
-            const isSesh = exp.timelineTitle === "Sesh";
+            // Position from the bottom: 2015 at bottom, current year at top
+            const position =
+              timelineHeight -
+              (yearPosition / maxPosition) * (timelineHeight - 100) -
+              50;
+            const isCurrentYear = year === currentYear;
 
             return (
-              <div
-                key={`timeline-${index}`}
-                className={`absolute ${timelineColors[colorIndex]} shadow-md dark:opacity-80`}
-                style={{
-                  top: `${endY}px`,
-                  height: `${startY - endY}px`,
-                  left: `${4 + offset}px`,
-                  width: "16px",
-                  borderRight: "2px solid",
-                  borderTop: "2px solid",
-                  borderBottom: "2px solid",
-                  borderTopRightRadius: "4px",
-                  borderBottomRightRadius: "4px",
+              <motion.div
+                key={`year-${year}`}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.1 }}
+                className={`absolute flex items-center justify-center transition-all duration-300 ${
+                  isCurrentYear
+                    ? "text-blue-600 dark:text-blue-400 font-bold text-base"
+                    : "text-gray-400 dark:text-gray-500 text-sm hover:text-gray-600 dark:hover:text-gray-300"
+                }`}
+                style={{ top: `${position}px` }}
+              >
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-3 h-3" />
+                  <span>{year}</span>
+                </div>
+                {isCurrentYear && (
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: 0.5, type: "spring" }}
+                    className="ml-2 w-2 h-2 bg-blue-500 rounded-full animate-pulse"
+                  />
+                )}
+              </motion.div>
+            );
+          })}
+        </div>
+
+        {/* Main Timeline Spine - Extended Height */}
+        <div
+          className="absolute left-0 top-0 w-1 bg-gradient-to-t from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 shadow-lg rounded-full"
+          style={{ height: `${calculateTimelineHeight()}px` }}
+        >
+          {/* Timeline Segments for Each Experience */}
+          {experiences.map((exp, index) => {
+            const maxPosition = getTimelinePosition("Present", startYear);
+            const startPosition = getTimelinePosition(exp.startDate, startYear);
+            const endPosition = getTimelinePosition(exp.endDate, startYear);
+            const timelineHeight = calculateTimelineHeight();
+
+            // Calculate positions using the full timeline height
+            const startY =
+              timelineHeight -
+              (startPosition / maxPosition) * (timelineHeight - 100) -
+              50;
+            const endY =
+              timelineHeight -
+              (endPosition / maxPosition) * (timelineHeight - 100) -
+              50;
+            const height = Math.abs(startY - endY);
+            const topPosition = Math.min(startY, endY);
+
+            const colors = getTimelineColors(index, false);
+            const isHovered = hoveredExperience === index;
+
+            // Smart positioning to avoid overlaps
+            const layerOffset = index % 3; // Alternate between 3 layers
+            const offsetX = 4 + layerOffset * 24;
+
+            return (
+              <motion.div
+                key={`timeline-segment-${index}`}
+                initial={{ scaleY: 0, opacity: 0 }}
+                animate={{
+                  scaleY: 1,
+                  opacity: 1,
                 }}
+                transition={{
+                  delay: index * 0.2,
+                  duration: 0.6,
+                  type: "spring",
+                  stiffness: 100,
+                }}
+                className={`absolute rounded-lg overflow-visible cursor-pointer group/timeline transition-all duration-200 ${
+                  isHovered ? "z-10" : "z-0"
+                }`}
+                style={{
+                  top: `${topPosition}px`,
+                  height: `${Math.max(height, 32)}px`, // Minimum height increased
+                  left: `${offsetX}px`,
+                  width: "20px",
+                  transformOrigin: "bottom",
+                }}
+                onMouseEnter={() => setHoveredExperience(index)}
+                onMouseLeave={() => setHoveredExperience(null)}
+              >
+                {/* Gradient Background */}
+                <div
+                  className={`absolute inset-0 bg-gradient-to-t ${
+                    colors.primary
+                  } transition-opacity duration-200 ${
+                    isHovered ? "opacity-100" : "opacity-90 dark:opacity-80"
+                  }`}
+                />
+
+                {/* Glow Effect */}
+                <div
+                  className={`absolute inset-0 bg-gradient-to-t ${
+                    colors.primary
+                  } ${colors.glow} blur-sm transition-opacity duration-200 ${
+                    isHovered ? "opacity-60" : "opacity-40"
+                  }`}
+                />
+
+                {/* Timeline Dot at top */}
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: index * 0.2 + 0.3 }}
+                  className={`absolute -top-2 left-1/2 transform -translate-x-1/2 w-4 h-4 bg-gradient-to-br ${colors.primary} rounded-full shadow-lg ${colors.glow} border-2 border-white dark:border-gray-800 transition-all duration-200`}
+                />
+
+                {/* Timeline Dot at bottom */}
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: index * 0.2 + 0.4 }}
+                  className={`absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-3 h-3 bg-gradient-to-br ${colors.primary} rounded-full shadow-md border border-white dark:border-gray-800 opacity-75 transition-all duration-200`}
+                />
+
+                {/* Simple Hover Tooltip */}
+                <motion.div
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.2 + 0.6 }}
+                  className={`absolute left-7 top-1/2 transform -translate-y-1/2 transition-all duration-200`}
+                >
+                  {/* Clean minimal tooltip */}
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{
+                      opacity: isHovered ? 1 : 0,
+                      scale: isHovered ? 1 : 0.9,
+                    }}
+                    transition={{ duration: 0.2 }}
+                    className={`whitespace-nowrap backdrop-blur-sm border shadow-lg rounded-lg px-3 py-2 bg-white/95 dark:bg-gray-800/95 border-gray-300 dark:border-gray-500 ${colors.textPrimary}`}
+                    style={{
+                      pointerEvents: isHovered ? "auto" : "none",
+                    }}
+                  >
+                    {/* Company name with icon */}
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-sm">
+                        {exp.timelineTitle || exp.title}
+                      </span>
+                    </div>
+
+                    {/* Simple role */}
+                    <div className="text-xs opacity-75 mt-1">{exp.role}</div>
+                  </motion.div>
+                </motion.div>
+              </motion.div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Simplified Mobile Timeline */}
+      <div className="block lg:hidden mb-6">
+        <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-4">
+          <Calendar className="w-4 h-4" />
+          <span>Experience Timeline</span>
+        </div>
+        <div className="space-y-2">
+          {experiences.map((exp, index) => {
+            const colors = getTimelineColors(index, false);
+
+            return (
+              <motion.div
+                key={`mobile-timeline-${index}`}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.1 }}
+                className="flex items-center gap-3"
               >
                 <div
-                  className={`absolute text-xs text-gray-600 dark:text-gray-100 font-bold ${
-                    isSesh ? "writing-vertical" : ""
-                  }`}
-                  style={{
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    ...(isSesh
-                      ? {
-                          right: "0px",
-                          writingMode: "vertical-lr",
-                          textOrientation: "upright",
-                          letterSpacing: "0.1em",
-                          height: "fit-content",
-                        }
-                      : {
-                          left: "24px",
-                        }),
-                  }}
-                >
-                  {exp.timelineTitle || exp.title}
+                  className={`w-3 h-3 rounded-full bg-gradient-to-br ${colors.primary} shadow-sm ${colors.glow}`}
+                />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="font-medium text-gray-900 dark:text-gray-100 truncate">
+                      {exp.title}
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                    {formatDate(exp.startDate)} - {formatDate(exp.endDate)}
+                  </div>
                 </div>
-              </div>
+              </motion.div>
             );
           })}
         </div>
       </div>
 
       {/* Experience Cards */}
-      <div className="md:ml-24 ml-4">
-        <h2 className="text-2xl font-bold mb-4 flex items-center text-gray-800 dark:text-gray-200">
-          <Briefcase className="mr-2" />
-          Experiences
-        </h2>
-        {experiences.map((exp, index) => {
-          const isKeplar = exp.title === "Keplar.io";
-          const isClimbingSideHustle =
-            exp.title === "Sesh" || exp.title === "V12 Resole";
+      <div className="lg:ml-32 ml-0">
+        <motion.h2
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-2xl md:text-3xl font-bold mb-6 flex items-center text-gray-800 dark:text-gray-200"
+        >
+          <Briefcase className="mr-3 text-blue-600 dark:text-blue-400" />
+          Professional Experience
+        </motion.h2>
 
-          return (
-            <motion.div
-              key={index}
-              initial={{ x: -50, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              transition={{ delay: index * 0.1 }}
-              className={`mb-8 p-3 md:p-4 rounded-lg shadow-md relative
-                hover:bg-gray-200 dark:hover:bg-gray-900/80 
-                transition-all duration-200 ${
-                  isKeplar
-                    ? "bg-gradient-to-br from-blue-50 to-teal-50 dark:from-blue-900/20 dark:to-teal-900/20 border-2 border-blue-300 dark:border-teal-400 shadow-lg shadow-blue-500/20 dark:shadow-teal-500/20"
-                    : isClimbingSideHustle
-                    ? "bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 border border-orange-200 dark:border-orange-600"
-                    : "bg-gray-100 dark:bg-gray-900/60 border border-transparent dark:border-gray-700"
+        <div className="space-y-6">
+          {experiences.map((exp, index) => {
+            const colors = getTimelineColors(index, false);
+            const isHovered = hoveredExperience === index;
+
+            return (
+              <motion.div
+                key={index}
+                initial={{ x: -50, opacity: 0 }}
+                animate={{
+                  x: 0,
+                  opacity: 1,
+                  scale: isHovered ? 1.02 : 1,
+                  y: isHovered ? -4 : 0,
+                }}
+                transition={{ delay: index * 0.1 }}
+                className={`group relative p-4 md:p-6 rounded-xl shadow-lg backdrop-blur-sm border transition-all duration-300 cursor-pointer
+                  hover:shadow-xl ${colors.cardBg} ${colors.cardBorder} ${
+                  colors.cardHover
+                } ${
+                  isHovered ? `ring-2 ring-offset-2 ${colors.cardRing}` : ""
                 }`}
-            >
-              {/* Featured Badge for Keplar.io */}
-              {isKeplar && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0, rotate: -12 }}
-                  animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                  transition={{
-                    delay: index * 0.1 + 0.3,
-                    type: "spring",
-                    stiffness: 300,
-                  }}
-                  className="absolute -top-2 -right-2 z-10 bg-gradient-to-r from-blue-500 to-teal-500 
-                    text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg flex items-center gap-1"
-                >
-                  <Star className="w-3 h-3 fill-current" />
-                  Current Role
-                </motion.div>
-              )}
-
-              {/* Side Hustle Badge for Climbing Businesses */}
-              {isClimbingSideHustle && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0, rotate: 12 }}
-                  animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                  transition={{
-                    delay: index * 0.1 + 0.3,
-                    type: "spring",
-                    stiffness: 300,
-                  }}
-                  className="absolute -top-2 -right-2 z-10 bg-gradient-to-r from-orange-500 to-amber-500 
-                    text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg flex items-center gap-1"
-                >
-                  <Mountain className="w-3 h-3" />
-                  Side Hustle
-                </motion.div>
-              )}
-
-              <div className="flex justify-between items-start">
-                <div className="flex-grow space-y-1 md:space-y-2">
-                  {/* Title and External Link */}
-                  <div className="flex items-start justify-between gap-2">
-                    <h3
-                      className={`font-bold text-base md:text-lg transition-colors ${
-                        isKeplar
-                          ? "text-blue-900 dark:text-teal-300"
-                          : isClimbingSideHustle
-                          ? "text-orange-900 dark:text-amber-300"
-                          : "text-gray-900 dark:text-gray-100"
-                      }`}
-                    >
-                      {exp.title}
-                    </h3>
-                    {exp.link && (
-                      <Link
-                        href={exp.link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`hover:scale-110 transition-all flex-shrink-0 ${
-                          isKeplar
-                            ? "text-blue-600 dark:text-teal-400 hover:text-blue-800 dark:hover:text-teal-300"
-                            : isClimbingSideHustle
-                            ? "text-orange-600 dark:text-amber-400 hover:text-orange-800 dark:hover:text-amber-300"
-                            : "text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
-                        }`}
+                onMouseEnter={() => setHoveredExperience(index)}
+                onMouseLeave={() => setHoveredExperience(null)}
+              >
+                <div className="flex justify-between items-start">
+                  <div className="flex-grow space-y-2 md:space-y-3">
+                    {/* Title and External Link */}
+                    <div className="flex items-start justify-between gap-3">
+                      <h3
+                        className={`font-bold text-lg md:text-xl transition-colors ${colors.textPrimary}`}
                       >
-                        <ExternalLink className="w-4 h-4" />
-                      </Link>
-                    )}
+                        {exp.title}
+                      </h3>
+                      {exp.link && (
+                        <Link
+                          href={exp.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={`group-hover:scale-110 transition-all flex-shrink-0 p-1 rounded-md ${colors.buttonColors}`}
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                        </Link>
+                      )}
+                    </div>
+
+                    {/* Role */}
+                    <p
+                      className={`text-base md:text-lg font-semibold ${colors.textSecondary}`}
+                    >
+                      {exp.role}
+                    </p>
+
+                    {/* Date Range with enhanced styling */}
+                    <div
+                      className={`text-sm md:text-base flex items-center gap-3 px-3 py-2 rounded-lg ${colors.textTertiary} ${colors.bgAccent}`}
+                    >
+                      <Calendar className="w-4 h-4 flex-shrink-0" />
+                      <span className="font-medium">
+                        {formatDate(exp.startDate)} - {formatDate(exp.endDate)}
+                      </span>
+                      <span className="text-gray-400 dark:text-gray-500">
+                        ·
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        <span>{getDuration(exp.startDate, exp.endDate)}</span>
+                      </div>
+                    </div>
+
+                    {/* More Info Button */}
+                    <button
+                      onClick={() =>
+                        setExpandedExperience(
+                          expandedExperience === index ? null : index
+                        )
+                      }
+                      className={`text-sm md:text-base flex items-center gap-2 transition-all duration-200 focus:outline-none focus:ring-2 
+                        rounded-lg px-4 py-2 font-medium ${colors.buttonColors}`}
+                      aria-expanded={expandedExperience === index}
+                      aria-controls={`experience-details-${index}`}
+                    >
+                      {expandedExperience === index ? (
+                        <>
+                          Less info{" "}
+                          <ChevronUp className="w-4 h-4 transition-transform" />
+                        </>
+                      ) : (
+                        <>
+                          More info{" "}
+                          <ChevronDown className="w-4 h-4 transition-transform" />
+                        </>
+                      )}
+                    </button>
                   </div>
 
-                  {/* Role */}
-                  <p
-                    className={`text-sm md:text-base font-medium ${
-                      isKeplar
-                        ? "text-blue-800 dark:text-teal-200"
-                        : isClimbingSideHustle
-                        ? "text-orange-800 dark:text-amber-200"
-                        : "text-gray-800 dark:text-gray-200"
-                    }`}
-                  >
-                    {exp.role}
-                  </p>
-
-                  {/* Date Range */}
-                  <p
-                    className={`text-xs md:text-sm flex items-center gap-2 ${
-                      isKeplar
-                        ? "text-blue-700 dark:text-teal-300"
-                        : isClimbingSideHustle
-                        ? "text-orange-700 dark:text-amber-300"
-                        : "text-gray-600 dark:text-gray-400"
-                    }`}
-                  >
-                    <span>
-                      {formatDate(exp.startDate)} - {formatDate(exp.endDate)}
-                    </span>
-                    <span className="text-gray-400 dark:text-gray-500">·</span>
-                    <span>{getDuration(exp.startDate, exp.endDate)}</span>
-                  </p>
-
-                  {/* More Info Button */}
-                  <button
-                    onClick={() =>
-                      setExpandedExperience(
-                        expandedExperience === index ? null : index
-                      )
-                    }
-                    className={`text-sm md:text-base flex items-center transition-colors focus:outline-none focus:ring-2 
-                      rounded-md px-2 py-1 ${
-                        isKeplar
-                          ? "text-blue-600 dark:text-teal-400 hover:text-blue-700 dark:hover:text-teal-300 focus:ring-blue-500 dark:focus:ring-teal-400 hover:bg-blue-100 dark:hover:bg-teal-900/30"
-                          : isClimbingSideHustle
-                          ? "text-orange-600 dark:text-amber-400 hover:text-orange-700 dark:hover:text-amber-300 focus:ring-orange-500 dark:focus:ring-amber-400 hover:bg-orange-100 dark:hover:bg-orange-900/30"
-                          : "text-red-500 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300 focus:ring-red-500 dark:focus:ring-red-400 hover:bg-gray-200 dark:hover:bg-gray-800/60"
-                      }`}
-                    aria-expanded={expandedExperience === index}
-                    aria-controls={`experience-details-${index}`}
-                  >
-                    {expandedExperience === index ? (
-                      <>
-                        Less info <ChevronUp className="ml-1 w-4 h-4" />
-                      </>
-                    ) : (
-                      <>
-                        More info <ChevronDown className="ml-1 w-4 h-4" />
-                      </>
-                    )}
-                  </button>
+                  {/* Pokemon sprite - enhanced for better integration */}
+                  <div className="relative flex-shrink-0 hidden md:block ml-4">
+                    <motion.div
+                      whileHover={{ scale: 1.1, rotate: 5 }}
+                      transition={{ type: "spring", stiffness: 300 }}
+                      className="relative"
+                    >
+                      <img
+                        src={getPokemonSprite(experiencePokemons[index])}
+                        alt={`Pokemon sprite`}
+                        style={{
+                          imageRendering: "pixelated",
+                          ...getPokemonSpriteSize(experiencePokemons[index]),
+                          transform: "scale(0.6)",
+                        }}
+                        className="object-contain transition-all duration-200 drop-shadow-lg"
+                      />
+                      {/* Subtle glow behind Pokemon */}
+                      <div
+                        className={`absolute inset-0 rounded-full blur-md opacity-30 ${colors.bulletColor}`}
+                        style={{ transform: "scale(0.8)" }}
+                      />
+                    </motion.div>
+                  </div>
                 </div>
 
-                {/* Pokemon sprite - hidden on mobile */}
-                <div className="relative flex-shrink-0 hidden md:block">
-                  <img
-                    src={getPokemonSprite(experiencePokemons[index])}
-                    alt={`Pokemon sprite`}
-                    style={{
-                      imageRendering: "pixelated",
-                      ...getPokemonSpriteSize(experiencePokemons[index]),
-                      transform: "scale(0.5)",
-                    }}
-                    className="object-contain transition-transform duration-200 hover:scale-110"
-                  />
-                </div>
-              </div>
-
-              {/* Details Section */}
-              <AnimatePresence>
-                {expandedExperience === index && (
-                  <motion.ul
-                    id={`experience-details-${index}`}
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    className={`mt-3 md:mt-4 list-disc list-inside text-sm md:text-base 
-                      pl-2 md:pl-4 space-y-2 ${
-                        isKeplar
-                          ? "text-blue-800 dark:text-teal-200"
-                          : isClimbingSideHustle
-                          ? "text-orange-800 dark:text-amber-200"
-                          : "text-gray-700 dark:text-gray-300"
-                      }`}
-                  >
-                    {exp.details.map((detail, i) => (
-                      <li key={i} className="mt-1">
-                        <span className="ml-[-4px]">{detail}</span>
-                      </li>
-                    ))}
-                  </motion.ul>
-                )}
-              </AnimatePresence>
-
-              {/* Subtle glow effect for Keplar.io */}
-              {isKeplar && (
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-teal-500/5 dark:from-blue-400/5 dark:to-teal-400/5 rounded-lg pointer-events-none" />
-              )}
-
-              {/* Subtle glow effect for climbing side hustles */}
-              {isClimbingSideHustle && (
-                <div className="absolute inset-0 bg-gradient-to-r from-orange-500/5 to-amber-500/5 dark:from-orange-400/5 dark:to-amber-400/5 rounded-lg pointer-events-none" />
-              )}
-            </motion.div>
-          );
-        })}
+                {/* Details Section with enhanced styling */}
+                <AnimatePresence>
+                  {expandedExperience === index && (
+                    <motion.div
+                      id={`experience-details-${index}`}
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.3, ease: "easeInOut" }}
+                      className="overflow-hidden"
+                    >
+                      <div
+                        className={`mt-4 md:mt-6 p-4 rounded-lg border-l-4 ${colors.detailsBg}`}
+                      >
+                        <ul
+                          className={`space-y-3 text-sm md:text-base ${colors.detailsText}`}
+                        >
+                          {exp.details.map((detail, i) => (
+                            <motion.li
+                              key={i}
+                              initial={{ opacity: 0, x: -20 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: i * 0.1 }}
+                              className="flex items-start gap-3"
+                            >
+                              <div
+                                className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${colors.bulletColor}`}
+                              />
+                              <span className="leading-relaxed">{detail}</span>
+                            </motion.li>
+                          ))}
+                        </ul>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            );
+          })}
+        </div>
       </div>
     </motion.div>
   );
