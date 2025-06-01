@@ -1,19 +1,21 @@
 import { motion } from "framer-motion";
-import { Globe, Mail, Phone } from "lucide-react";
+import { Globe, Mail, Phone, FileText } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 
 export const Header = () => {
   const [isPlaying, setIsPlaying] = useState(true);
+  const [mounted, setMounted] = useState(false);
   const { theme } = useTheme();
 
+  // Avoid hydration mismatch
+  useEffect(() => setMounted(true), []);
+
   return (
-    <header className="text-center mb-8 w-full max-w-4xl mx-auto px-4">
+    <header className="text-center mb-8 w-full max-w-4xl mx-auto px-4 pt-12 md:pt-0">
       {/* Rest of header content */}
-      <h1 className="text-2xl md:text-4xl font-bold mt-4">
-        Bill (Yichen) Huang
-      </h1>
+      <h1 className="text-2xl md:text-4xl font-bold mt-4">Bill Huang</h1>
       <p className="text-lg md:text-xl mb-4">AI Focused Software Engineer</p>
       <div className="max-w-2xl mx-auto text-center px-4">
         <p className="mb-2 text-sm md:text-base">
@@ -43,6 +45,14 @@ export const Header = () => {
           >
             <Globe className="w-4 h-4 mr-1" />
             LinkedIn
+          </Link>
+          <Link
+            href="https://docs.google.com/document/d/1TnHRCXyjnkWP9OwyAd-uVaEt3_w_kDlII8yLDSQjDts/edit?usp=sharing"
+            target="_blank"
+            className="flex items-center text-blue-600 hover:underline text-sm md:text-base"
+          >
+            <FileText className="w-4 h-4 mr-1" />
+            Resume
           </Link>
         </div>
       </div>
@@ -93,7 +103,7 @@ export const Header = () => {
             y="50"
             width="110"
             height="80"
-            fill={theme === "dark" ? "#1A1B1E" : "#232323"}
+            fill={mounted && theme === "dark" ? "#1A1B1E" : "#232323"}
           />
 
           {/* Screen Container */}

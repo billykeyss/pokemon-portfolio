@@ -1,12 +1,19 @@
-import { motion, AnimatePresence } from "framer-motion";
-import { Briefcase, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
-import Link from "next/link";
-import { useState, useEffect } from "react";
 import {
   getPokemonSprite,
-  getRandomPokemonName,
   getPokemonSpriteSize,
+  getRandomPokemonName,
 } from "@/utils/pokemon";
+import { AnimatePresence, motion } from "framer-motion";
+import {
+  Briefcase,
+  ChevronDown,
+  ChevronUp,
+  ExternalLink,
+  Star,
+  Mountain,
+} from "lucide-react";
+import Link from "next/link";
+import { useEffect, useState } from "react";
 
 type Experience = {
   title: string;
@@ -16,23 +23,6 @@ type Experience = {
   endDate: string;
   details: string[];
   link?: string;
-};
-
-// Add a utility function to check if we're on mobile
-const useIsMobile = () => {
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768); // 768px is typical md breakpoint
-    };
-
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
-
-  return isMobile;
 };
 
 // Add this utility function for formatting dates
@@ -70,6 +60,22 @@ export const Experiences = () => {
 
   const experiences: Experience[] = [
     {
+      title: "Keplar.io",
+      timelineTitle: "Keplar.io",
+      role: "Founding Engineer",
+      startDate: "2024-04",
+      endDate: "Present",
+      details: [
+        "As a founding engineer, I lead development of Keplar's audience simulation platform from concept to production, leveraging state-of-the-art LLMs, RAG, and agentic architectures. Built robust, scalable infrastructure for AI-driven user feedback simulations across a modern SaaS stack (TypeScript, Node.js, Temporal, Elasticsearch, PostgreSQL).",
+        "Architected and launched an agentic simulation engine using the Observe-Reflect-Act (ORA) paradigm, enabling lifelike, context-aware synthetic audience feedback for enterprise clients.",
+        "Designed and deployed vector based Retrieval-Augmented Generation (RAG) pipelines to ground LLM outputs in proprietary user data, increasing relevance and accuracy of simulated feedback by over 60%.",
+        "Implemented vector embedding and semantic search using Elasticsearch, enabling instant retrieval of audience segments and real-time scenario benchmarking; supported 25,000+ unique synthetic audience profiles at scale.",
+        "Integrated Multi-Context Protocols (MCP) for advanced context switching and memory in simulated agents, enhancing simulation fidelity and product test coverage.",
+        "Reduced traditional product feedback cycles by up to 95%, accelerating enterprise customer time-to-insight from weeks to hours.",
+      ],
+      link: "https://www.keplar.io/",
+    },
+    {
       title: "Sesh",
       timelineTitle: "Sesh",
       role: "Founder",
@@ -77,6 +83,7 @@ export const Experiences = () => {
       endDate: "Present",
       details: [
         "Founded and launched an e-commerce platform specializing in premium climbing gear and accessories.",
+        "Partnering with local gyms for local pop up events and sales.",
         "Designed and developed product line including chalk bags, chalk buckets, brushes, and training equipment.",
         "Built full e-commerce platform with Shopify integration, payment processing, and inventory management.",
         "Implemented international shipping capabilities supfporting both USD and CAD currencies.",
@@ -98,17 +105,6 @@ export const Experiences = () => {
         "Established social media presence across Facebook, Instagram, and TikTok platforms.",
       ],
       link: "https://www.v12resole.com/",
-    },
-    {
-      title: "Keplar",
-      timelineTitle: "Keplar",
-      role: "Founding Engineer",
-      startDate: "2024-04",
-      endDate: "Present",
-      details: [
-        "Developing a platform for AI-powered audience simulation services.",
-      ],
-      link: "https://www.keplar.io/",
     },
     {
       title: "Amazon Lab 126, Astro",
@@ -323,114 +319,209 @@ export const Experiences = () => {
           <Briefcase className="mr-2" />
           Experiences
         </h2>
-        {experiences.map((exp, index) => (
-          <motion.div
-            key={index}
-            initial={{ x: -50, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            transition={{ delay: index * 0.1 }}
-            className="mb-8 p-3 md:p-4 bg-gray-100 dark:bg-gray-900/60 rounded-lg shadow-md relative
-              hover:bg-gray-200 dark:hover:bg-gray-900/80 
-              border border-transparent dark:border-gray-700
-              transition-all duration-200"
-          >
-            <div className="flex justify-between items-start">
-              <div className="flex-grow space-y-1 md:space-y-2">
-                {/* Title and External Link */}
-                <div className="flex items-start justify-between gap-2">
-                  <h3 className="font-bold text-base md:text-lg text-gray-900 dark:text-gray-100">
-                    {exp.title}
-                  </h3>
-                  {exp.link && (
-                    <Link
-                      href={exp.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 
-                        transition-colors flex-shrink-0"
+        {experiences.map((exp, index) => {
+          const isKeplar = exp.title === "Keplar.io";
+          const isClimbingSideHustle =
+            exp.title === "Sesh" || exp.title === "V12 Resole";
+
+          return (
+            <motion.div
+              key={index}
+              initial={{ x: -50, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ delay: index * 0.1 }}
+              className={`mb-8 p-3 md:p-4 rounded-lg shadow-md relative
+                hover:bg-gray-200 dark:hover:bg-gray-900/80 
+                transition-all duration-200 ${
+                  isKeplar
+                    ? "bg-gradient-to-br from-blue-50 to-teal-50 dark:from-blue-900/20 dark:to-teal-900/20 border-2 border-blue-300 dark:border-teal-400 shadow-lg shadow-blue-500/20 dark:shadow-teal-500/20"
+                    : isClimbingSideHustle
+                    ? "bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 border border-orange-200 dark:border-orange-600"
+                    : "bg-gray-100 dark:bg-gray-900/60 border border-transparent dark:border-gray-700"
+                }`}
+            >
+              {/* Featured Badge for Keplar.io */}
+              {isKeplar && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0, rotate: -12 }}
+                  animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                  transition={{
+                    delay: index * 0.1 + 0.3,
+                    type: "spring",
+                    stiffness: 300,
+                  }}
+                  className="absolute -top-2 -right-2 z-10 bg-gradient-to-r from-blue-500 to-teal-500 
+                    text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg flex items-center gap-1"
+                >
+                  <Star className="w-3 h-3 fill-current" />
+                  Current Role
+                </motion.div>
+              )}
+
+              {/* Side Hustle Badge for Climbing Businesses */}
+              {isClimbingSideHustle && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0, rotate: 12 }}
+                  animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                  transition={{
+                    delay: index * 0.1 + 0.3,
+                    type: "spring",
+                    stiffness: 300,
+                  }}
+                  className="absolute -top-2 -right-2 z-10 bg-gradient-to-r from-orange-500 to-amber-500 
+                    text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg flex items-center gap-1"
+                >
+                  <Mountain className="w-3 h-3" />
+                  Side Hustle
+                </motion.div>
+              )}
+
+              <div className="flex justify-between items-start">
+                <div className="flex-grow space-y-1 md:space-y-2">
+                  {/* Title and External Link */}
+                  <div className="flex items-start justify-between gap-2">
+                    <h3
+                      className={`font-bold text-base md:text-lg transition-colors ${
+                        isKeplar
+                          ? "text-blue-900 dark:text-teal-300"
+                          : isClimbingSideHustle
+                          ? "text-orange-900 dark:text-amber-300"
+                          : "text-gray-900 dark:text-gray-100"
+                      }`}
                     >
-                      <ExternalLink className="w-4 h-4" />
-                    </Link>
-                  )}
+                      {exp.title}
+                    </h3>
+                    {exp.link && (
+                      <Link
+                        href={exp.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`hover:scale-110 transition-all flex-shrink-0 ${
+                          isKeplar
+                            ? "text-blue-600 dark:text-teal-400 hover:text-blue-800 dark:hover:text-teal-300"
+                            : isClimbingSideHustle
+                            ? "text-orange-600 dark:text-amber-400 hover:text-orange-800 dark:hover:text-amber-300"
+                            : "text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
+                        }`}
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                      </Link>
+                    )}
+                  </div>
+
+                  {/* Role */}
+                  <p
+                    className={`text-sm md:text-base font-medium ${
+                      isKeplar
+                        ? "text-blue-800 dark:text-teal-200"
+                        : isClimbingSideHustle
+                        ? "text-orange-800 dark:text-amber-200"
+                        : "text-gray-800 dark:text-gray-200"
+                    }`}
+                  >
+                    {exp.role}
+                  </p>
+
+                  {/* Date Range */}
+                  <p
+                    className={`text-xs md:text-sm flex items-center gap-2 ${
+                      isKeplar
+                        ? "text-blue-700 dark:text-teal-300"
+                        : isClimbingSideHustle
+                        ? "text-orange-700 dark:text-amber-300"
+                        : "text-gray-600 dark:text-gray-400"
+                    }`}
+                  >
+                    <span>
+                      {formatDate(exp.startDate)} - {formatDate(exp.endDate)}
+                    </span>
+                    <span className="text-gray-400 dark:text-gray-500">·</span>
+                    <span>{getDuration(exp.startDate, exp.endDate)}</span>
+                  </p>
+
+                  {/* More Info Button */}
+                  <button
+                    onClick={() =>
+                      setExpandedExperience(
+                        expandedExperience === index ? null : index
+                      )
+                    }
+                    className={`text-sm md:text-base flex items-center transition-colors focus:outline-none focus:ring-2 
+                      rounded-md px-2 py-1 ${
+                        isKeplar
+                          ? "text-blue-600 dark:text-teal-400 hover:text-blue-700 dark:hover:text-teal-300 focus:ring-blue-500 dark:focus:ring-teal-400 hover:bg-blue-100 dark:hover:bg-teal-900/30"
+                          : isClimbingSideHustle
+                          ? "text-orange-600 dark:text-amber-400 hover:text-orange-700 dark:hover:text-amber-300 focus:ring-orange-500 dark:focus:ring-amber-400 hover:bg-orange-100 dark:hover:bg-orange-900/30"
+                          : "text-red-500 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300 focus:ring-red-500 dark:focus:ring-red-400 hover:bg-gray-200 dark:hover:bg-gray-800/60"
+                      }`}
+                    aria-expanded={expandedExperience === index}
+                    aria-controls={`experience-details-${index}`}
+                  >
+                    {expandedExperience === index ? (
+                      <>
+                        Less info <ChevronUp className="ml-1 w-4 h-4" />
+                      </>
+                    ) : (
+                      <>
+                        More info <ChevronDown className="ml-1 w-4 h-4" />
+                      </>
+                    )}
+                  </button>
                 </div>
 
-                {/* Role */}
-                <p className="text-sm md:text-base text-gray-800 dark:text-gray-200 font-medium">
-                  {exp.role}
-                </p>
-
-                {/* Date Range */}
-                <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 flex items-center gap-2">
-                  <span>
-                    {formatDate(exp.startDate)} - {formatDate(exp.endDate)}
-                  </span>
-                  <span className="text-gray-400 dark:text-gray-500">·</span>
-                  <span>{getDuration(exp.startDate, exp.endDate)}</span>
-                </p>
-
-                {/* More Info Button */}
-                <button
-                  onClick={() =>
-                    setExpandedExperience(
-                      expandedExperience === index ? null : index
-                    )
-                  }
-                  className="text-sm md:text-base text-red-500 dark:text-red-400 
-                    hover:text-red-600 dark:hover:text-red-300 
-                    flex items-center transition-colors focus:outline-none focus:ring-2 
-                    focus:ring-red-500 dark:focus:ring-red-400 rounded-md
-                    hover:bg-gray-200 dark:hover:bg-gray-800/60 px-2 py-1"
-                  aria-expanded={expandedExperience === index}
-                  aria-controls={`experience-details-${index}`}
-                >
-                  {expandedExperience === index ? (
-                    <>
-                      Less info <ChevronUp className="ml-1 w-4 h-4" />
-                    </>
-                  ) : (
-                    <>
-                      More info <ChevronDown className="ml-1 w-4 h-4" />
-                    </>
-                  )}
-                </button>
+                {/* Pokemon sprite - hidden on mobile */}
+                <div className="relative flex-shrink-0 hidden md:block">
+                  <img
+                    src={getPokemonSprite(experiencePokemons[index])}
+                    alt={`Pokemon sprite`}
+                    style={{
+                      imageRendering: "pixelated",
+                      ...getPokemonSpriteSize(experiencePokemons[index]),
+                      transform: "scale(0.5)",
+                    }}
+                    className="object-contain transition-transform duration-200 hover:scale-110"
+                  />
+                </div>
               </div>
 
-              {/* Pokemon sprite - hidden on mobile */}
-              <div className="relative flex-shrink-0 hidden md:block">
-                <img
-                  src={getPokemonSprite(experiencePokemons[index])}
-                  alt={`Pokemon sprite`}
-                  style={{
-                    imageRendering: "pixelated",
-                    ...getPokemonSpriteSize(experiencePokemons[index]),
-                    transform: "scale(0.5)",
-                  }}
-                  className="object-contain transition-transform duration-200 hover:scale-110"
-                />
-              </div>
-            </div>
+              {/* Details Section */}
+              <AnimatePresence>
+                {expandedExperience === index && (
+                  <motion.ul
+                    id={`experience-details-${index}`}
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    className={`mt-3 md:mt-4 list-disc list-inside text-sm md:text-base 
+                      pl-2 md:pl-4 space-y-2 ${
+                        isKeplar
+                          ? "text-blue-800 dark:text-teal-200"
+                          : isClimbingSideHustle
+                          ? "text-orange-800 dark:text-amber-200"
+                          : "text-gray-700 dark:text-gray-300"
+                      }`}
+                  >
+                    {exp.details.map((detail, i) => (
+                      <li key={i} className="mt-1">
+                        <span className="ml-[-4px]">{detail}</span>
+                      </li>
+                    ))}
+                  </motion.ul>
+                )}
+              </AnimatePresence>
 
-            {/* Details Section */}
-            <AnimatePresence>
-              {expandedExperience === index && (
-                <motion.ul
-                  id={`experience-details-${index}`}
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  className="mt-3 md:mt-4 list-disc list-inside text-sm md:text-base 
-                    text-gray-700 dark:text-gray-300 pl-2 md:pl-4 space-y-2"
-                >
-                  {exp.details.map((detail, i) => (
-                    <li key={i} className="mt-1">
-                      <span className="ml-[-4px]">{detail}</span>
-                    </li>
-                  ))}
-                </motion.ul>
+              {/* Subtle glow effect for Keplar.io */}
+              {isKeplar && (
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-teal-500/5 dark:from-blue-400/5 dark:to-teal-400/5 rounded-lg pointer-events-none" />
               )}
-            </AnimatePresence>
-          </motion.div>
-        ))}
+
+              {/* Subtle glow effect for climbing side hustles */}
+              {isClimbingSideHustle && (
+                <div className="absolute inset-0 bg-gradient-to-r from-orange-500/5 to-amber-500/5 dark:from-orange-400/5 dark:to-amber-400/5 rounded-lg pointer-events-none" />
+              )}
+            </motion.div>
+          );
+        })}
       </div>
     </motion.div>
   );
