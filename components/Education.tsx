@@ -2,39 +2,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import { GraduationCap, ChevronUp, ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { getPokemonSprite } from "@/utils/pokemon";
-
-type EducationEntry = {
-  degree: string;
-  school: string;
-  date: string;
-  details: string[];
-  pokemon: string;
-};
+import { resumeData, type EducationItem } from "@/data/resume-data";
 
 export const Education = () => {
   const [expandedEducation, setExpandedEducation] = useState<number | null>(
     null
   );
 
-  const education: EducationEntry[] = [
-    {
-      degree: "Bachelor of Computer Engineering",
-      school: "University of Waterloo",
-      date: "Graduated April 2018",
-      details: [
-        "Fourth Year Capstone Project: Unreal Sensor Simulation for Autonomous Vehicles — Best Presentation Award",
-        "University of Lund; Lund, Sweden — Semester Abroad Fall 2016",
-      ],
-      pokemon: "alakazam",
-    },
-    {
-      degree: "High School Diploma",
-      school: "Pokémon Trainer Academy",
-      date: "Graduated June 2014",
-      details: ["Grinding experience points"],
-      pokemon: "pikachu",
-    },
-  ];
+  const education: EducationItem[] = resumeData.education;
 
   return (
     <motion.div
@@ -109,7 +84,7 @@ export const Education = () => {
                 className="mt-2 list-disc list-inside text-gray-700 dark:text-gray-300
                   pl-4 space-y-2"
               >
-                {edu.details.map((detail, i) => (
+                {edu.details?.map((detail, i) => (
                   <li key={i} className="mt-1">
                     {detail}
                   </li>

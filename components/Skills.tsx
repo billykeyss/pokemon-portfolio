@@ -1,30 +1,23 @@
 import { animate, motion, useMotionValue, useTransform } from "framer-motion";
 import {
-  Bot,
   Brain,
-  Cloud,
   Code,
   Database,
+  Cloud,
   Smartphone,
+  Bot,
   Zap,
   Star,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import {
+  resumeData,
+  type SkillCategory as SkillCategoryType,
+  type CoreSkill,
+} from "@/data/resume-data";
 
-type SkillCategory = {
+type SkillCategory = SkillCategoryType & {
   icon: React.ComponentType<{ className?: string }>;
-  title: string;
-  description: string;
-  skills: string[];
-  color: string;
-  darkColor: string;
-};
-
-type CoreSkill = {
-  name: string;
-  category: "AI" | "Frontend" | "Backend" | "Cloud";
-  proficiency: number; // 1-5 scale
-  description: string;
 };
 
 export const Skills = () => {
@@ -53,184 +46,23 @@ export const Skills = () => {
     return controls.stop;
   }, []);
 
-  const coreSkills: CoreSkill[] = [
-    {
-      name: "LLM Integration",
-      category: "AI",
-      proficiency: 5,
-      description:
-        "Advanced prompt engineering, fine-tuning, and API integration",
-    },
-    {
-      name: "RAG Systems & Vector Databases",
-      category: "AI",
-      proficiency: 5,
-      description:
-        "Building intelligent retrieval systems with ElasticSearch, Pinecone",
-    },
-    {
-      name: "React & Next.js",
-      category: "Frontend",
-      proficiency: 5,
-      description: "Modern React patterns, SSR, and performance optimization",
-    },
-    {
-      name: "TypeScript & JavaScript",
-      category: "Frontend",
-      proficiency: 5,
-      description: "Type-safe development and advanced JS patterns",
-    },
-    {
-      name: "Node.js & Python FastAPI",
-      category: "Backend",
-      proficiency: 5,
-      description: "Scalable backend services and API development",
-    },
-    {
-      name: "PostgreSQL & MongoDB",
-      category: "Backend",
-      proficiency: 4,
-      description: "Database design, optimization, and management",
-    },
-    {
-      name: "AWS & Cloud Architecture",
-      category: "Cloud",
-      proficiency: 4,
-      description: "Serverless, containers, and scalable cloud solutions",
-    },
-    {
-      name: "Docker & Kubernetes",
-      category: "Cloud",
-      proficiency: 4,
-      description: "Containerization and orchestration",
-    },
-  ];
+  // Map icons to skill categories
+  const iconMap = {
+    "AI & Machine Learning": Brain,
+    "Frontend Development": Code,
+    "Backend & APIs": Database,
+    "Cloud & DevOps": Cloud,
+    "Mobile Development": Smartphone,
+    "Robotics & IoT": Bot,
+  };
 
-  const skillCategories: SkillCategory[] = [
-    {
-      icon: Brain,
-      title: "AI & Machine Learning",
-      description: "Building human-centered AI systems",
-      color: "bg-gradient-to-br from-purple-500 to-pink-500",
-      darkColor: "dark:from-purple-400 dark:to-pink-400",
-      skills: [
-        "OpenAI GPT-4",
-        "TogetherAI",
-        "Llama Models",
-        "VLLM",
-        "RAG Systems",
-        "LLM Integration",
-        "ElasticSearch",
-        "Hugging Face",
-        "Vector Databases",
-        "Reinforcement Learning",
-        "Model Deployment",
-        "Prompt Engineering",
-      ],
-    },
-    {
-      icon: Code,
-      title: "Frontend Development",
-      description: "Modern, responsive user interfaces",
-      color: "bg-gradient-to-br from-blue-500 to-cyan-500",
-      darkColor: "dark:from-blue-400 dark:to-cyan-400",
-      skills: [
-        "React",
-        "Next.js",
-        "TypeScript",
-        "Tailwind CSS",
-        "Framer Motion",
-        "Three.js",
-        "WebGL",
-        "Redux Toolkit",
-        "React Query",
-        "Vite",
-        "Webpack",
-        "Sass/SCSS",
-      ],
-    },
-    {
-      icon: Database,
-      title: "Backend & APIs",
-      description: "Scalable server architectures",
-      color: "bg-gradient-to-br from-green-500 to-emerald-500",
-      darkColor: "dark:from-green-400 dark:to-emerald-400",
-      skills: [
-        "Node.js",
-        "Python FastAPI",
-        "Go Services",
-        "GraphQL",
-        "REST APIs",
-        "PostgreSQL",
-        "MongoDB",
-        "Redis",
-        "Apache Kafka",
-        "Microservices",
-        "WebSockets",
-        "OAuth/JWT",
-      ],
-    },
-    {
-      icon: Cloud,
-      title: "Cloud & DevOps",
-      description: "Infrastructure & deployment",
-      color: "bg-gradient-to-br from-orange-500 to-red-500",
-      darkColor: "dark:from-orange-400 dark:to-red-400",
-      skills: [
-        "AWS",
-        "Azure",
-        "GCP",
-        "Docker",
-        "Kubernetes",
-        "Terraform",
-        "GitHub Actions",
-        "Jenkins",
-        "Grafana",
-        "Prometheus",
-        "Serverless",
-        "CDN/CloudFront",
-      ],
-    },
-    {
-      icon: Smartphone,
-      title: "Mobile Development",
-      description: "Cross-platform mobile apps",
-      color: "bg-gradient-to-br from-indigo-500 to-purple-500",
-      darkColor: "dark:from-indigo-400 dark:to-purple-400",
-      skills: [
-        "Flutter",
-        "React Native",
-        "Kotlin",
-        "Swift",
-        "Jetpack Compose",
-        "SwiftUI",
-        "Native Android",
-        "iOS Development",
-        "Kotlin Multiplatform",
-        "Expo",
-      ],
-    },
-    {
-      icon: Bot,
-      title: "Robotics & IoT",
-      description: "Autonomous systems & sensors",
-      color: "bg-gradient-to-br from-teal-500 to-green-500",
-      darkColor: "dark:from-teal-400 dark:to-green-400",
-      skills: [
-        "ROS/ROS2",
-        "Computer Vision",
-        "OpenCV",
-        "SLAM",
-        "Path Planning",
-        "Sensor Fusion",
-        "Real-time Systems",
-        "Embedded C++",
-        "Arduino",
-        "Raspberry Pi",
-        "Gazebo",
-      ],
-    },
-  ];
+  const skillCategories: SkillCategory[] = resumeData.skillCategories.map(
+    (category) => ({
+      ...category,
+      icon: iconMap[category.title as keyof typeof iconMap] || Brain,
+    })
+  );
+  const coreSkills: CoreSkill[] = resumeData.coreSkills;
 
   const getCategoryColor = (category: CoreSkill["category"]) => {
     switch (category) {

@@ -14,16 +14,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-
-type Experience = {
-  title: string;
-  timelineTitle: string;
-  role: string;
-  startDate: string;
-  endDate: string;
-  details: string[];
-  link?: string;
-};
+import { resumeData, type Experience } from "@/data/resume-data";
 
 // Add this utility function for formatting dates
 const formatDate = (dateString: string): string => {
@@ -241,151 +232,7 @@ export const Experiences = () => {
     null
   );
 
-  const experiences: Experience[] = [
-    {
-      title: "Keplar.io",
-      timelineTitle: "Keplar.io",
-      role: "Founding Engineer",
-      startDate: "2024-04",
-      endDate: "Present",
-      details: [
-        "As a founding engineer, I lead development of Keplar's audience simulation platform from concept to production, leveraging state-of-the-art LLMs, RAG, and agentic architectures. Built robust, scalable infrastructure for AI-driven user feedback simulations across a modern SaaS stack (TypeScript, Node.js, Temporal, Elasticsearch, PostgreSQL).",
-        "Architected and launched an agentic simulation engine using the Observe-Reflect-Act (ORA) paradigm, enabling lifelike, context-aware synthetic audience feedback for enterprise clients.",
-        "Designed and deployed vector based Retrieval-Augmented Generation (RAG) pipelines to ground LLM outputs in proprietary user data, increasing relevance and accuracy of simulated feedback by over 60%.",
-        "Implemented vector embedding and semantic search using Elasticsearch, enabling instant retrieval of audience segments and real-time scenario benchmarking; supported 25,000+ unique synthetic audience profiles at scale.",
-        "Integrated Multi-Context Protocols (MCP) for advanced context switching and memory in simulated agents, enhancing simulation fidelity and product test coverage.",
-        "Reduced traditional product feedback cycles by up to 95%, accelerating enterprise customer time-to-insight from weeks to hours.",
-      ],
-      link: "https://www.keplar.io/",
-    },
-    {
-      title: "Sesh",
-      timelineTitle: "Sesh",
-      role: "Founder",
-      startDate: "2022-10",
-      endDate: "Present",
-      details: [
-        "Launched Sesh Climbing (climbingsesh.com), a direct-to-consumer brand for premium climbing gear—from concept and naming to Shopify storefront, 3PL workflows, and multi-currency checkout in USD & CAD.",
-        "Designed and released a 10-SKU product line including chalk buckets, modular chalk bags, boar-hair brushes, 3D-printed training blocks, and pure magnesium-carbonate chalk, all produced with local suppliers and in-house additive manufacturing.",
-        "Maintained a 4.8-star-plus customer rating across the store, with the flagship BOLDER SESH chalk bucket earning a 4.86/5 average from 14 verified reviews.",
-        "Secured partnerships with six regional climbing gyms to host pop-up events, doubling the email list and driving 30% month-over-month revenue lifts during campaign weeks.",
-        "Built an end-to-end commerce stack—Shopify Liquid customizations, Klaviyo automations, Stripe & Shop Pay integration, and Pirate Ship for cross-border fulfillment—cutting average dispatch time to 48 hours and keeping returns under 1%.",
-        "Grew social presence from zero to 3k+ followers in six months on Instagram, TikTok, and Facebook through product-demo reels and user-generated content challenges, reaching 150k organic impressions per quarter.",
-        "Led brand identity and packaging design (logo, print collateral, unboxing experience), boosting on-site conversion to 14% and enabling repeat-purchase email flows that now account for 25% of revenue.",
-      ],
-      link: "https://climbingsesh.com/",
-    },
-    {
-      title: "V12 Resole",
-      timelineTitle: "V12 Resole",
-      role: "CTO (Consultant → Full-time)",
-      startDate: "2023-10",
-      endDate: "Present",
-      details: [
-        "Transitioned from technical consultant to CTO, leading full-stack development and hardware engineering initiatives for a climbing shoe resole service.",
-        "Engineered an end-to-end Resole Service Management (RSM) platform in Node.js + TypeScript (NX monorepo), React, PostgreSQL, and Docker, integrating Square & Shopify POS APIs for order intake, invoicing, and inventory sync. → 65% cut in manual admin time and 3× order-throughput capacity without extra head-count.",
-        'Designed a 24/7 "Smart Drop-Box" for contact-free pick-up/drop-off: Raspberry Pi + GPIO-controlled electronic lock, QR-code reader, LCD, and an Express/Tailscale VPN backend for secure remote updates. → 28% growth in monthly shoe intakes and lost-item rate < 1%.',
-        "Built a real-time production dashboard (React Flow + MUI) with drag-and-drop Kanban stages, barcode scanning, and live metrics. → 50% reduction in workshop search time and <5 min average status update latency.",
-        'Authored a TypeScript "SquareService" SDK wrapping 14 critical endpoints (orders, payments, customers) and a Shopify webhook processor; now drives 100% of financial transactions with < 0.2% sync errors.',
-        "Launched an AI-powered cobbler training portal (OpenAI GPT based RAG over internal videos & SOPs) that auto-generates step-by-step repair guidance and quizzes. → On-the-tools proficiency time cut from 6 weeks to 2 weeks for new hires.",
-        "Implemented CI/CD on Render with blue-green deploys; maintains 99.9% uptime and < 5 min rollback windows.",
-      ],
-      link: "https://www.v12resole.com/",
-    },
-    {
-      title: "Amazon Lab 126, Astro",
-      timelineTitle: "Astro",
-      role: "Senior Software Development Engineer",
-      startDate: "2022-04",
-      endDate: "2024-03",
-      details: [
-        "Championed the complete lifecycle of multiple feature developments, orchestrating cross-functional collaboration with QA, TPM, and PM teams.",
-        "Delegated tasks among team members, optimizing productivity. Directed onboarding of 12 consumer development teams.",
-        "Pioneered in-house device simulation lab using Hardware-In-Loop setup.",
-        "Integrated integration tests into release pipeline with automated test reports.",
-        "Orchestrated integrations throughout Android AOSP stack including System Apps, Services, Native C++ Libraries, HAL, and Kernel elements.",
-        "Utilized C++, Java, Python, Ruby, JavaScript, Kotlin, and ROS for seamless integration.",
-      ],
-      link: "https://www.aboutamazon.com/news/devices/meet-astro",
-    },
-    {
-      title: "Amazon Lab 126, FireTV",
-      timelineTitle: "FireTV",
-      role: "Software Development Engineer II",
-      startDate: "2020-04",
-      endDate: "2022-03",
-      details: [
-        "Developed Amazon Astro Robot's core platform and services using C++, Java, Python, Ruby, Javascript, ROS.",
-        "Developed novel phone battery notifier feature for Astro.",
-        "Created remote device debugging interface with multi-SOC system health monitor.",
-        "Created in-house device simulation lab for automated integration testing.",
-      ],
-    },
-    {
-      title: "Amazon Lab 126, FireTV",
-      timelineTitle: "FireTV",
-      role: "Software Development Engineer I",
-      startDate: "2018-08",
-      endDate: "2020-03",
-      details: [
-        "Led development on FireTV news application, creating system architecture.",
-        "Engineered high-performing application for 11 FireTV platforms.",
-        "Provided 24-hour operational support for service hitting 3000 TPS.",
-        "Reduced p50 cold start latency by 25% and p90 by 60%.",
-      ],
-      link: "https://amazonfiretv.blog/introducing-the-news-app-on-fire-tv-5138d80a8dc9",
-    },
-    {
-      title: "Amazon Lab 126, FireTV",
-      timelineTitle: "FireTV",
-      role: "Software Development Engineering Intern",
-      startDate: "2017-08",
-      endDate: "2017-12",
-      details: [
-        "Developed Amazon Video Application for Echo devices and tablets.",
-        "Created production-ready web video application with third-party integrations.",
-        "Led development on Zoom Voice Support with NLU and CSM.",
-      ],
-    },
-    {
-      title: "Connected Lab",
-      timelineTitle: "Connected",
-      role: "Solutions Architect Engineering Intern",
-      startDate: "2017-01",
-      endDate: "2017-05",
-      details: [
-        "Implemented programmable chatbot interface using Watson API (NLP).",
-        "Prototyped experimental android application with face recognition.",
-        "Developed video processing interface using Android NDK.",
-      ],
-    },
-    {
-      title: "Connected Lab",
-      timelineTitle: "Connected",
-      role: "Software Engineering Intern",
-      startDate: "2016-01",
-      endDate: "2016-05",
-      details: [
-        "Built resource allocation tool using ReactJS and Node.",
-        "Developed core server functionality with Redux.",
-        "Built Jenkins pipeline infrastructure.",
-        "Improved unit testing coverage while reducing testing time by 90%.",
-      ],
-    },
-    {
-      title: "nanoPay",
-      timelineTitle: "nanoPay",
-      role: "Frontend Developer Intern",
-      startDate: "2015-05",
-      endDate: "2015-09",
-      details: [
-        "Implemented UI/UX of Android app and AngularJS responsive website.",
-        "Integrated REST APIs and payment processing systems.",
-        "Collaborated with designers to implement high-quality UI components.",
-        "Established CI/CD pipeline for automated testing and deployment.",
-      ],
-    },
-  ];
+  const experiences: Experience[] = resumeData.experiences;
 
   useEffect(() => {
     const pokemons = experiences.map(() => getRandomPokemonName());
@@ -633,16 +480,38 @@ export const Experiences = () => {
         <motion.h2
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-2xl md:text-3xl font-bold mb-6 flex items-center text-gray-800 dark:text-gray-200"
+          className="text-2xl md:text-3xl font-bold mb-2 flex items-center text-gray-800 dark:text-gray-200"
         >
           <Briefcase className="mr-3 text-blue-600 dark:text-blue-400" />
           Professional Experience
         </motion.h2>
 
+        {/* Total Experience Summary */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="mb-6 flex items-center gap-3 text-sm md:text-base text-gray-600 dark:text-gray-400"
+        >
+          <Clock className="w-4 h-4" />
+          <span className="font-medium">
+            {(() => {
+              const startDate = new Date("2015-05-01");
+              const currentDate = new Date();
+              const totalMonths =
+                (currentDate.getFullYear() - startDate.getFullYear()) * 12 +
+                (currentDate.getMonth() - startDate.getMonth());
+              const years = Math.floor(totalMonths / 12);
+              return `${years}+ years of professional experience`;
+            })()}
+          </span>
+          <span className="text-gray-400 dark:text-gray-500">•</span>
+          <span>Software Engineering & Leadership</span>
+        </motion.div>
+
         <div className="space-y-6">
           {experiences.map((exp, index) => {
             const colors = getTimelineColors(index, false);
-            const isHovered = hoveredExperience === index;
 
             return (
               <motion.div
@@ -651,16 +520,10 @@ export const Experiences = () => {
                 animate={{
                   x: 0,
                   opacity: 1,
-                  scale: isHovered ? 1.02 : 1,
-                  y: isHovered ? -4 : 0,
                 }}
                 transition={{ delay: index * 0.1 }}
                 className={`group relative p-4 md:p-6 rounded-xl shadow-lg backdrop-blur-sm border transition-all duration-300 cursor-pointer
-                  hover:shadow-xl ${colors.cardBg} ${colors.cardBorder} ${
-                  colors.cardHover
-                } ${
-                  isHovered ? `ring-2 ring-offset-2 ${colors.cardRing}` : ""
-                }`}
+                  hover:shadow-xl ${colors.cardBg} ${colors.cardBorder} ${colors.cardHover}`}
                 onMouseEnter={() => setHoveredExperience(index)}
                 onMouseLeave={() => setHoveredExperience(null)}
               >
@@ -738,7 +601,7 @@ export const Experiences = () => {
                   {/* Pokemon sprite - enhanced for better integration */}
                   <div className="relative flex-shrink-0 hidden md:block ml-4">
                     <motion.div
-                      whileHover={{ scale: 1.1, rotate: 5 }}
+                      whileHover={{ scale: 1.05 }}
                       transition={{ type: "spring", stiffness: 300 }}
                       className="relative"
                     >

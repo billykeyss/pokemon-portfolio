@@ -1,30 +1,16 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 import {
+  ExternalLink,
+  Calendar,
+  Code,
   ChevronDown,
   ChevronUp,
-  Code,
-  ExternalLink,
-  Github,
-  Calendar,
   Award,
   TrendingUp,
-  Filter,
 } from "lucide-react";
 import Link from "next/link";
-
-type Project = {
-  title: string;
-  description: string;
-  year: string;
-  details: string;
-  link?: string;
-  image: string;
-  techStack: string[];
-  category: "web" | "mobile" | "ai" | "game" | "iot";
-  featured?: boolean;
-  award?: string;
-};
+import { resumeData, type Project } from "@/data/resume-data";
 
 export const Projects = () => {
   const [expandedProject, setExpandedProject] = useState<number | null>(null);
@@ -33,143 +19,7 @@ export const Projects = () => {
   >("desc");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
-  const projects: Project[] = [
-    {
-      title: "Tahoe Snow Conditions",
-      description:
-        "Real-time ski resort conditions tracker for California and BC/Alberta",
-      year: "2024",
-      category: "web",
-      featured: true,
-      details:
-        "A comprehensive ski conditions monitoring platform that aggregates real-time data from ski resorts across California and British Columbia/Alberta. Features live snow reports, weather conditions, trail status, and lift operations. Built with modern web technologies to provide skiers and snowboarders with up-to-date resort information for trip planning.",
-      link: "https://tahoesno.onrender.com/",
-      image: "/projects/tahoe-snow.png",
-      techStack: [
-        "React",
-        "Node.js",
-        "Weather API",
-        "Resort APIs",
-        "TypeScript",
-        "Tailwind CSS",
-      ],
-    },
-    {
-      title: "Mushroom Weather Dashboard",
-      description:
-        "Weather analysis tool for mushroom foraging with interactive mapping",
-      year: "2024",
-      category: "web",
-      featured: true,
-      details:
-        "Developed an interactive weather dashboard that helps foragers determine potential mushroom locations based on historical and forecasted weather conditions. Users can select locations via map interface or coordinates to analyze 10-day historical and future weather patterns optimal for mushroom growth.",
-      link: "https://mushroom-weather.s3.us-west-2.amazonaws.com/index.html",
-      image: "/projects/mushroom-weather.png",
-      techStack: [
-        "React",
-        "AWS S3",
-        "Weather API",
-        "Mapbox",
-        "TypeScript",
-        "Tailwind CSS",
-      ],
-    },
-    {
-      title: "Unreal Sensor Simulation",
-      description:
-        "Virtual simulation environment with custom sensor configurations",
-      year: "2018",
-      category: "ai",
-      featured: true,
-      award: "Best Presentation Award - $1000",
-      details:
-        "Architected and implemented a flexible sensor configuration system in a virtual environment, empowering users to customize their experience with an unlimited number of camera and lidar sensors. Won Best Presentation Award and $1000 cash prize.",
-      link: "https://example.com/unreal-sensor-simulation",
-      image: "/placeholder.svg?height=200&width=300",
-      techStack: ["Unreal Engine", "C++", "Python", "CUDA"],
-    },
-    {
-      title: "Home.ly",
-      description: "IoT wireless ad-hoc network for smart home monitoring",
-      year: "2017",
-      category: "iot",
-      featured: true,
-      details:
-        "Developed an IoT system that monitors the ambient environment of separate rooms in your home. Equipped with a microphone array to track snoring patterns and humidity sensors to monitor house plants. Built with Microsoft Azure IoT Hub, NodeJS, DynamoDB, and hosted on Azure Web services.",
-      link: "https://github.com/billykeyss/home.ly",
-      image: "/placeholder.svg?height=200&width=300",
-      techStack: ["Node.js", "Azure IoT", "DynamoDB", "React"],
-    },
-    {
-      title: "Animal Crossing Market Predictor",
-      description: "ML-powered game data analysis and prediction platform",
-      year: "2020",
-      category: "ai",
-      details:
-        "Created a comprehensive platform for Animal Crossing New Horizons data analysis, including price prediction algorithms, market trend analysis, and availability forecasting for bugs, fish, and turnip prices.",
-      link: "https://acnh.s3.us-west-2.amazonaws.com/index.html",
-      image: "/projects/acnh.png",
-      techStack: ["React", "Node.js", "MongoDB", "Python", "ML Models"],
-    },
-    {
-      title: "Palette",
-      description: "AI-powered color palette extraction from camera feed",
-      year: "2019",
-      category: "mobile",
-      details:
-        "Analyzes an image/camera feed and extracts a custom color palette from it using advanced computer vision algorithms. Developed using Kotlin on Android, implementing modern best practices for MVVM Architecture and using Room database to cache data and maintain history.",
-      image: "/placeholder.svg?height=200&width=300",
-      techStack: [
-        "Kotlin",
-        "Android",
-        "MVVM",
-        "Room DB",
-        "Camera API",
-        "Computer Vision",
-      ],
-    },
-    {
-      title: "RapBot",
-      description: "Alexa rapping skill with dynamic lyrics generation",
-      year: "2017",
-      category: "ai",
-      award: "Hackathon Winner - $250",
-      details:
-        "Developed a rapping skill for the Alexa voice interface at Amazon x Connected Lab hackathon. Features dynamic rap generation and rhythm matching. Won best hack and $250 Prize.",
-      image: "/placeholder.svg?height=200&width=300",
-      techStack: ["AWS Lambda", "S3", "Alexa Skills Kit", "Node.js", "NLP"],
-    },
-    {
-      title: "TapExchange",
-      description: "NFC-based contact exchange mobile application",
-      year: "2016",
-      category: "mobile",
-      details:
-        "Developed an Android Application that uses NFC to allow users to exchange contact information by tapping their phones together. Implemented secure transfer of contact information and NFC methods.",
-      image: "/placeholder.svg?height=200&width=300",
-      techStack: ["Android", "Java", "NFC API", "Contacts API"],
-    },
-    {
-      title: "Casty",
-      description: "Household movie queue and streaming platform",
-      year: "2018",
-      category: "iot",
-      details:
-        "A household movie queue and streaming device built for the Raspberry Pi, enabling local media streaming, queue management, and multi-user controls.",
-      image: "/projects/casty.png",
-      techStack: ["Node.js", "Raspberry Pi", "React", "Express", "WebRTC"],
-    },
-    {
-      title: "Pong Neural Network",
-      description: "AI-enhanced classic game with reinforcement learning",
-      year: "2016",
-      category: "game",
-      details:
-        "A modern recreation of the classic game of Pong using Unity game engine, featuring AI opponents trained with reinforcement learning and adaptive difficulty.",
-      image: "/projects/pong.png",
-      techStack: ["Unity", "C#", "ML-Agents", "Reinforcement Learning"],
-    },
-  ];
+  const projects: Project[] = resumeData.projects;
 
   const categories = [
     { id: "all", label: "All Projects", icon: Code },
