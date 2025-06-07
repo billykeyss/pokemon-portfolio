@@ -75,19 +75,19 @@ export const Portfolio = () => {
       featured: true,
     },
     {
-      id: "acnh-predictor",
-      title: "ACNH Market Predictor",
+      id: "acnh-database",
+      title: "ACNH Database Explorer",
       description:
-        "ML model predicting Animal Crossing market trends with 92% accuracy",
+        "Search interface for comprehensive Animal Crossing item and villager database",
       status: "completed",
-      tags: ["Time Series", "Prediction", "Gaming", "React"],
-      metrics: { users: 12000, accuracy: "92%" },
+      tags: ["Database", "Search", "Gaming", "React"],
+      metrics: { users: 12000, stars: 145 },
       links: {
-        demo: "https://acnh-predictor.example.com",
-        repo: "https://github.com/yichen/acnh-predictor",
+        demo: "https://acnh.billhuang.me/",
+        repo: "https://github.com/yichen/acnh-database",
       },
       notes:
-        "Time series analysis of in-game economics. Used LSTM networks to predict turnip prices and rare item availability.",
+        "Interactive database search tool for Animal Crossing items, villagers, and game data. Features advanced filtering, favorites system, and detailed item information with images.",
       featured: false,
     },
     {

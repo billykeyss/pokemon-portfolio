@@ -428,8 +428,36 @@ export const Experiences = () => {
                       </span>
                     </div>
 
-                    {/* Simple role */}
-                    <div className="text-xs opacity-75 mt-1">{exp.role}</div>
+                    {/* Role */}
+                    <p
+                      className={`text-base md:text-lg font-semibold ${colors.textSecondary}`}
+                    >
+                      {exp.role}
+                    </p>
+
+                    {/* Highlight - Quick description */}
+                    <div
+                      className={`text-sm md:text-base leading-relaxed ${colors.textTertiary} opacity-90`}
+                    >
+                      {exp.highlight}
+                    </div>
+
+                    {/* Date Range with enhanced styling */}
+                    <div
+                      className={`text-sm md:text-base flex items-center gap-3 px-3 py-2 rounded-lg ${colors.textTertiary} ${colors.bgAccent}`}
+                    >
+                      <Calendar className="w-4 h-4 flex-shrink-0" />
+                      <span className="font-medium">
+                        {formatDate(exp.startDate)} - {formatDate(exp.endDate)}
+                      </span>
+                      <span className="text-gray-400 dark:text-gray-500">
+                        ·
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        <span>{getDuration(exp.startDate, exp.endDate)}</span>
+                      </div>
+                    </div>
                   </motion.div>
                 </motion.div>
               </motion.div>
@@ -554,6 +582,13 @@ export const Experiences = () => {
                     >
                       {exp.role}
                     </p>
+
+                    {/* Highlight - Quick description */}
+                    <div
+                      className={`text-sm md:text-base leading-relaxed ${colors.textTertiary} opacity-90`}
+                    >
+                      {exp.highlight}
+                    </div>
 
                     {/* Date Range with enhanced styling */}
                     <div

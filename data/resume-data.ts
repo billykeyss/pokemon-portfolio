@@ -14,6 +14,7 @@ export interface Experience {
   role: string;
   startDate: string;
   endDate: string;
+  highlight: string;
   details: string[];
   link?: string;
 }
@@ -115,6 +116,8 @@ export const resumeData: ResumeData = {
       role: "Founding Engineer",
       startDate: "2024-04",
       endDate: "Present",
+      highlight:
+        "Building AI-powered audience simulation platform using LLMs and RAG to accelerate enterprise product feedback cycles by 95%",
       details: [
         "As a founding engineer, I lead development of Keplar's audience simulation platform from concept to production, leveraging state-of-the-art LLMs, RAG, and agentic architectures. Built robust, scalable infrastructure for AI-driven user feedback simulations across a modern SaaS stack (TypeScript, Node.js, Temporal, Elasticsearch, PostgreSQL).",
         "Architected and launched an agentic simulation engine using the Observe-Reflect-Act (ORA) paradigm, enabling lifelike, context-aware synthetic audience feedback for enterprise clients.",
@@ -131,6 +134,8 @@ export const resumeData: ResumeData = {
       role: "Founder",
       startDate: "2022-10",
       endDate: "Present",
+      highlight:
+        "Founded and scaled premium climbing gear D2C brand from concept to 4.8⭐ rating, 3k+ social followers, and 14% conversion rate",
       details: [
         "Launched Sesh Climbing (climbingsesh.com), a direct-to-consumer brand for premium climbing gear—from concept and naming to Shopify storefront, 3PL workflows, and multi-currency checkout in USD & CAD.",
         "Designed and released a 10-SKU product line including chalk buckets, modular chalk bags, boar-hair brushes, 3D-printed training blocks, and pure magnesium-carbonate chalk, all produced with local suppliers and in-house additive manufacturing.",
@@ -148,6 +153,8 @@ export const resumeData: ResumeData = {
       role: "CTO (Consultant → Full-time)",
       startDate: "2023-10",
       endDate: "Present",
+      highlight:
+        "Leading tech transformation for climbing service company: built smart IoT drop-box, AI training portal, and 3x throughput platform",
       details: [
         "Transitioned from technical consultant to CTO, leading full-stack development and hardware engineering initiatives for a climbing shoe resole service.",
         "Engineered an end-to-end Resole Service Management (RSM) platform in Node.js + TypeScript (NX monorepo), React, PostgreSQL, and Docker, integrating Square & Shopify POS APIs for order intake, invoicing, and inventory sync. → 65% cut in manual admin time and 3× order-throughput capacity without extra head-count.",
@@ -165,6 +172,8 @@ export const resumeData: ResumeData = {
       role: "Senior Software Development Engineer",
       startDate: "2022-04",
       endDate: "2024-03",
+      highlight:
+        "Led core robotics systems for Amazon's home robot: autonomous navigation, computer vision, and 95%+ person recognition accuracy",
       details: [
         "Led end-to-end development of Astro's autonomous navigation and mapping systems, integrating SLAM algorithms with real-time obstacle detection to enable seamless home exploration across 15+ room configurations.",
         "Architected and deployed Astro's computer vision pipeline for person recognition and tracking, combining RGB-D sensors with machine learning models to achieve 95%+ accuracy in family member identification.",
@@ -183,6 +192,8 @@ export const resumeData: ResumeData = {
       role: "Software Development Engineer II",
       startDate: "2020-04",
       endDate: "2022-03",
+      highlight:
+        "Developed Astro Robot's core platform and innovative features including phone battery notifications and multi-SOC debugging",
       details: [
         "Developed Amazon Astro Robot's core platform and services using C++, Java, Python, Ruby, Javascript, ROS.",
         "Developed novel phone battery notifier feature for Astro.",
@@ -196,6 +207,8 @@ export const resumeData: ResumeData = {
       role: "Software Development Engineer I",
       startDate: "2018-08",
       endDate: "2020-03",
+      highlight:
+        "Architected and delivered FireTV news application supporting 11 platforms and 3000 TPS with 60% latency improvements",
       details: [
         "Led development on FireTV news application, creating system architecture.",
         "Engineered high-performing application for 11 FireTV platforms.",
@@ -210,6 +223,8 @@ export const resumeData: ResumeData = {
       role: "Software Development Engineering Intern",
       startDate: "2017-08",
       endDate: "2017-12",
+      highlight:
+        "Built production-ready Amazon Video app for Echo devices with voice support and third-party integrations",
       details: [
         "Developed Amazon Video Application for Echo devices and tablets.",
         "Created production-ready web video application with third-party integrations.",
@@ -222,6 +237,8 @@ export const resumeData: ResumeData = {
       role: "Solutions Architect Engineering Intern",
       startDate: "2017-01",
       endDate: "2017-05",
+      highlight:
+        "Prototyped AI-powered chatbot with Watson NLP and experimental Android face recognition application",
       details: [
         "Implemented programmable chatbot interface using Watson API (NLP).",
         "Prototyped experimental android application with face recognition.",
@@ -234,6 +251,8 @@ export const resumeData: ResumeData = {
       role: "Software Engineering Intern",
       startDate: "2016-01",
       endDate: "2016-05",
+      highlight:
+        "Built React/Node resource allocation tool with Redux architecture and 90% testing time reduction via Jenkins CI/CD",
       details: [
         "Built resource allocation tool using ReactJS and Node.",
         "Developed core server functionality with Redux.",
@@ -247,6 +266,8 @@ export const resumeData: ResumeData = {
       role: "Frontend Developer Intern",
       startDate: "2015-05",
       endDate: "2015-09",
+      highlight:
+        "Developed responsive AngularJS fintech application with payment processing integration and automated CI/CD pipeline",
       details: [
         "Implemented UI/UX of Android app and AngularJS responsive website.",
         "Integrated REST APIs and payment processing systems.",
@@ -269,7 +290,7 @@ export const resumeData: ResumeData = {
     {
       degree: "High School Diploma",
       school: "Pokémon Trainer Academy",
-      date: "Graduated June 2014",
+      date: "Graduated June 2013",
       details: ["Grinding experience points"],
       pokemon: "pikachu",
     },

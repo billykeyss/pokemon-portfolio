@@ -8,6 +8,7 @@ import { Navigation } from "@/components/Navigation";
 import { Portfolio } from "@/components/Portfolio";
 import { Projects } from "@/components/Projects";
 import { Skills } from "@/components/Skills";
+import { EightBitBackground } from "@/components/EightBitBackground";
 import { useState, useEffect } from "react";
 
 export default function Component() {
@@ -55,7 +56,10 @@ export default function Component() {
   };
 
   return (
-    <div className="min-h-screen bg-yellow-100 dark:bg-gray-900 text-black dark:text-white font-mono p-8 transition-colors duration-200">
+    <div className="min-h-screen text-black dark:text-white font-mono p-8 transition-colors duration-200 relative">
+      {/* 8-bit background */}
+      <EightBitBackground />
+
       <Header />
 
       <Navigation
@@ -63,7 +67,7 @@ export default function Component() {
         setActiveSection={handleSetActiveSection}
       />
 
-      <main className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg max-w-3xl mx-auto">
+      <main className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm p-6 rounded-lg shadow-lg max-w-3xl mx-auto border border-gray-200/50 dark:border-gray-700/50">
         {activeSection === "experiences" && <Experiences />}
         {activeSection === "projects" && <Projects />}
         {activeSection === "skills" && <Skills />}
@@ -71,16 +75,6 @@ export default function Component() {
         {activeSection === "portfolio" && <Portfolio />}
         {activeSection === "hobbies" && <Hobbies />}
       </main>
-      <style jsx>{`
-        @keyframes move {
-          0% {
-            background-position: 0 0;
-          }
-          100% {
-            background-position: 28px 0;
-          }
-        }
-      `}</style>
     </div>
   );
 }
