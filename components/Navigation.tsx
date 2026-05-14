@@ -48,11 +48,12 @@ export const Navigation = ({
         initial={{ x: 100, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         transition={{ duration: 0.3, ease: "easeOut" }}
-        className="hidden md:flex fixed z-40 
+        className="hidden md:flex fixed right-4 z-40 
           flex-col items-center gap-3 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl 
           border border-gray-200/50 dark:border-gray-700/50 rounded-2xl p-4 shadow-2xl"
         style={{
-          top: "20vh",
+          top: "50%",
+          transform: "translateY(-50%)",
         }}
       >
         {navigationSections.map((section) => {
