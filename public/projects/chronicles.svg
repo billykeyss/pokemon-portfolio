@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a98a31"/>
+      <stop offset="55%" stop-color="#8a6f1c"/>
+      <stop offset="100%" stop-color="#5e4810"/>
+    </linearGradient>
+    <linearGradient id="goldStroke" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#5e4810"/>
+      <stop offset="50%" stop-color="#a98a31"/>
+      <stop offset="100%" stop-color="#5e4810"/>
+    </linearGradient>
+    <radialGradient id="bgGlow" cx="50%" cy="45%" r="70%">
+      <stop offset="0%" stop-color="#fdfbf3"/>
+      <stop offset="100%" stop-color="#efe8d3"/>
+    </radialGradient>
+  </defs>
+  <rect x="0" y="0" width="256" height="256" rx="36" fill="url(#bgGlow)" stroke="#cbb979" stroke-width="1" opacity="1"/>
+  <circle cx="128" cy="128" r="104" fill="none" stroke="#8a6f1c" stroke-width="1.2" opacity="0.4"/>
+  <circle cx="128" cy="42" r="4.5" fill="#8a6f1c"/>
+  <path d="M 44 176 A 84 84 0 0 1 212 176" fill="none" stroke="url(#goldStroke)" stroke-width="6" stroke-linecap="round"/>
+  <line x1="56" y1="170" x2="40" y2="166" stroke="#8a6f1c" stroke-width="4" stroke-linecap="round"/>
+  <line x1="76" y1="112" x2="66" y2="98" stroke="#8a6f1c" stroke-width="4" stroke-linecap="round"/>
+  <line x1="128" y1="92" x2="128" y2="76" stroke="#8a6f1c" stroke-width="4" stroke-linecap="round"/>
+  <line x1="180" y1="112" x2="190" y2="98" stroke="#8a6f1c" stroke-width="4" stroke-linecap="round"/>
+  <line x1="200" y1="170" x2="216" y2="166" stroke="#8a6f1c" stroke-width="4" stroke-linecap="round"/>
+  <rect x="36" y="176" width="184" height="7" fill="url(#goldGrad)"/>
+  <path d="M 128 92 L 128 176 L 176 176 Z" fill="url(#goldGrad)"/>
+  <line x1="128" y1="92" x2="128" y2="176" stroke="#cbb979" stroke-width="2" opacity="0.85"/>
+  <line x1="128" y1="92" x2="62" y2="172" stroke="#5e4810" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="8 8" opacity="0.4"/>
+</svg>

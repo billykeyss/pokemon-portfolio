@@ -11,6 +11,7 @@ import {
   ExternalLink,
   Calendar,
   Clock,
+  Flag,
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -19,8 +20,9 @@ import { resumeData, type Experience } from "@/data/resume-data";
 // Add this utility function for formatting dates
 const formatDate = (dateString: string): string => {
   if (dateString === "Present") return "Present";
-
-  const date = new Date(dateString + "-01"); // Add day for proper parsing
+  // Parse in local time so e.g. "2025-10" doesn't drift to "Sep 2025" in negative UTC offsets
+  const [year, month] = dateString.split("-").map(Number);
+  const date = new Date(year, month - 1, 1);
   return new Intl.DateTimeFormat("en-US", {
     year: "numeric",
     month: "short",
@@ -210,7 +212,7 @@ const getTimelineColors = (index: number, isSpecial: boolean = false) => {
 
 const getTimelinePosition = (
   date: string,
-  startYear: number = 2015
+  startYear: number = 2015,
 ): number => {
   const now = new Date();
   const targetDate = date === "Present" ? now : new Date(date + "-01");
@@ -225,14 +227,44 @@ const getTimelinePosition = (
 
 export const Experiences = () => {
   const [expandedExperience, setExpandedExperience] = useState<number | null>(
-    null
+    null,
   );
   const [experiencePokemons, setExperiencePokemons] = useState<string[]>([]);
   const [hoveredExperience, setHoveredExperience] = useState<number | null>(
-    null
+    null,
   );
 
   const experiences: Experience[] = resumeData.experiences;
+
+  // Greedy lane assignment so overlapping roles cluster without leaving lanes empty
+  const laneAssignments: number[] = (() => {
+    const now = Date.now();
+    const indexed = experiences.map((e, i) => ({
+      i,
+      startMs: new Date(e.startDate + "-01").getTime(),
+      endMs:
+        e.endDate === "Present" ? now : new Date(e.endDate + "-01").getTime(),
+    }));
+    const sorted = [...indexed].sort((a, b) => a.startMs - b.startMs);
+    const laneEndMs: number[] = [];
+    const lanes = new Array<number>(experiences.length);
+    for (const e of sorted) {
+      let placed = false;
+      for (let l = 0; l < laneEndMs.length; l++) {
+        if (laneEndMs[l] <= e.startMs) {
+          laneEndMs[l] = e.endMs;
+          lanes[e.i] = l;
+          placed = true;
+          break;
+        }
+      }
+      if (!placed) {
+        lanes[e.i] = laneEndMs.length;
+        laneEndMs.push(e.endMs);
+      }
+    }
+    return lanes;
+  })();
 
   useEffect(() => {
     const pokemons = experiences.map(() => getRandomPokemonName());
@@ -265,7 +297,7 @@ export const Experiences = () => {
       {/* Enhanced Timeline - visible on medium screens and up */}
       <div className="hidden lg:block">
         {/* Modern Year Markers - Now positioned from bottom to top */}
-        <div className="absolute -left-20 top-0">
+        <div className="absolute -left-36 top-0">
           {Array.from({ length: yearRange }).map((_, i) => {
             const year = startYear + i; // Changed: start from 2015 and go up
             const maxPosition = getTimelinePosition("Present", startYear);
@@ -336,9 +368,16 @@ export const Experiences = () => {
             const colors = getTimelineColors(index, false);
             const isHovered = hoveredExperience === index;
 
-            // Smart positioning to avoid overlaps
-            const layerOffset = index % 3; // Alternate between 3 layers
-            const offsetX = 4 + layerOffset * 24;
+            // Splay lanes symmetrically around the spine: lane 0 sits on the line, lane 1 to its left, lane 2 to its right, etc.
+            const layerOffset = laneAssignments[index] ?? 0;
+            const splayStep =
+              layerOffset === 0
+                ? 0
+                : layerOffset % 2 === 1
+                  ? -Math.ceil(layerOffset / 2)
+                  : Math.ceil(layerOffset / 2);
+            // spine is at x=0 with width 4 (center=2); bar is 20px wide so half=10
+            const offsetX = 2 - 10 + splayStep * 24;
 
             return (
               <motion.div
@@ -367,39 +406,125 @@ export const Experiences = () => {
                 onMouseEnter={() => setHoveredExperience(index)}
                 onMouseLeave={() => setHoveredExperience(null)}
               >
-                {/* Gradient Background */}
+                {/* Cartridge body — beveled top/bottom corners via clip-path */}
                 <div
-                  className={`absolute inset-0 bg-gradient-to-t ${
+                  className={`absolute inset-0 bg-gradient-to-b ${
                     colors.primary
-                  } transition-opacity duration-200 ${
-                    isHovered ? "opacity-100" : "opacity-90 dark:opacity-80"
+                  } shadow-md transition-opacity duration-200 ${
+                    isHovered ? "opacity-100" : "opacity-95"
+                  }`}
+                  style={{
+                    clipPath:
+                      "polygon(0 8px, 30% 0, 70% 0, 100% 8px, 100% calc(100% - 6px), 80% 100%, 20% 100%, 0 calc(100% - 6px))",
+                  }}
+                />
+
+                {/* Inner bevel — top highlight to bottom shadow for depth */}
+                <div
+                  className="absolute inset-x-1 top-2 bottom-2 rounded-sm pointer-events-none"
+                  style={{
+                    background:
+                      "linear-gradient(180deg, rgba(255,255,255,0.28) 0%, rgba(0,0,0,0.08) 50%, rgba(0,0,0,0.28) 100%)",
+                  }}
+                />
+
+                {/* Outer glow — soft halo behind the cartridge */}
+                <div
+                  className={`absolute -inset-1 bg-gradient-to-b ${
+                    colors.primary
+                  } ${colors.glow} blur-md -z-10 transition-opacity duration-200 ${
+                    isHovered ? "opacity-50" : "opacity-25"
                   }`}
                 />
 
-                {/* Glow Effect */}
-                <div
-                  className={`absolute inset-0 bg-gradient-to-t ${
-                    colors.primary
-                  } ${colors.glow} blur-sm transition-opacity duration-200 ${
-                    isHovered ? "opacity-60" : "opacity-40"
-                  }`}
-                />
+                {/* Pokéball cap at top.
+                    Centering lives on the wrapper so framer-motion's transform
+                    (used for the entry scale) doesn't clobber translateX(-50%). */}
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-5 h-5">
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: index * 0.2 + 0.3 }}
+                    className={`relative w-5 h-5 rounded-full overflow-hidden border-2 border-black shadow-lg ${
+                      exp.endDate === "Present" ? "animate-pulse" : ""
+                    }`}
+                  >
+                    <div
+                      className={`h-1/2 bg-gradient-to-br ${colors.primary}`}
+                    />
+                    <div className="h-px bg-black" />
+                    <div className="h-1/2 bg-white dark:bg-gray-200" />
+                  </motion.div>
+                  {/* Pokéball center button */}
+                  <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-white border border-black rounded-full" />
+                  {/* Ping ring for ongoing roles */}
+                  {exp.endDate === "Present" && (
+                    <span
+                      className={`pointer-events-none absolute inset-0 rounded-full ring-2 ring-emerald-400 animate-ping`}
+                    />
+                  )}
+                </div>
 
-                {/* Timeline Dot at top */}
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ delay: index * 0.2 + 0.3 }}
-                  className={`absolute -top-2 left-1/2 transform -translate-x-1/2 w-4 h-4 bg-gradient-to-br ${colors.primary} rounded-full shadow-lg ${colors.glow} border-2 border-white dark:border-gray-800 transition-all duration-200`}
-                />
+                {/* Quest badge — main-quest (briefcase, blue) or side-quest (flag, amber).
+                    Sits inside the cartridge below the Pokéball cap; hover shows a styled tooltip. */}
+                {(() => {
+                  const quest = exp.isSide
+                    ? {
+                        Icon: Flag,
+                        bg: "bg-amber-400 dark:bg-amber-500",
+                        border: "border-amber-700 dark:border-amber-800",
+                        iconColor: "text-amber-950",
+                        tipBg: "bg-amber-100 dark:bg-amber-900/90",
+                        tipBorder: "border-amber-400 dark:border-amber-600",
+                        tipText: "text-amber-900 dark:text-amber-100",
+                        label: "Side Quest",
+                        desc: "Concurrent side business",
+                      }
+                    : {
+                        Icon: Briefcase,
+                        bg: "bg-sky-400 dark:bg-sky-500",
+                        border: "border-sky-700 dark:border-sky-800",
+                        iconColor: "text-sky-950",
+                        tipBg: "bg-sky-100 dark:bg-sky-900/90",
+                        tipBorder: "border-sky-400 dark:border-sky-600",
+                        tipText: "text-sky-900 dark:text-sky-100",
+                        label: "Main Quest",
+                        desc: "Primary role",
+                      };
+                  const { Icon } = quest;
+                  return (
+                    <div className="absolute top-2 left-1/2 -translate-x-1/2 w-4 h-4 z-20 group/quest">
+                      <div
+                        className={`w-4 h-4 rounded-full ${quest.bg} border ${quest.border} shadow flex items-center justify-center transition-transform group-hover/quest:scale-110`}
+                      >
+                        <Icon className={`w-2 h-2 ${quest.iconColor}`} />
+                      </div>
+                      <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 opacity-0 scale-95 group-hover/quest:opacity-100 group-hover/quest:scale-100 transition-all duration-150 pointer-events-none z-30">
+                        <div
+                          className={`${quest.tipBg} border ${quest.tipBorder} rounded-md px-2 py-1 shadow-lg whitespace-nowrap text-[10px] font-bold ${quest.tipText} backdrop-blur-sm`}
+                        >
+                          <div className="flex items-center gap-1">
+                            <Icon className="w-2.5 h-2.5" />
+                            <span>{quest.label}</span>
+                          </div>
+                          <div className="text-[9px] font-normal opacity-80 mt-0.5">
+                            {quest.desc}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
 
-                {/* Timeline Dot at bottom */}
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ delay: index * 0.2 + 0.4 }}
-                  className={`absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-3 h-3 bg-gradient-to-br ${colors.primary} rounded-full shadow-md border border-white dark:border-gray-800 opacity-75 transition-all duration-200`}
-                />
+                {/* Cartridge foot — small accent at bottom */}
+                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2">
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: index * 0.2 + 0.4 }}
+                    className={`w-2 h-2 rounded-full bg-gradient-to-br ${colors.primary} border border-white dark:border-gray-800 shadow-sm opacity-80`}
+                  />
+                </div>
 
                 {/* Simple Hover Tooltip */}
                 <motion.div
@@ -522,17 +647,7 @@ export const Experiences = () => {
           className="mb-6 flex items-center gap-3 text-sm md:text-base text-gray-600 dark:text-gray-400"
         >
           <Clock className="w-4 h-4" />
-          <span className="font-medium">
-            {(() => {
-              const startDate = new Date("2015-05-01");
-              const currentDate = new Date();
-              const totalMonths =
-                (currentDate.getFullYear() - startDate.getFullYear()) * 12 +
-                (currentDate.getMonth() - startDate.getMonth());
-              const years = Math.floor(totalMonths / 12);
-              return `${years}+ years of professional experience`;
-            })()}
-          </span>
+          <span className="font-medium">10+ years of professional experience</span>
           <span className="text-gray-400 dark:text-gray-500">•</span>
           <span>Software Engineering & Leadership</span>
         </motion.div>
@@ -611,7 +726,7 @@ export const Experiences = () => {
                     <button
                       onClick={() =>
                         setExpandedExperience(
-                          expandedExperience === index ? null : index
+                          expandedExperience === index ? null : index,
                         )
                       }
                       className={`text-sm md:text-base flex items-center gap-2 transition-all duration-200 focus:outline-none focus:ring-2 

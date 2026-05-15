@@ -6,7 +6,7 @@ import { resumeData, type EducationItem } from "@/data/resume-data";
 
 export const Education = () => {
   const [expandedEducation, setExpandedEducation] = useState<number | null>(
-    null
+    null,
   );
 
   const education: EducationItem[] = resumeData.education;
@@ -44,7 +44,7 @@ export const Education = () => {
               <button
                 onClick={() =>
                   setExpandedEducation(
-                    expandedEducation === index ? null : index
+                    expandedEducation === index ? null : index,
                   )
                 }
                 className="mt-2 text-red-500 dark:text-red-400 

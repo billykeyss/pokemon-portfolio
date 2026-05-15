@@ -3,11 +3,11 @@ import { ThemeProvider } from "next-themes";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Yichen Huang | Software Engineer",
+  title: "Bill Huang | Software Engineer",
   description:
     "Software Development Engineer with expertise in full-stack development, IoT, AI, and robotics. Portfolio showcasing projects and professional experience.",
   keywords: [
-    "Yichen Huang",
+    "Bill Huang",
     "Software Engineer",
     "Full Stack Developer",
     "AI Engineer",
@@ -15,9 +15,9 @@ export const metadata: Metadata = {
     "Web Development",
     "Portfolio",
   ],
-  authors: [{ name: "Yichen Huang" }],
+  authors: [{ name: "Bill Huang" }],
   openGraph: {
-    title: "Yichen Huang | Software Engineer",
+    title: "Bill Huang | Software Engineer",
     description:
       "Software Development Engineer with expertise in full-stack development, IoT, AI, and robotics.",
     type: "website",
@@ -35,8 +35,8 @@ export default function RootLayout({
       <body>
         <ThemeProvider
           attribute="class"
-          defaultTheme="dark"
-          enableSystem={true}
+          defaultTheme="light"
+          enableSystem={false}
         >
           {children}
         </ThemeProvider>

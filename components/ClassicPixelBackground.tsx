@@ -115,8 +115,8 @@ export const ClassicPixelBackground = () => {
                   ? "#1f293740"
                   : "#0f172a40"
                 : i % 2 === 0
-                ? "#bef26420"
-                : "#a3d96220",
+                  ? "#bef26420"
+                  : "#a3d96220",
               left: `${(i * 35 + 15) % 75}%`,
               top: `${(i * 41 + 25) % 60}%`,
               animation: `blockFloat ${5 + (i % 2)}s ease-in-out infinite`,

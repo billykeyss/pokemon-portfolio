@@ -2,7 +2,6 @@ import { Globe, Mail, Phone, FileText } from "lucide-react";
 import Link from "next/link";
 
 export const Header = () => {
-
   return (
     <header className="text-center mb-8 w-full px-4">
       <h1 className="text-2xl md:text-4xl font-bold mt-4">Bill Huang</h1>

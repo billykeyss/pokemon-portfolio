@@ -17,6 +17,7 @@ export interface Experience {
   highlight: string;
   details: string[];
   link?: string;
+  isSide?: boolean;
 }
 
 export interface EducationItem {
@@ -31,6 +32,7 @@ export interface Hobby {
   name: string;
   pokemon: string;
   type: string;
+  type2?: string;
   description: string;
   experience: string;
   details: string[];
@@ -104,18 +106,39 @@ export const resumeData: ResumeData = {
     title: "Software Engineering & Leadership",
     bio: {
       intro:
-        "Hey there! I'm Bill, a passionate software engineer with 9+ years of experience building everything from home robots to AI-powered platforms. When I'm not crafting code, you'll find me scaling rock faces, experimenting in the kitchen, or exploring new corners of the world.",
+        "Hey there! I'm Bill, a passionate software engineer with 10+ years of experience building everything from home robots to AI-powered platforms. When I'm not crafting code, you'll find me scaling rock faces, experimenting in the kitchen, or exploring new corners of the world.",
       philosophy:
         "I believe in the intersection of technology and adventure – whether that's programming autonomous navigation systems for robots or founding a climbing gear company. My curiosity drives me to constantly learn, create, and push boundaries both in my professional work and personal pursuits.",
     },
   },
   experiences: [
     {
+      title: "Capsule",
+      timelineTitle: "Capsule",
+      role: "Chief AI Officer, Co-Founder",
+      startDate: "2025-10",
+      endDate: "Present",
+      highlight:
+        "Co-founded Capsule AI — Agentic Strategy for Life Sciences. The context system of record for pharma and biotech, converting the world's unstructured science into decisions teams can act on. Deployed across Global Top 10 Pharma; leading AI strategy across voice agents, scientific OCR, domain embeddings, and multi-agent orchestration.",
+      details: [
+        "Selected for Betaworks Spring 2026 Camp: Agent Systems — 1 of 11 companies chosen from 400+ applicants, culminating in Demo Day on May 14, 2026.",
+        "Led development of a pharma-specific voice agent fluent in standard-of-care, emerging therapies, and treatment architecture.",
+        "Architected a scientific OCR model that extracts structured data from biomedical graphics — Kaplan-Meier curves, swimmer plots, forest plots, and spider plots.",
+        "Drove training of a life-sciences-native embedding model on scientific literature for domain-specific retrieval.",
+        "Designed multi-agent orchestration that decomposes complex scientific questions across dozens of data domains with full traceability.",
+        "Shipped live, multimodal coverage of 200+ academic and medical congresses, expanding teams' effective field of view ~100×.",
+        "Built native-language ingestion of Chinese clinical, regulatory, and corporate sources for global market intelligence.",
+        "Achieved SOC 2 Type II and HIPAA compliance; partnered with NVIDIA, AWS, and Google Cloud.",
+        "Deployed across Global Top 10 Pharma, Top 3 Med Device, biotech, diagnostics, and institutional investors.",
+      ],
+      link: "https://gocapsule.ai/",
+    },
+    {
       title: "Keplar.io",
       timelineTitle: "Keplar.io",
       role: "Founding Engineer",
       startDate: "2024-04",
-      endDate: "Present",
+      endDate: "2025-09",
       highlight:
         "Building AI-powered audience simulation platform using LLMs and RAG to accelerate enterprise product feedback cycles by 95%",
       details: [
@@ -134,15 +157,16 @@ export const resumeData: ResumeData = {
       role: "Founder",
       startDate: "2022-10",
       endDate: "Present",
+      isSide: true,
       highlight:
-        "Founded and scaled premium climbing gear D2C brand from concept to 4.8⭐ rating, 3k+ social followers, and 14% conversion rate",
+        "Founded and scaled premium climbing gear D2C brand from concept to 4.8⭐ rating, 500+ social followers, and 14% conversion rate",
       details: [
         "Launched Sesh Climbing (climbingsesh.com), a direct-to-consumer brand for premium climbing gear—from concept and naming to Shopify storefront, 3PL workflows, and multi-currency checkout in USD & CAD.",
         "Designed and released a 10-SKU product line including chalk buckets, modular chalk bags, boar-hair brushes, 3D-printed training blocks, and pure magnesium-carbonate chalk, all produced with local suppliers and in-house additive manufacturing.",
         "Maintained a 4.8-star-plus customer rating across the store, with the flagship BOLDER SESH chalk bucket earning a 4.86/5 average from 14 verified reviews.",
         "Secured partnerships with six regional climbing gyms to host pop-up events, doubling the email list and driving 30% month-over-month revenue lifts during campaign weeks.",
         "Built an end-to-end commerce stack—Shopify Liquid customizations, Klaviyo automations, Stripe & Shop Pay integration, and Pirate Ship for cross-border fulfillment—cutting average dispatch time to 48 hours and keeping returns under 1%.",
-        "Grew social presence from zero to 3k+ followers in six months on Instagram, TikTok, and Facebook through product-demo reels and user-generated content challenges, reaching 150k organic impressions per quarter.",
+        "Grew social presence from zero to 500+ followers in six months on Instagram, TikTok, and Facebook through product-demo reels and user-generated content challenges, reaching 150k organic impressions per quarter.",
         "Led brand identity and packaging design (logo, print collateral, unboxing experience), boosting on-site conversion to 14% and enabling repeat-purchase email flows that now account for 25% of revenue.",
       ],
       link: "https://climbingsesh.com/",
@@ -153,6 +177,7 @@ export const resumeData: ResumeData = {
       role: "CTO (Consultant → Full-time)",
       startDate: "2023-10",
       endDate: "Present",
+      isSide: true,
       highlight:
         "Leading tech transformation for climbing service company: built smart IoT drop-box, AI training portal, and 3x throughput platform",
       details: [
@@ -297,25 +322,6 @@ export const resumeData: ResumeData = {
   ],
   hobbies: [
     {
-      name: "Gaming",
-      pokemon: "pikachu",
-      type: "electric",
-      description:
-        "Passionate about competitive esports, indie games, and the latest AAA titles.",
-      experience: "15+ years",
-      details: [
-        "Competitive FPS gaming with tournament experience in Counter-Strike and Valorant",
-        "Indie game enthusiast, particularly drawn to innovative gameplay mechanics and storytelling",
-        "Console and PC gaming across multiple genres including RPGs, strategy, and simulation games",
-        "Active in gaming communities and forums, sharing reviews and gameplay strategies",
-      ],
-      highlights: [
-        "Tournament Top 16",
-        "2000+ hours in various titles",
-        "Game dev hobbyist",
-      ],
-    },
-    {
       name: "Rock Climbing",
       pokemon: "machamp",
       type: "fighting",
@@ -336,42 +342,6 @@ export const resumeData: ResumeData = {
       ],
     },
     {
-      name: "Cooking",
-      pokemon: "charmander",
-      type: "fire",
-      description:
-        "Culinary enthusiast exploring international cuisines and molecular gastronomy.",
-      experience: "10+ years",
-      details: [
-        "Specialized in Asian fusion cuisine, particularly Japanese and Korean techniques",
-        "Molecular gastronomy experiments with spherification and liquid nitrogen",
-        "Sourdough bread baking with wild yeast cultivation and fermentation science",
-        "Farm-to-table cooking using locally sourced ingredients and seasonal menus",
-        "Wine and sake pairing knowledge with completed sommelier courses",
-      ],
-      highlights: [
-        "Michelin-inspired dishes",
-        "Perfect sourdough",
-        "Molecular techniques",
-      ],
-    },
-    {
-      name: "Reading",
-      pokemon: "abra",
-      type: "psychic",
-      description:
-        "Voracious reader across sci-fi, technical literature, and philosophy.",
-      experience: "Lifelong",
-      details: [
-        "Science fiction and speculative fiction, particularly hard sci-fi and cyberpunk genres",
-        "Technical books on software engineering, AI/ML, and emerging technologies",
-        "Philosophy and cognitive science, exploring consciousness and human-AI interaction",
-        "Biographies of innovators and entrepreneurs in technology and science",
-        "Active participant in book clubs and online literary discussions",
-      ],
-      highlights: ["200+ books/year", "Philosophy focus", "Sci-fi collector"],
-    },
-    {
       name: "Traveling",
       pokemon: "lugia",
       type: "psychic",
@@ -388,54 +358,65 @@ export const resumeData: ResumeData = {
       highlights: ["5 continents", "Solo adventures", "Cultural immersion"],
     },
     {
-      name: "Photography",
+      name: "Skiing",
+      pokemon: "articuno",
+      type: "ice",
+      description:
+        "Chasing fresh tracks across alpine resorts and backcountry lines.",
+      experience: "10+ years",
+      details: [
+        "Resort skiing across Tahoe, Whistler, and other North American mountains",
+        "All-mountain skiing — groomers, trees, moguls, and powder",
+        "Off-piste and side-country exploration when conditions allow",
+        "Built Tahoe Snow Conditions, a real-time ski resort tracker, to plan trips",
+      ],
+      highlights: ["Tahoe regular", "Tree skiing", "Powder chaser"],
+    },
+    {
+      name: "3D Printing",
+      pokemon: "magnemite",
+      type: "electric",
+      description:
+        "Designing and printing custom parts — from climbing gear to functional prototypes.",
+      experience: "5+ years",
+      details: [
+        "Functional parts and prototypes for personal and Sesh Climbing projects",
+        "CAD design in Fusion 360 and Onshape",
+        "FDM printing on Bambu Lab hardware",
+        "Iterative design — print, test, refine",
+      ],
+      highlights: ["Custom parts", "Fusion 360", "Bambu Lab"],
+    },
+    {
+      name: "Gardening",
       pokemon: "bulbasaur",
       type: "grass",
       description:
-        "Capturing moments through landscape, street, and adventure photography.",
-      experience: "12+ years",
+        "Growing edibles and tending plants — patience as a practice.",
+      experience: "3+ years",
       details: [
-        "Landscape photography with focus on golden hour and blue hour compositions",
-        "Street photography in urban environments, documenting daily life and culture",
-        "Adventure and climbing photography, capturing action and outdoor experiences",
-        "Drone photography for aerial perspectives and unique viewpoints",
-        "Film photography using vintage cameras and developing techniques",
+        "Home vegetable and herb garden with seasonal rotations",
+        "Composting and soil health management",
+        "Container and raised-bed growing for limited urban space",
       ],
-      highlights: ["Published works", "Drone certified", "Film development"],
+      highlights: ["Veg garden", "Composting", "Seasonal rotations"],
     },
     {
-      name: "Surfing",
-      pokemon: "lapras",
-      type: "water",
-      description: "Ocean enthusiast riding waves along coastlines worldwide.",
-      experience: "6+ years",
+      name: "Mushroom Foraging",
+      pokemon: "paras",
+      type: "grass",
+      type2: "poison",
+      description:
+        "Hunting wild edible mushrooms — chanterelle, morel, lobster, beefsteak, matsutake, lion's mane, candy cap, and boletes to date.",
+      experience: "3+ years",
       details: [
-        "Surfing breaks across California, Hawaii, and international destinations",
-        "Longboard and shortboard riding in various wave conditions",
-        "Ocean conservation advocacy and beach cleanup participation",
-        "Surf photography and videography to document sessions and conditions",
-        "Teaching beginners proper surf etiquette and safety practices",
+        "Notable finds: chanterelle, morel, lobster mushroom, beefsteak, matsutake, lion's mane, candy cap, boletes",
+        "Pacific Northwest foraging across forests and coastal regions",
+        "Built Mushroom Weather Dashboard to plan trips around historical and forecasted weather",
+        "Identification practice with field guides and local mycology groups",
+        "Foraging ethics — Leave No Trace, sustainable harvesting, never eat the maybes",
       ],
-      highlights: [
-        "Hawaii pipeline",
-        "Conservation advocate",
-        "Multi-board rider",
-      ],
-    },
-    {
-      name: "Music Production",
-      pokemon: "jigglypuff",
-      type: "normal",
-      description: "Electronic music creation and sound design exploration.",
-      experience: "5+ years",
-      details: [
-        "Digital Audio Workstation (DAW) proficiency in Ableton Live and Logic Pro",
-        "Synthesizer programming and sound design using hardware and software synths",
-        "Beat making and rhythm programming across various electronic genres",
-        "Field recording for ambient textures and unique sound sources",
-        "Collaboration with local artists and producers on creative projects",
-      ],
-      highlights: ["Released tracks", "Hardware synths", "Sound design"],
+      highlights: ["Matsutake", "Lion's Mane", "Morel"],
     },
   ],
   skillCategories: [
@@ -609,6 +590,18 @@ export const resumeData: ResumeData = {
   ],
   projects: [
     {
+      title: "Chronicles",
+      description: "Trivia game that tests your knowledge of historical events",
+      year: "2026",
+      category: "game",
+      featured: true,
+      details:
+        "A wiki-driven trivia game that challenges players to identify when notable historical events occurred. Pulls event data from public sources to build daily and themed rounds covering everything from ancient history to the modern era.",
+      link: "https://chronicle.billhuang.me/",
+      image: "/projects/chronicles.svg",
+      techStack: ["Next.js", "TypeScript", "Tailwind", "Wikipedia API"],
+    },
+    {
       title: "Tahoe Snow Conditions",
       description:
         "Real-time ski resort conditions tracker for California and BC/Alberta",
@@ -658,7 +651,6 @@ export const resumeData: ResumeData = {
       award: "Best Presentation Award - $1000",
       details:
         "Architected and implemented a flexible sensor configuration system in a virtual environment, empowering users to customize their experience with an unlimited number of camera and lidar sensors. Won Best Presentation Award and $1000 cash prize.",
-      link: "https://example.com/unreal-sensor-simulation",
       image: "/placeholder.svg?height=200&width=300",
       techStack: ["Unreal Engine", "C++", "Python", "CUDA"],
     },
@@ -675,15 +667,16 @@ export const resumeData: ResumeData = {
       techStack: ["Node.js", "Azure IoT", "DynamoDB", "React"],
     },
     {
-      title: "Animal Crossing Market Predictor",
-      description: "ML-powered game data analysis and prediction platform",
+      title: "Animal Crossing Market Tracker",
+      description:
+        "Price tracker and lookup tool for Animal Crossing: New Horizons market data",
       year: "2020",
-      category: "ai",
+      category: "web",
       details:
-        "Created a comprehensive platform for Animal Crossing New Horizons data analysis, including price prediction algorithms, market trend analysis, and availability forecasting for bugs, fish, and turnip prices.",
+        "A reference site for Animal Crossing: New Horizons players to look up turnip prices, bug and fish availability windows by month and time of day, and market trends. Built as a single-page app to make in-game economy data easy to scan.",
       link: "https://acnh.s3.us-west-2.amazonaws.com/index.html",
       image: "/projects/acnh.png",
-      techStack: ["React", "Node.js", "MongoDB", "Python", "ML Models"],
+      techStack: ["React", "Node.js", "MongoDB"],
     },
     {
       title: "Palette",
@@ -692,6 +685,7 @@ export const resumeData: ResumeData = {
       category: "mobile",
       details:
         "Analyzes an image/camera feed and extracts a custom color palette from it using advanced computer vision algorithms. Developed using Kotlin on Android, implementing modern best practices for MVVM Architecture and using Room database to cache data and maintain history.",
+      link: "https://github.com/billykeyss/color-picker-android",
       image: "/placeholder.svg?height=200&width=300",
       techStack: [
         "Kotlin",
@@ -710,6 +704,7 @@ export const resumeData: ResumeData = {
       award: "Hackathon Winner - $250",
       details:
         "Developed a rapping skill for the Alexa voice interface at Amazon x Connected Lab hackathon. Features dynamic rap generation and rhythm matching. Won best hack and $250 Prize.",
+      link: "https://github.com/billykeyss/RapBattle",
       image: "/placeholder.svg?height=200&width=300",
       techStack: ["AWS Lambda", "S3", "Alexa Skills Kit", "Node.js", "NLP"],
     },
@@ -720,6 +715,7 @@ export const resumeData: ResumeData = {
       category: "mobile",
       details:
         "Developed an Android Application that uses NFC to allow users to exchange contact information by tapping their phones together. Implemented secure transfer of contact information and NFC methods.",
+      link: "https://github.com/billykeyss/TAP",
       image: "/placeholder.svg?height=200&width=300",
       techStack: ["Android", "Java", "NFC API", "Contacts API"],
     },
@@ -730,6 +726,7 @@ export const resumeData: ResumeData = {
       category: "iot",
       details:
         "A household movie queue and streaming device built for the Raspberry Pi, enabling local media streaming, queue management, and multi-user controls.",
+      link: "https://github.com/billykeyss/Casty",
       image: "/projects/casty.png",
       techStack: ["Node.js", "Raspberry Pi", "React", "Express", "WebRTC"],
     },
@@ -868,6 +865,13 @@ export const resumeData: ResumeData = {
       gradient: "from-blue-500 to-cyan-600",
       light: "from-blue-100 to-cyan-100",
       dark: "from-blue-900/30 to-cyan-900/30",
+    },
+    ice: {
+      bg: "#98D8D8",
+      text: "#000",
+      gradient: "from-cyan-400 to-blue-500",
+      light: "from-cyan-100 to-blue-100",
+      dark: "from-cyan-900/30 to-blue-900/30",
     },
     electric: {
       bg: "#F8D030",

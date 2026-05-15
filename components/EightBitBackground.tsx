@@ -61,17 +61,17 @@ export const EightBitBackground = () => {
                 ? i % 4 === 0
                   ? "bg-blue-400/30"
                   : i % 4 === 1
-                  ? "bg-green-400/30"
-                  : i % 4 === 2
-                  ? "bg-red-400/30"
-                  : "bg-yellow-400/30"
+                    ? "bg-green-400/30"
+                    : i % 4 === 2
+                      ? "bg-red-400/30"
+                      : "bg-yellow-400/30"
                 : i % 4 === 0
-                ? "bg-blue-600/20"
-                : i % 4 === 1
-                ? "bg-green-600/20"
-                : i % 4 === 2
-                ? "bg-red-600/20"
-                : "bg-yellow-600/20"
+                  ? "bg-blue-600/20"
+                  : i % 4 === 1
+                    ? "bg-green-600/20"
+                    : i % 4 === 2
+                      ? "bg-red-600/20"
+                      : "bg-yellow-600/20"
             }`}
             style={{
               left: `${(i * 17 + 10) % 90}%`,
@@ -93,13 +93,13 @@ export const EightBitBackground = () => {
                 ? i % 3 === 0
                   ? "bg-purple-500/20"
                   : i % 3 === 1
-                  ? "bg-indigo-500/20"
-                  : "bg-teal-500/20"
+                    ? "bg-indigo-500/20"
+                    : "bg-teal-500/20"
                 : i % 3 === 0
-                ? "bg-purple-600/15"
-                : i % 3 === 1
-                ? "bg-indigo-600/15"
-                : "bg-teal-600/15"
+                  ? "bg-purple-600/15"
+                  : i % 3 === 1
+                    ? "bg-indigo-600/15"
+                    : "bg-teal-600/15"
             }`}
             style={{
               left: `${(i * 27 + 5) % 80}%`,

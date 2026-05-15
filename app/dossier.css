@@ -1,0 +1,3275 @@
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,300..900,0..100;1,9..144,300..900,0..100&family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&family=JetBrains+Mono:wght@300;400;500;700&family=Silkscreen:wght@400;700&family=Bungee&family=Press+Start+2P&display=swap");
+
+:root {
+  --cream: #e6f2f8; /* Soft sky cream */
+  --cream-2: #c7e1ee;
+  --paper: #f8fbfd;
+  --ink: #1b1f2b;
+  --ink-2: #3a4055;
+  --muted: #6f7a91;
+  --rule: #a9c5d6;
+  --poke: #ff4d4d; /* Bright cherry */
+  --poke-deep: #b0292b;
+  --gold: #ffc740;
+  --leaf: #6bc76b;
+  --sparkle: #ffd93b;
+  --bubble: #fffbe8;
+
+  /* Pokémon type palette */
+  --t-normal: #a8a878;
+  --t-fire: #f08030;
+  --t-water: #6890f0;
+  --t-electric: #f8d030;
+  --t-grass: #78c850;
+  --t-psychic: #f85888;
+  --t-fighting: #c03028;
+  --t-flying: #a890f0;
+  --t-steel: #8e96a6;
+  --t-ghost: #705898;
+  --t-bug: #a8b820;
+  --t-dragon: #7038f8;
+  --t-ice: #98d8d8;
+  --t-poison: #a040a0;
+
+  --shadow:
+    0 1px 0 rgba(27, 22, 18, 0.06), 0 8px 24px -12px rgba(27, 22, 18, 0.18);
+}
+
+/* Dark mode palette — invert the dossier into a "night file". Pokémon type
+   colours stay constant (brand-fixed); only cream/paper/ink shift. */
+.dark .dossier-root {
+  --cream: #1a2236;
+  --cream-2: #2c3a55;
+  --paper: #2b3850;
+  --ink: #f3eee0;
+  --ink-2: #e9e3d3;
+  --muted: #bdb7a2;
+  --rule: #6f7990;
+  --bubble: #38445a;
+  --poke: #ff5c6b;
+}
+
+/* Section-head pills (CHAPTER 0X pretitle + count badge) — lock to dark
+   borders/shadows/text since they sit on bright green/yellow pill bodies. */
+.dark .dossier-root .pretitle,
+.dark .dossier-root .count,
+.dark .dossier-root .project-hero .hero-badge {
+  color: #0b1424;
+  border-color: #0b1424;
+  box-shadow: 3px 3px 0 #0b1424;
+}
+
+/* Pokéballs (strip crest + footer-mark + small icons) — keep their iconic
+   dark stripe in dark mode instead of inheriting the cream --ink */
+.dark .dossier-root .pokeball {
+  background:
+    radial-gradient(circle at 50% 50%, #fff 0 18%, #0b1424 18% 25%, #fff 25% 32%, transparent 32%),
+    linear-gradient(to bottom, var(--poke) 0 49%, #0b1424 49% 51%, #fff 51% 100%);
+  border-color: #0b1424;
+}
+
+/* Project ★ corner stickers — lock dark glyph/border so they read on yellow */
+.dark .dossier-root .project::after {
+  border-color: #0b1424;
+  box-shadow: 2px 2px 0 #0b1424;
+  color: #0b1424;
+}
+
+/* Project corner Pokéball — lock the dark stripe + button border + shadow
+   to a true dark in dark mode. They use var(--ink) which is now cream. */
+.dark .dossier-root .pokeball-corner {
+  border-color: #0b1424;
+  box-shadow: 2px 2px 0 #0b1424;
+}
+.dark .dossier-root .pokeball-corner .pball-band { background: #0b1424; }
+.dark .dossier-root .pokeball-corner .pball-button { border-color: #0b1424; }
+.dark .dossier-root .project:hover .pokeball-corner {
+  box-shadow: 3px 3px 0 #0b1424;
+}
+
+/* Locked-dark grounding for layered drop-shadow headings — without this
+   the second text-shadow layer (normally var(--ink) dark) turns light and
+   the headlines look unanchored against the dark page. */
+.dark .dossier-root .eyebrow {
+  border-color: #0b1424;
+  box-shadow: 3px 3px 0 #0b1424;
+}
+/* Dark mode: drop the yellow shadow layer entirely — the cream/red fill +
+   text-stroke + a single dark drop shadow reads much cleaner against the
+   navy page than the busy yellow-on-dark sandwich. */
+.dark .dossier-root .hero h1,
+.dark .dossier-root .hero h1 em {
+  text-shadow: 5px 5px 0 #0b1424;
+}
+.dark .dossier-root .now-head h2 {
+  text-shadow: 3px 3px 0 #0b1424;
+}
+.dark .dossier-root .section-head h2,
+.dark .dossier-root .section-head h2 em,
+.dark .dossier-root .twocol h2,
+.dark .dossier-root .twocol h2 em {
+  text-shadow: 4px 4px 0 #0b1424;
+}
+.dark .dossier-root footer .mark {
+  text-shadow: 3px 3px 0 #0b1424;
+}
+
+/* Display headings get a thin dark stroke in dark mode so they pop against
+   the navy page — classic Pokémon-game text styling (fill + black outline). */
+.dark .dossier-root .hero h1,
+.dark .dossier-root .hero h1 em,
+.dark .dossier-root .now-head h2,
+.dark .dossier-root .section-head h2,
+.dark .dossier-root .section-head h2 em,
+.dark .dossier-root .twocol h2,
+.dark .dossier-root .twocol h2 em,
+.dark .dossier-root footer .mark {
+  -webkit-text-stroke: 1.5px #0b1424;
+  paint-order: stroke fill;
+}
+
+/* Hero dialog bubble stays cream so the dialog-box metaphor reads in dark too */
+.dark .dossier-root .hero-lede {
+  background: #f4f0dc;
+  color: #1b1f2b;
+  border-color: #0b1424;
+  box-shadow: 6px 6px 0 #0b1424;
+}
+.dark .dossier-root .hero-lede strong,
+.dark .dossier-root .lede-link { color: #1b1f2b; }
+.dark .dossier-root .lede-link:hover { color: var(--poke); }
+
+/* Project tech-stack chips — lift contrast against dark backgrounds */
+.dark .dossier-root .project .stack span {
+  background: #3b4a66;
+  color: #f4efe0;
+  border-color: #6f7990;
+}
+
+/* Primary Active Quest card inverts to cream in dark mode — reset its
+   body/role text from light-tan defaults to dark slate for legibility. */
+.dark .dossier-root .quest.primary p { color: #3a4055; }
+.dark .dossier-root .quest.primary .quest-tag .role { color: #5d6478; }
+.dark .dossier-root .quest.primary .badge {
+  color: #1a2236;
+  border-color: rgba(26, 34, 54, 0.4);
+}
+
+/* Active Quest cards (non-primary) — subtle border lift in dark */
+.dark .dossier-root .quest:not(.primary) {
+  background: var(--paper);
+  border-color: var(--rule);
+}
+
+.dark .dossier-root .strip { background: rgba(27, 33, 52, 0.92); }
+/* Keep the GameBoy chrome light/tan in dark mode so it pops against the navy page.
+   Re-anchor --ink/--ink-2 locally so its chrome (D-pad, GAMEBOY header,
+   A/B labels, START/SELECT pills) stays dark on the cream housing. */
+.dark .dossier-root .gameboy-mini {
+  --ink: #1b1f2b;
+  --ink-2: #3a2f25;
+  --muted: #6f5d4d;
+  box-shadow: 10px 10px 0 #0b1424;
+}
+
+* {
+  box-sizing: border-box;
+}
+/* Restore browser defaults that Tailwind preflight strips */
+.dossier-root ul,
+.dossier-root ol {
+  list-style: revert;
+  padding-left: 1.4em;
+  margin: revert;
+}
+.dossier-root li {
+  list-style: revert;
+}
+.dossier-root strong {
+  font-weight: 700;
+}
+.dossier-root em {
+  font-style: italic;
+}
+.dossier-root {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+}
+/* Smooth-scroll for in-page nav anchors + breathing room for the sticky strip */
+:root,
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 80px;
+}
+@media (max-width: 640px) {
+  html {
+    scroll-padding-top: 130px;
+  }
+}
+.dossier-root {
+  background: var(--cream);
+  color: var(--ink);
+  font-family: "Newsreader", "Source Serif 4", Georgia, serif;
+  font-size: 17px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  background-image:
+    radial-gradient(
+      ellipse 700px 380px at 12% -2%,
+      rgba(255, 77, 77, 0.18),
+      transparent 65%
+    ),
+    radial-gradient(
+      ellipse 640px 340px at 92% 18%,
+      rgba(248, 88, 136, 0.2),
+      transparent 65%
+    ),
+    radial-gradient(
+      ellipse 720px 380px at 8% 60%,
+      rgba(107, 199, 107, 0.18),
+      transparent 65%
+    ),
+    radial-gradient(
+      ellipse 700px 340px at 96% 78%,
+      rgba(255, 215, 59, 0.22),
+      transparent 65%
+    ),
+    radial-gradient(
+      ellipse 600px 320px at 50% 110%,
+      rgba(120, 160, 250, 0.18),
+      transparent 65%
+    );
+  background-attachment: fixed;
+}
+
+/* Confetti dot scatter */
+.dossier-root::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.45;
+  background-image:
+    radial-gradient(circle, var(--poke) 1.5px, transparent 2px),
+    radial-gradient(circle, var(--sparkle) 1.5px, transparent 2px),
+    radial-gradient(circle, var(--leaf) 1.5px, transparent 2px);
+  background-size:
+    64px 64px,
+    96px 96px,
+    128px 128px;
+  background-position:
+    0 0,
+    32px 48px,
+    16px 80px;
+}
+.dossier-root::after {
+  content: "";
+  position: fixed;
+  right: -160px;
+  bottom: -160px;
+  width: 480px;
+  height: 480px;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.08;
+  background: radial-gradient(
+    circle at 50% 40%,
+    var(--poke) 0 47%,
+    transparent 47% 51%,
+    var(--ink) 51% 100%
+  );
+  -webkit-mask: radial-gradient(circle, black 70%, transparent 71%);
+  mask: radial-gradient(circle, black 70%, transparent 71%);
+  animation: spinBg 60s linear infinite;
+}
+@keyframes spinBg {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── Sparkle utility ── */
+.sparkle {
+  position: absolute;
+  color: var(--sparkle);
+  font-family: "Press Start 2P", monospace;
+  text-shadow: 2px 2px 0 var(--ink);
+  pointer-events: none;
+  animation: sparkleSpin 3s linear infinite;
+}
+@keyframes sparkleSpin {
+  0%,
+  100% {
+    transform: rotate(0deg) scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: rotate(180deg) scale(1.2);
+    opacity: 0.6;
+  }
+}
+
+a {
+  color: inherit;
+}
+
+/* ============ TOP STRIP ============ */
+.strip {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(230, 242, 248, 0.94);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 3px solid var(--ink);
+}
+.strip-inner {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 12px 32px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.pokeball {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background:
+    radial-gradient(
+      circle at 50% 50%,
+      #fff 0 18%,
+      var(--ink) 18% 25%,
+      #fff 25% 32%,
+      transparent 32%
+    ),
+    linear-gradient(
+      to bottom,
+      var(--poke) 0 49%,
+      var(--ink) 49% 51%,
+      #fff 51% 100%
+    );
+  border: 1.5px solid var(--ink);
+  flex-shrink: 0;
+  image-rendering: pixelated;
+}
+.pokeball.spinner {
+  animation: roll 8s linear infinite;
+}
+@keyframes roll {
+  from {
+    transform: rotate(0);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.strip-meta {
+  font-family: "Silkscreen", "JetBrains Mono", monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  line-height: 1.3;
+}
+.strip-meta strong {
+  color: var(--ink);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+}
+.strip-meta .dex {
+  color: var(--poke);
+}
+
+.strip-links {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+  font-family: "Press Start 2P", monospace;
+  font-size: 9px;
+  letter-spacing: 0.02em;
+}
+.strip-links a {
+  color: var(--ink);
+  text-decoration: none;
+  padding: 7px 11px;
+  border: 2px solid var(--ink);
+  background: var(--paper);
+  border-radius: 999px;
+  transition:
+    transform 0.15s,
+    background 0.15s,
+    color 0.15s;
+  box-shadow: 2px 2px 0 var(--ink);
+}
+.strip-links a:hover {
+  background: var(--poke);
+  color: white;
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 var(--ink);
+}
+
+/* Theme toggle pill — sits at the right edge of the strip */
+.theme-toggle {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--paper);
+  color: var(--ink);
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+  box-shadow: 2px 2px 0 var(--ink);
+  cursor: pointer;
+  transition: transform 0.15s, background 0.15s, color 0.15s, box-shadow 0.15s;
+  margin-left: 8px;
+  padding: 0;
+}
+.theme-toggle:hover {
+  background: var(--sparkle);
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 var(--ink);
+}
+.theme-toggle:focus-visible {
+  outline: 2px solid var(--poke);
+  outline-offset: 2px;
+}
+
+/* ============ HERO / TRAINER CARD ============ */
+.hero {
+  position: relative;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 88px 32px 56px;
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 56px;
+  z-index: 2;
+}
+.eyebrow {
+  font-family: "Press Start 2P", monospace;
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  color: var(--poke);
+  margin-bottom: 26px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  background: var(--sparkle);
+  border: 2.5px solid var(--ink);
+  border-radius: 999px;
+  box-shadow: 3px 3px 0 var(--ink);
+  transform: rotate(-2deg);
+}
+.eyebrow::before {
+  content: "★";
+  color: var(--ink);
+}
+.eyebrow::after {
+  content: "★";
+  color: var(--ink);
+}
+
+.hero h1 {
+  font-family: "Bungee", "Silkscreen", monospace;
+  font-size: clamp(48px, 6.8vw, 92px);
+  line-height: 0.95;
+  letter-spacing: -0.015em;
+  margin: 0 0 28px;
+  text-shadow:
+    3px 3px 0 var(--sparkle),
+    6px 6px 0 var(--ink);
+  position: relative;
+}
+.hero h1 em {
+  font-style: normal;
+  color: var(--poke);
+  text-shadow:
+    3px 3px 0 #fff,
+    6px 6px 0 var(--ink);
+}
+.hero h1 .spark-1 {
+  top: -18px;
+  left: -12px;
+  font-size: 22px;
+}
+.hero h1 .spark-2 {
+  top: 12%;
+  right: 4%;
+  font-size: 16px;
+  animation-delay: 0.6s;
+}
+.hero h1 .spark-3 {
+  bottom: -10px;
+  left: 30%;
+  font-size: 14px;
+  animation-delay: 1.2s;
+}
+
+/* Hero lede as a Pokémon dialog bubble */
+.hero-lede {
+  position: relative;
+  font-size: 19px;
+  line-height: 1.5;
+  color: var(--ink);
+  margin: 8px 0 22px;
+  padding: 22px 24px 26px;
+  background: var(--bubble);
+  border: 3px solid var(--ink);
+  border-radius: 14px;
+  box-shadow: 6px 6px 0 var(--ink);
+  max-width: 52ch;
+}
+.lede-link {
+  color: inherit;
+  text-decoration: none;
+  background-image: linear-gradient(to right, var(--poke), var(--poke));
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+  background-size: 100% 2px;
+  padding-bottom: 1px;
+  transition: background-size 0.25s ease-out, color 0.2s;
+}
+.lede-link:hover {
+  color: var(--poke);
+  background-size: 100% 3px;
+}
+.hero-lede::before {
+  /* tail pointer */
+  content: "";
+  position: absolute;
+  top: -14px;
+  left: 28px;
+  width: 20px;
+  height: 20px;
+  background: var(--bubble);
+  border: 3px solid var(--ink);
+  border-right: 0;
+  border-bottom: 0;
+  transform: rotate(45deg);
+}
+.hero-lede::after {
+  /* "press to continue" arrow */
+  content: "▼";
+  position: absolute;
+  bottom: 6px;
+  right: 14px;
+  color: var(--poke);
+  font-size: 14px;
+  animation: blink 1.2s steps(2) infinite;
+}
+@keyframes blink {
+  50% {
+    opacity: 0.2;
+  }
+}
+
+.hero-sub {
+  font-style: italic;
+  color: var(--ink-2);
+  font-size: 16px;
+  max-width: 50ch;
+  padding-left: 14px;
+  border-left: 4px solid var(--poke);
+}
+
+/* Developer card panel — Pokédex inspired */
+.trainer {
+  background: var(--paper);
+  border: 3px solid var(--ink);
+  box-shadow: 8px 8px 0 var(--ink);
+  padding: 22px;
+  position: relative;
+  transform: rotate(1deg);
+  border-radius: 14px;
+}
+.trainer::before {
+  content: "";
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--leaf);
+  box-shadow:
+    20px 0 0 var(--gold),
+    40px 0 0 var(--poke);
+}
+.trainer-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px dashed var(--rule);
+  margin-bottom: 14px;
+}
+.trainer-portrait {
+  width: 72px;
+  height: 72px;
+  background: linear-gradient(
+    135deg,
+    var(--t-psychic) 0%,
+    var(--t-electric) 100%
+  );
+  border: 2px solid var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  image-rendering: pixelated;
+  flex-shrink: 0;
+}
+.trainer-portrait img {
+  width: 64px;
+  height: 64px;
+  image-rendering: pixelated;
+  filter: drop-shadow(1px 1px 0 rgba(0, 0, 0, 0.25));
+}
+.trainer-name {
+  font-family: "Silkscreen", monospace;
+  font-size: 14px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.trainer-id {
+  font-family: "Silkscreen", monospace;
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 18px;
+}
+.stat {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+}
+.stat-val {
+  display: block;
+  font-family: "Fraunces", serif;
+  font-variation-settings:
+    "opsz" 80,
+    "wght" 480;
+  font-size: 30px;
+  line-height: 1;
+  color: var(--ink);
+  margin-top: 4px;
+  letter-spacing: -0.02em;
+}
+.stat-val .accent {
+  color: var(--poke);
+}
+.hpbar {
+  margin-top: 6px;
+  height: 8px;
+  background: var(--cream-2);
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  position: relative;
+  overflow: hidden;
+}
+.hpbar::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: var(--hp, 80%);
+  background: repeating-linear-gradient(
+    45deg,
+    var(--leaf) 0 4px,
+    color-mix(in srgb, var(--leaf) 80%, white) 4px 8px
+  );
+  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.18);
+}
+
+/* ============ NOW PLAYING ============ */
+.now {
+  max-width: 1180px;
+  margin: 16px auto 88px;
+  padding: 0 32px;
+  position: relative;
+  z-index: 2;
+}
+.now-head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 28px;
+  padding-bottom: 14px;
+  border-bottom: 4px dashed var(--ink);
+}
+.now-head h2 {
+  font-family: "Bungee", "Silkscreen", monospace;
+  font-size: 28px;
+  margin: 0;
+  letter-spacing: 0;
+  text-shadow:
+    2px 2px 0 var(--sparkle),
+    4px 4px 0 var(--ink);
+}
+.pulse {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--poke);
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(201, 48, 42, 0.55);
+  }
+  70% {
+    box-shadow: 0 0 0 12px rgba(201, 48, 42, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(201, 48, 42, 0);
+  }
+}
+.now-tag {
+  margin-left: auto;
+  font-family: "Silkscreen", monospace;
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+}
+.now-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr;
+  gap: 14px;
+}
+.quest {
+  background: var(--paper);
+  border: 3px solid var(--ink);
+  border-radius: 16px;
+  padding: 24px 22px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+  box-shadow: 6px 6px 0 var(--ink);
+  transition:
+    transform 0.25s,
+    box-shadow 0.25s,
+    rotate 0.25s;
+}
+.quest:nth-child(1) {
+  transform: rotate(-1.2deg);
+}
+.quest:nth-child(2) {
+  transform: rotate(1deg);
+}
+.quest:nth-child(3) {
+  transform: rotate(-0.8deg);
+}
+.quest:hover {
+  transform: rotate(0deg) translate(-2px, -3px) scale(1.015);
+  box-shadow: 9px 9px 0 var(--ink);
+  z-index: 5;
+}
+.quest .corner-sprite {
+  position: absolute;
+  top: -18px;
+  right: -14px;
+  width: 64px;
+  height: 64px;
+  background: var(--sparkle);
+  border: 3px solid var(--ink);
+  border-radius: 50%;
+  box-shadow: 3px 3px 0 var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  image-rendering: pixelated;
+  animation: gbBob 4s ease-in-out infinite;
+}
+.quest .corner-sprite img {
+  width: 48px;
+  height: 48px;
+  image-rendering: pixelated;
+}
+.quest-tag {
+  font-family: "Silkscreen", monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--poke);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  text-transform: uppercase;
+}
+.quest-tag .role {
+  color: var(--muted);
+}
+.quest h3 {
+  font-family: "Fraunces", serif;
+  font-variation-settings:
+    "opsz" 80,
+    "SOFT" 50,
+    "wght" 480;
+  font-size: 26px;
+  margin: 0;
+  line-height: 1.05;
+  letter-spacing: -0.015em;
+  padding-right: 50px;
+}
+.quest h3 a {
+  text-decoration: none;
+  background-image: linear-gradient(
+    to right,
+    currentColor 0,
+    currentColor 100%
+  );
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+  background-size: 0% 2px;
+  transition: background-size 0.3s;
+}
+.quest h3 a:hover {
+  background-size: 100% 2px;
+}
+.quest p {
+  margin: 0;
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+.quest.primary {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+  box-shadow: 4px 4px 0 var(--poke-deep);
+}
+.quest.primary:hover {
+  box-shadow: 5px 5px 0 var(--poke-deep);
+}
+.quest.primary .quest-tag {
+  color: var(--t-electric);
+}
+.quest.primary .quest-tag .role {
+  color: var(--rule);
+}
+.quest.primary p {
+  color: #d8cdb3;
+}
+.quest.primary .corner-sprite {
+  background: var(--paper);
+}
+.types-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+.type-pill {
+  font-family: "Press Start 2P", "Silkscreen", monospace;
+  font-size: 8px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #fff;
+  padding: 5px 9px;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.35);
+  box-shadow: 2px 2px 0 var(--ink);
+  transition: transform 0.15s;
+}
+.type-pill:hover {
+  transform: translate(-1px, -1px) scale(1.04);
+}
+
+/* ============ TIMELINE ============ */
+.timeline-section {
+  max-width: 1180px;
+  margin: 0 auto 100px;
+  padding: 0 32px;
+  position: relative;
+  z-index: 2;
+}
+.section-head {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: end;
+  gap: 24px;
+  margin-bottom: 56px;
+  padding-bottom: 16px;
+  border-bottom: 4px dashed var(--ink);
+}
+.section-head h2 {
+  font-family: "Bungee", "Silkscreen", monospace;
+  font-size: clamp(36px, 4.5vw, 58px);
+  margin: 0;
+  line-height: 1;
+  letter-spacing: -0.005em;
+  text-shadow:
+    3px 3px 0 var(--sparkle),
+    5px 5px 0 var(--ink);
+}
+.section-head h2 em {
+  font-style: normal;
+  color: var(--poke);
+  text-shadow:
+    3px 3px 0 #fff,
+    5px 5px 0 var(--ink);
+}
+.pretitle {
+  font-family: "Press Start 2P", monospace;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+  padding: 6px 12px;
+  background: var(--leaf);
+  border: 2.5px solid var(--ink);
+  border-radius: 999px;
+  box-shadow: 3px 3px 0 var(--ink);
+  transform: rotate(-2deg);
+  align-self: end;
+  margin-bottom: 8px;
+}
+.count {
+  font-family: "Press Start 2P", monospace;
+  font-size: 9px;
+  color: var(--ink);
+  letter-spacing: 0.04em;
+  padding: 6px 12px;
+  background: var(--sparkle);
+  border: 2.5px solid var(--ink);
+  border-radius: 999px;
+  box-shadow: 3px 3px 0 var(--ink);
+  transform: rotate(2deg);
+  align-self: end;
+  margin-bottom: 8px;
+}
+
+/* ============ ROUTE MAP (Gantt) ============ */
+.route-map {
+  background: var(--paper);
+  border: 3px solid var(--ink);
+  border-radius: 16px;
+  box-shadow: 8px 8px 0 var(--ink);
+  padding: 22px 22px 18px;
+  margin-bottom: 64px;
+  position: relative;
+}
+/* corner studs */
+.route-map::before,
+.route-map::after {
+  content: "";
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: var(--ink);
+}
+.route-map::before {
+  top: 6px;
+  left: 6px;
+}
+.route-map::after {
+  top: 6px;
+  right: 6px;
+}
+
+.route-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 0 0 14px;
+  margin-bottom: 16px;
+  border-bottom: 2px dashed var(--rule);
+}
+.route-head .title {
+  font-family: "Silkscreen", monospace;
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.route-head .title::before {
+  content: "▶";
+  color: var(--poke);
+  font-size: 11px;
+}
+.route-head .legend {
+  display: flex;
+  gap: 14px;
+  font-family: "Silkscreen", monospace;
+  font-size: 9px;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.route-head .legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.route-head .legend i {
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  border: 1.5px solid var(--ink);
+}
+.route-head .legend .swatch-current {
+  background: var(--poke);
+}
+.route-head .legend .swatch-side {
+  background: var(--leaf);
+}
+.route-head .legend .swatch-past {
+  background: var(--t-electric);
+}
+
+.route-grid {
+  position: relative;
+  padding-left: 132px;
+}
+.route-row {
+  position: relative;
+  height: 36px;
+  margin-bottom: 6px;
+}
+.route-row .row-label {
+  position: absolute;
+  left: -132px;
+  top: 0;
+  width: 122px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  text-align: right;
+  font-family: "Silkscreen", monospace;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  color: var(--ink-2);
+  text-transform: uppercase;
+  padding-right: 12px;
+}
+.route-row .row-label .side {
+  color: var(--leaf);
+  font-size: 8px;
+  margin-left: 4px;
+}
+.route-track {
+  position: relative;
+  height: 100%;
+  background-color: var(--cream-2);
+  background-image:
+    repeating-linear-gradient(
+      to right,
+      transparent 0,
+      transparent calc(100% / 12 - 1px),
+      rgba(27, 22, 18, 0.15) calc(100% / 12 - 1px),
+      rgba(27, 22, 18, 0.15) calc(100% / 12)
+    ),
+    repeating-linear-gradient(
+      45deg,
+      transparent 0 3px,
+      rgba(27, 22, 18, 0.04) 3px 4px
+    );
+  border: 1.5px solid var(--ink);
+}
+.route-bar {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  background: var(--bar-color, var(--t-normal));
+  border: 1.5px solid var(--ink);
+  display: flex;
+  align-items: center;
+  padding: 0 8px 0 38px;
+  font-family: "Silkscreen", monospace;
+  font-size: 9px;
+  color: white;
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.4);
+  white-space: nowrap;
+  overflow: hidden;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  box-sizing: border-box;
+  transition:
+    transform 0.2s,
+    filter 0.2s,
+    box-shadow 0.2s;
+  z-index: 1;
+  cursor: pointer;
+}
+.route-bar[data-target]:hover,
+.route-bar[data-target]:focus-visible {
+  transform: translate(-1px, -2px);
+  filter: brightness(1.12);
+  box-shadow: 3px 3px 0 var(--ink);
+  z-index: 3;
+  outline: none;
+}
+.route-bar[data-target]:active {
+  transform: translate(0, 0);
+  box-shadow: 1px 1px 0 var(--ink);
+}
+.route-bar.light-text {
+  color: #1b1612;
+  text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.4);
+}
+.route-bar .bar-sprite {
+  position: absolute;
+  left: -10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 36px;
+  height: 36px;
+  background: var(--bar-color);
+  border: 1.5px solid var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  image-rendering: pixelated;
+}
+
+/* Hover-scroll marquee on bar text — reveals truncated labels on narrow bars */
+.route-bar .bar-text {
+  display: inline-block;
+  white-space: nowrap;
+  will-change: transform;
+}
+.route-bar:hover .bar-text,
+.route-bar:focus-visible .bar-text {
+  animation: barTextScroll 5s ease-in-out infinite;
+  animation-delay: 0.3s;
+}
+@keyframes barTextScroll {
+  0%, 8% { transform: translateX(0); }
+  46%, 54% { transform: translateX(calc(-100% + 80px)); }
+  92%, 100% { transform: translateX(0); }
+}
+.route-bar .bar-sprite img {
+  width: 30px;
+  height: 30px;
+  image-rendering: pixelated;
+  filter: drop-shadow(1px 1px 0 rgba(0, 0, 0, 0.35));
+}
+.route-bar.current {
+  background: repeating-linear-gradient(
+    45deg,
+    var(--bar-color) 0 8px,
+    color-mix(in srgb, var(--bar-color) 80%, white) 8px 16px
+  );
+}
+.route-bar .now-flag {
+  margin-left: auto;
+  padding: 2px 6px;
+  background: var(--poke);
+  color: white;
+  border: 1px solid #fff;
+  font-size: 8px;
+  text-shadow: none;
+  flex-shrink: 0;
+}
+.route-bar .side-flag {
+  margin-left: auto;
+  padding: 2px 6px;
+  background: var(--leaf);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  font-size: 8px;
+  text-shadow: none;
+  flex-shrink: 0;
+}
+
+/* Now indicator: vertical line + Pokéball */
+.now-marker {
+  position: absolute;
+  top: -8px;
+  bottom: -8px;
+  width: 2px;
+  background: var(--poke);
+  z-index: 4;
+  pointer-events: none;
+}
+.now-marker::before {
+  content: "";
+  position: absolute;
+  top: -8px;
+  left: -7px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background:
+    radial-gradient(
+      circle at 50% 50%,
+      #fff 0 18%,
+      var(--ink) 18% 28%,
+      #fff 28% 36%,
+      transparent 36%
+    ),
+    linear-gradient(
+      to bottom,
+      var(--poke) 0 49%,
+      var(--ink) 49% 53%,
+      #fff 53% 100%
+    );
+  border: 1.5px solid var(--ink);
+  animation: bob 1.6s ease-in-out infinite;
+}
+@keyframes bob {
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+.year-axis {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  margin-top: 10px;
+  padding-left: 132px;
+  font-family: "Silkscreen", monospace;
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.05em;
+}
+.year-axis span {
+  position: relative;
+  padding-top: 6px;
+  text-align: left;
+  border-top: 2px solid var(--ink);
+}
+.year-axis span::before {
+  content: "";
+  position: absolute;
+  top: -8px;
+  left: -1px;
+  width: 2px;
+  height: 6px;
+  background: var(--ink);
+}
+.year-axis span:last-child::after {
+  content: "";
+  position: absolute;
+  top: -8px;
+  right: -1px;
+  width: 2px;
+  height: 6px;
+  background: var(--ink);
+}
+
+@media (max-width: 900px) {
+  .route-map {
+    padding: 18px 16px 14px;
+  }
+  .route-grid,
+  .year-axis {
+    padding-left: 92px;
+  }
+  .route-row .row-label {
+    left: -92px;
+    width: 84px;
+    font-size: 8px;
+    padding-right: 8px;
+  }
+  .route-bar {
+    font-size: 8px;
+    padding-left: 32px;
+  }
+  .route-bar .bar-sprite {
+    width: 28px;
+    height: 28px;
+  }
+  .route-bar .bar-sprite img {
+    width: 22px;
+    height: 22px;
+  }
+  .year-axis {
+    font-size: 8px;
+  }
+  .year-axis span:nth-child(even) {
+    color: transparent;
+  }
+}
+
+/* ============ CONCURRENT BADGES + HOVER RIBBON ============ */
+.card .concurrent {
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--rule);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  font-family: "Silkscreen", monospace;
+  font-size: 9px;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+/* (alternating-side rules removed — horizontal layout now) */
+.card .concurrent-label {
+  letter-spacing: 0.1em;
+  margin-right: 4px;
+  color: var(--ink-2);
+}
+.card .concurrent-label::before {
+  content: "↔ ";
+  color: var(--poke);
+}
+.card .conc-chip {
+  padding: 3px 7px;
+  border: 1.5px solid var(--ink);
+  background: var(--cream);
+  color: var(--ink);
+  letter-spacing: 0.06em;
+  font-size: 9px;
+  cursor: pointer;
+  transition:
+    transform 0.15s,
+    background 0.15s,
+    color 0.15s;
+}
+.card .conc-chip:hover {
+  background: var(--ink);
+  color: var(--cream);
+  transform: translateY(-1px);
+}
+.card .conc-chip .swatch {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  background: var(--chip-color, var(--t-normal));
+  margin-right: 5px;
+  vertical-align: 1px;
+  border: 1px solid var(--ink);
+}
+
+/* Highlight effect for concurrent cards during hover */
+.entry.is-concurrent .card {
+  box-shadow: 4px 4px 0 var(--poke);
+  border-color: var(--poke);
+  transform: translate(-1px, -1px);
+}
+.entry.is-source .card {
+  box-shadow: 4px 4px 0 var(--poke);
+  border-color: var(--poke);
+}
+
+/* Slim period bracket along the spine — marks the time range, doesn't blanket it */
+/* Overlap ribbon — not used in horizontal timeline; kept hidden */
+.overlap-ribbon {
+  display: none;
+}
+/* End caps — short horizontal ticks marking the start and end of the period */
+.overlap-ribbon::before,
+.overlap-ribbon::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  width: 28px;
+  height: 3px;
+  transform: translateX(-50%);
+  background: var(--ribbon-color, var(--poke));
+}
+.overlap-ribbon::before {
+  top: -2px;
+}
+.overlap-ribbon::after {
+  bottom: -2px;
+}
+/* Period label floating beside the bracket */
+.overlap-ribbon-label {
+  position: absolute;
+  left: 22px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: "Press Start 2P", "Silkscreen", monospace;
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+  background: var(--ribbon-color, var(--poke));
+  padding: 5px 9px;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  box-shadow: 2px 2px 0 var(--ink);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+@media (max-width: 900px) {
+  .overlap-ribbon {
+    left: 22px;
+  }
+}
+
+/* ============ POKéDOX GAMEBOY (hero companion) ============ */
+.hero-right {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  align-items: stretch;
+  align-self: start;
+  margin-top: 56px;
+}
+.gameboy-mini {
+  position: relative;
+  width: 410px;
+  height: 580px;
+  align-self: flex-end;
+  background: linear-gradient(165deg, #d9cca8 0%, #b5a584 100%);
+  border: 3px solid var(--ink);
+  border-radius: 14px 14px 14px 76px;
+  box-shadow: 10px 10px 0 var(--ink);
+  padding: 20px 20px 16px;
+  font-family: "Silkscreen", monospace;
+  animation: gbBob 5s ease-in-out infinite;
+  transition: transform 0.2s;
+  transform: rotate(-1.5deg);
+}
+.gameboy-mini:hover {
+  animation-play-state: paused;
+  transform: rotate(0) scale(1.03);
+}
+@keyframes gbBob {
+  0%,
+  100% {
+    transform: rotate(-1.5deg) translateY(0);
+  }
+  50% {
+    transform: rotate(-1.5deg) translateY(-4px);
+  }
+}
+.gb-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  padding-bottom: 7px;
+  border-bottom: 2px solid rgba(27, 22, 18, 0.4);
+  font-family: "Press Start 2P", monospace;
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  color: var(--ink-2);
+}
+.gb-top .gb-led {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--poke);
+  box-shadow: 0 0 4px var(--poke);
+  animation: led 1.6s ease-in-out infinite;
+}
+@keyframes led {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+/* The LCD screen — now hosts the trainer card content */
+.gb-screen {
+  position: relative;
+  height: 380px;
+  background: #9db07a;
+  border: 3px solid var(--ink);
+  border-radius: 6px;
+  margin-bottom: 18px;
+  /* overflow visible so party hover tooltips can land at the top of the screen */
+  overflow: visible;
+  box-shadow: inset 0 0 14px rgba(0, 0, 0, 0.4);
+  image-rendering: pixelated;
+  background-image:
+    linear-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
+  background-size: 5px 5px;
+  display: flex;
+  flex-direction: column;
+  padding: 12px 14px;
+  color: #2a301e;
+}
+.gb-scr-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: "Press Start 2P", monospace;
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  padding-bottom: 7px;
+  margin-bottom: 10px;
+  border-bottom: 2px dashed rgba(42, 48, 30, 0.55);
+}
+.gb-scr-header .dex-no {
+  color: #2a301e;
+}
+.gb-scr-header .dex-no::before {
+  content: "●";
+  color: #c9302a;
+  margin-right: 5px;
+  animation: led 1.6s ease-in-out infinite;
+}
+.gb-scr-body {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.gb-scr-portrait {
+  width: 92px;
+  height: 92px;
+  background: linear-gradient(
+    135deg,
+    var(--t-psychic) 0%,
+    var(--t-electric) 100%
+  );
+  border: 2.5px solid #2a301e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  position: relative;
+}
+.gb-scr-portrait img {
+  width: 80px;
+  height: 80px;
+  image-rendering: pixelated;
+  filter: drop-shadow(1px 1px 0 rgba(0, 0, 0, 0.4));
+  animation: gbStepLight 0.6s steps(2) infinite;
+}
+@keyframes gbStepLight {
+  0%,
+  50% {
+    transform: translateY(0);
+  }
+  51%,
+  100% {
+    transform: translateY(-1.5px);
+  }
+}
+.gb-scr-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.gb-scr-name {
+  font-family: "Press Start 2P", monospace;
+  font-size: 13px;
+  line-height: 1.05;
+  color: #2a301e;
+}
+.gb-scr-role {
+  font-family: "Press Start 2P", monospace;
+  font-size: 8px;
+  line-height: 1.4;
+  letter-spacing: 0.02em;
+  color: #2a301e;
+  opacity: 0.78;
+}
+.gb-scr-types {
+  display: flex;
+  gap: 4px;
+  margin-top: 5px;
+}
+.gb-scr-type {
+  font-family: "Press Start 2P", monospace;
+  font-size: 7.5px;
+  padding: 4px 7px;
+  color: #fff;
+  letter-spacing: 0.02em;
+  border: 1.5px solid #2a301e;
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.35);
+}
+/* Stats panel */
+.gb-scr-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-bottom: 8px;
+}
+.gb-stat-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: "Press Start 2P", monospace;
+  font-size: 7.5px;
+  color: #2a301e;
+}
+.gb-stat-row .gb-stat-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  letter-spacing: 0.04em;
+}
+.gb-stat-row .gb-stat-label {
+  text-transform: uppercase;
+}
+.gb-stat-row .gb-stat-bar {
+  height: 8px;
+  background: rgba(42, 48, 30, 0.22);
+  border: 1.5px solid #2a301e;
+  position: relative;
+  overflow: hidden;
+}
+.gb-stat-row .gb-stat-bar::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: var(--fill, 80%);
+  background: repeating-linear-gradient(90deg, #2a4d2a 0 4px, #3e6a3e 4px 8px);
+  animation: barFill 1.4s ease-out;
+}
+@keyframes barFill {
+  from {
+    width: 0;
+  }
+}
+.gb-stat-row .gb-stat-val {
+  text-align: right;
+  font-size: 9px;
+  letter-spacing: 0;
+  font-weight: 400;
+  color: #1a2a1a;
+}
+/* Link variant of a stat row — clickable LinkedIn / GitHub etc. */
+a.gb-stat-link {
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  cursor: pointer;
+  transition: transform 0.12s ease;
+}
+a.gb-stat-link:hover {
+  transform: translateX(2px);
+}
+a.gb-stat-link:hover .gb-stat-arrow {
+  background: rgba(42, 48, 30, 0.35);
+}
+.gb-stat-row .gb-stat-arrow {
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 6px;
+  background: rgba(42, 48, 30, 0.18);
+  border: 1.5px solid #2a301e;
+  font-family: "Press Start 2P", monospace;
+  font-size: 6px;
+  letter-spacing: 0.06em;
+  color: #1a2a1a;
+  text-transform: uppercase;
+  transition: background 0.12s ease;
+}
+
+/* Walking sprite still drifts across the bottom of the screen */
+.gb-grass {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 16px;
+  background:
+    linear-gradient(to top, #4f5c3a 0 7px, transparent 7px),
+    repeating-linear-gradient(
+      to right,
+      #4f5c3a 0 2px,
+      transparent 2px 7px,
+      #4f5c3a 7px 9px,
+      transparent 9px 16px
+    );
+  background-size:
+    100% 100%,
+    16px 16px;
+  background-position: bottom, bottom;
+  background-repeat: no-repeat, repeat-x;
+}
+/* Trainer's party — 6 Pokémon standing on the grass */
+.gb-party {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  bottom: 18px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 2px;
+  z-index: 2;
+}
+/* Each party slot wraps a sprite + holds the hover tooltip */
+.gb-party-slot {
+  position: relative;
+  display: inline-flex;
+  align-items: flex-end;
+  line-height: 0;
+}
+.gb-party-slot::after {
+  content: attr(data-name);
+  position: absolute;
+  /* Anchored near the top of the Game Boy screen rather than just above the sprite.
+     Lifts well past the stats + portrait so it reads like a Pokédex info banner. */
+  bottom: calc(100% + 250px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  background: var(--ink);
+  color: var(--paper);
+  padding: 6px 10px;
+  font-family: "Press Start 2P", monospace;
+  font-size: 8px;
+  letter-spacing: 0.04em;
+  border: 1.5px solid var(--ink);
+  border-radius: 4px;
+  box-shadow: 3px 3px 0 var(--poke);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 0.15s ease-out,
+    transform 0.18s ease-out;
+  z-index: 10;
+}
+.gb-party-slot:hover::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+.gb-party img {
+  width: 50px;
+  height: 50px;
+  flex-shrink: 0;
+  image-rendering: pixelated;
+  filter: drop-shadow(1px 1px 0 rgba(0, 0, 0, 0.4));
+  animation: gbStep 0.5s steps(2) infinite;
+  cursor: pointer;
+  opacity: 0;
+  transition:
+    transform 0.18s ease-out,
+    filter 0.18s ease-out,
+    opacity 0.35s ease-out;
+}
+.gb-party.loaded img {
+  opacity: 1;
+}
+.gb-party-slot:hover img {
+  animation-play-state: paused;
+  transform: translateY(-8px) scale(1.35);
+  filter: drop-shadow(2px 2px 0 rgba(0, 0, 0, 0.5)) brightness(1.05);
+  z-index: 5;
+}
+.gb-party-slot:nth-child(1) img {
+  animation-delay: 0s;
+}
+.gb-party-slot:nth-child(2) img {
+  animation-delay: 0.08s;
+}
+.gb-party-slot:nth-child(3) img {
+  animation-delay: 0.16s;
+}
+.gb-party-slot:nth-child(4) img {
+  animation-delay: 0.24s;
+}
+.gb-party-slot:nth-child(5) img {
+  animation-delay: 0.32s;
+}
+.gb-party-slot:nth-child(6) img {
+  animation-delay: 0.4s;
+}
+@keyframes gbStep {
+  0%,
+  50% {
+    transform: translateY(0);
+  }
+  51%,
+  100% {
+    transform: translateY(-2px);
+  }
+}
+.gb-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.gb-dpad {
+  width: 42px;
+  height: 42px;
+  position: relative;
+}
+.gb-dpad::before,
+.gb-dpad::after {
+  content: "";
+  position: absolute;
+  background: var(--ink);
+  border-radius: 2px;
+}
+.gb-dpad::before {
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 13px;
+  transform: translateY(-50%);
+}
+.gb-dpad::after {
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 13px;
+  transform: translateX(-50%);
+}
+.gb-buttons {
+  display: flex;
+  gap: 8px;
+  transform: rotate(-18deg);
+}
+.gb-btn {
+  width: 24px;
+  height: 24px;
+  background: var(--poke-deep);
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+  position: relative;
+  box-shadow: inset 1.5px 1.5px 0 rgba(255, 255, 255, 0.25);
+}
+.gb-btn::after {
+  content: attr(data-letter);
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 3px;
+  font-size: 8px;
+  color: var(--ink-2);
+  font-family: "Press Start 2P", monospace;
+}
+.gb-startsel {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 4px;
+}
+.gb-pill {
+  width: 24px;
+  height: 5px;
+  background: var(--ink);
+  border-radius: 3px;
+  position: relative;
+  transform: rotate(-18deg);
+}
+.gb-pill::after {
+  content: attr(data-label);
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%) rotate(18deg);
+  margin-top: 5px;
+  font-size: 7px;
+  color: var(--ink-2);
+  letter-spacing: 0.05em;
+  font-family: "Press Start 2P", monospace;
+}
+@media (max-width: 700px) {
+  .gameboy-mini {
+    width: 320px;
+    height: 460px;
+    padding: 18px 18px 14px;
+  }
+  .gb-screen {
+    height: 312px;
+    padding: 11px 12px;
+  }
+  .gb-party {
+    bottom: 14px;
+    left: 2px;
+    right: 2px;
+    gap: 1px;
+  }
+  .gb-party img {
+    width: 42px;
+    height: 42px;
+  }
+  .gb-party-slot::after { bottom: calc(100% + 210px); font-size: 7px; }
+  .gb-dpad {
+    width: 36px;
+    height: 36px;
+  }
+  .gb-dpad::before {
+    height: 11px;
+  }
+  .gb-dpad::after {
+    width: 11px;
+  }
+  .gb-btn {
+    width: 20px;
+    height: 20px;
+  }
+  .gb-pill {
+    width: 20px;
+    height: 4px;
+  }
+}
+
+/* ============ HORIZONTAL TIMELINE (compact) ============ */
+.timeline {
+  position: relative;
+  display: flex;
+  gap: 22px;
+  padding: 70px 4px 24px;
+  overflow-x: auto;
+  overflow-y: visible;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+}
+/* Horizontal dashed spine running through the centers of the sprite circles */
+.timeline::before {
+  content: "";
+  position: absolute;
+  /* Aligns with sprite vertical centre: 70px padding-top + ~18px dex chip + 6px gap + 46px (sprite half) */
+  top: 140px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: repeating-linear-gradient(
+    to right,
+    var(--ink) 0 5px,
+    transparent 5px 10px
+  );
+  opacity: 0.55;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.entry {
+  position: relative;
+  flex: 0 0 auto;
+  width: 260px;
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  z-index: 1;
+}
+
+.node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.sprite {
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+  background: var(--type-bg, var(--t-normal));
+  border: 3px solid var(--ink);
+  box-shadow: 4px 4px 0 var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 3;
+  animation: gbBob 4s ease-in-out infinite;
+}
+.sprite img {
+  width: 72px;
+  height: 72px;
+  image-rendering: pixelated;
+  filter: drop-shadow(1px 1px 0 rgba(0, 0, 0, 0.3));
+}
+.node .year {
+  font-family: "Silkscreen", monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--ink);
+  background: var(--cream);
+  padding: 3px 7px;
+  border: 1px solid var(--ink);
+}
+.node .dex {
+  font-family: "Silkscreen", monospace;
+  font-size: 8.5px;
+  color: var(--muted);
+  letter-spacing: 0.05em;
+  background: var(--cream);
+  padding: 2px 5px;
+  border: 1px solid var(--rule);
+}
+
+/* Compact, no-rotation cards — subtle border-only hover */
+.entry .card {
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+.entry .card:hover {
+  border-color: var(--poke);
+  box-shadow: 4px 4px 0 var(--poke);
+}
+.card {
+  background: var(--paper);
+  padding: 14px 16px 12px;
+  border: 3px solid var(--ink);
+  border-radius: 12px;
+  box-shadow: 4px 4px 0 var(--ink);
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.card .meta {
+  font-family: "Silkscreen", monospace;
+  font-size: 8.5px;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin-bottom: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  align-items: center;
+  text-transform: uppercase;
+}
+.card .meta .now-tag-inline {
+  background: var(--poke);
+  color: white;
+  padding: 2px 6px;
+  font-size: 8px;
+  border: 1px solid var(--poke-deep);
+}
+.card .meta .side-tag {
+  background: var(--leaf);
+  color: white;
+  padding: 2px 6px;
+  font-size: 8px;
+  border: 1px solid #2e4424;
+}
+.card h3 {
+  font-family: "Fraunces", serif;
+  font-variation-settings:
+    "opsz" 80,
+    "SOFT" 40,
+    "wght" 480;
+  font-size: 19px;
+  margin: 0 0 2px;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+.card h3 a {
+  color: var(--ink);
+  text-decoration: none;
+  background-image: linear-gradient(to right, var(--poke) 0, var(--poke) 100%);
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+  background-size: 0% 2px;
+  transition: background-size 0.3s;
+}
+.card h3 a:hover {
+  background-size: 100% 2px;
+}
+.card .role {
+  font-family: "Newsreader", serif;
+  font-style: italic;
+  color: var(--ink-2);
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+.card .types-row {
+  margin: 0 0 8px;
+}
+.card .highlight {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-2);
+  margin: 0 0 4px;
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ============ PROJECTS ============ */
+.projects {
+  max-width: 1180px;
+  margin: 0 auto 96px;
+  padding: 0 32px;
+  position: relative;
+  z-index: 2;
+}
+.project-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+
+/* ============ Featured-project hero ============ */
+.project-hero {
+  position: relative;
+  background:
+    radial-gradient(circle at 20% 0%, rgba(255, 215, 100, 0.15) 0%, transparent 50%),
+    var(--paper);
+  border: 4px solid var(--ink);
+  border-radius: 20px;
+  box-shadow: 8px 8px 0 var(--ink);
+  padding: 36px 36px 30px;
+  margin: 14px 0 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition:
+    transform 0.25s cubic-bezier(0.5, 1.4, 0.5, 1),
+    box-shadow 0.2s;
+}
+.project-hero:hover {
+  transform: translate(-3px, -4px);
+  box-shadow: 12px 12px 0 var(--ink);
+}
+.project-hero .hero-badge {
+  position: absolute;
+  top: -14px;
+  left: 28px;
+  padding: 6px 14px;
+  background: var(--gold, #fbcf45);
+  border: 2.5px solid var(--ink);
+  border-radius: 999px;
+  box-shadow: 3px 3px 0 var(--ink);
+  font-family: "Silkscreen", monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: var(--ink);
+  text-transform: uppercase;
+}
+.project-hero .hero-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+  margin-top: 4px;
+}
+.project-hero .hero-top-text {
+  flex: 1;
+  min-width: 0;
+}
+.project-hero .hero-logo {
+  width: 120px;
+  height: 120px;
+  flex-shrink: 0;
+  border-radius: 16px;
+  border: 3px solid var(--ink);
+  box-shadow: 4px 4px 0 var(--ink);
+  background: var(--cream-2, #f6efd7);
+  padding: 10px;
+  object-fit: contain;
+}
+.project-hero .hero-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: "Silkscreen", monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+@media (max-width: 720px) {
+  .project-hero .hero-top {
+    flex-direction: column;
+    gap: 14px;
+  }
+  .project-hero .hero-logo {
+    width: 88px;
+    height: 88px;
+  }
+}
+.project-hero .hero-meta .hero-award {
+  color: var(--gold, #c69820);
+}
+.project-hero .hero-title {
+  font-family: "Fraunces", serif;
+  font-variation-settings:
+    "opsz" 144,
+    "SOFT" 40,
+    "wght" 600;
+  font-size: 44px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  margin: 6px 0 4px;
+}
+.project-hero .hero-tagline {
+  font-size: 18px;
+  line-height: 1.45;
+  color: var(--ink);
+  margin: 0;
+  max-width: 70ch;
+}
+.project-hero .hero-detail {
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: var(--ink-2);
+  margin: 4px 0 6px;
+  max-width: 78ch;
+}
+.project-hero .stack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0 4px;
+}
+.project-hero .stack span {
+  font-family: "Press Start 2P", "Silkscreen", monospace;
+  font-size: 8px;
+  padding: 5px 9px;
+  background: var(--cream-2);
+  color: var(--ink);
+  border: 1.5px solid var(--ink);
+  border-radius: 999px;
+  box-shadow: 1.5px 1.5px 0 var(--ink);
+  letter-spacing: 0.02em;
+}
+.project-hero .hero-cta {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 11px 22px;
+  background: var(--ink);
+  color: var(--paper);
+  border: 2.5px solid var(--ink);
+  border-radius: 999px;
+  box-shadow: 4px 4px 0 var(--gold, #fbcf45);
+  font-family: "Silkscreen", monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-decoration: none;
+  text-transform: uppercase;
+  margin-top: 10px;
+  transition:
+    transform 0.15s,
+    box-shadow 0.15s;
+}
+.project-hero .hero-cta:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 var(--gold, #fbcf45);
+}
+@media (max-width: 720px) {
+  .project-hero {
+    padding: 28px 22px 22px;
+  }
+  .project-hero .hero-title {
+    font-size: 32px;
+  }
+  .project-hero .hero-tagline {
+    font-size: 15.5px;
+  }
+}
+.project {
+  background: var(--paper);
+  border: 3px solid var(--ink);
+  border-radius: 14px;
+  box-shadow: 5px 5px 0 var(--ink);
+  padding: 22px 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+  transition:
+    transform 0.3s cubic-bezier(0.5, 1.4, 0.5, 1),
+    box-shadow 0.25s;
+}
+.project:nth-child(3n + 1) {
+  transform: rotate(-1.2deg);
+}
+.project:nth-child(3n + 2) {
+  transform: rotate(1.1deg);
+}
+.project:nth-child(3n) {
+  transform: rotate(-0.6deg);
+}
+.project:hover {
+  transform: rotate(0deg) translate(-2px, -3px) scale(1.02);
+  box-shadow: 8px 8px 0 var(--ink);
+  z-index: 5;
+}
+/* Star sticker replaced by .pokeball-corner element — see below. */
+
+/* ============ Pokéball corner badge ============ */
+.pokeball-corner {
+  position: absolute;
+  top: -12px;
+  left: -12px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2.5px solid var(--ink);
+  box-shadow: 2px 2px 0 var(--ink);
+  background: #ffffff;
+  overflow: hidden;
+  z-index: 4;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
+  pointer-events: none;
+}
+.pokeball-corner .pball-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: var(--ball-top, #e63946);
+  transition: transform 0.4s cubic-bezier(0.5, 1.4, 0.5, 1);
+  z-index: 2;
+}
+.pokeball-corner .pball-band {
+  position: absolute;
+  top: calc(50% - 1.5px);
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--ink);
+  z-index: 3;
+}
+.pokeball-corner .pball-button {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 1.5px solid var(--ink);
+  transform: translate(-50%, -50%);
+  z-index: 4;
+}
+.pokeball-corner .pball-shine {
+  position: absolute;
+  top: 14%;
+  left: 22%;
+  width: 6px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.55);
+  z-index: 3;
+}
+.project:hover .pokeball-corner {
+  transform: scale(1.08);
+  box-shadow: 3px 3px 0 var(--ink);
+}
+/* "Crack open" — top half slides out the clipped circle on hover */
+.project:hover .pokeball-corner .pball-top {
+  transform: translateY(-100%);
+}
+.pokeball-corner.var-poke   { --ball-top: #e63946; }
+.pokeball-corner.var-great  { --ball-top: #2c7be5; }
+.pokeball-corner.var-ultra  { --ball-top: #1f2937; }
+.pokeball-corner.var-heal   { --ball-top: #ec4899; }
+.pokeball-corner.var-dusk   { --ball-top: #14532d; }
+.pokeball-corner.var-master { --ball-top: #7c3aed; }
+.pokeball-corner.var-ultra .pball-top {
+  background:
+    linear-gradient(
+      to right,
+      #1f2937 0,
+      #1f2937 28%,
+      #fbbf24 28%,
+      #fbbf24 36%,
+      #1f2937 36%,
+      #1f2937 64%,
+      #fbbf24 64%,
+      #fbbf24 72%,
+      #1f2937 72%
+    );
+}
+.pokeball-corner.var-master .pball-top::after {
+  content: "M";
+  position: absolute;
+  top: 18%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: "Press Start 2P", monospace;
+  font-size: 6px;
+  color: #fce7f3;
+}
+.project .ptag {
+  font-family: "Silkscreen", monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  display: flex;
+  justify-content: space-between;
+  text-transform: uppercase;
+}
+.project .ptag .award {
+  color: var(--gold);
+}
+.project h3 {
+  font-family: "Fraunces", serif;
+  font-variation-settings:
+    "opsz" 80,
+    "SOFT" 40,
+    "wght" 480;
+  font-size: 22px;
+  margin: 6px 0 2px;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+.project p {
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: var(--ink-2);
+  margin: 0;
+  flex: 1;
+}
+.project .stack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+.project .stack span {
+  font-family: "Press Start 2P", "Silkscreen", monospace;
+  font-size: 7.5px;
+  padding: 4px 7px;
+  background: var(--cream-2);
+  color: var(--ink);
+  border: 1.5px solid var(--ink);
+  border-radius: 999px;
+  box-shadow: 1.5px 1.5px 0 var(--ink);
+  letter-spacing: 0.02em;
+}
+.project .project-cta {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 7px 13px;
+  margin-top: auto;
+  background: var(--ink);
+  color: var(--paper);
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  box-shadow: 2.5px 2.5px 0 var(--gold, #fbcf45);
+  font-family: "Silkscreen", monospace;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition:
+    transform 0.15s,
+    box-shadow 0.15s;
+}
+.project .project-cta:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 3.5px 3.5px 0 var(--gold, #fbcf45);
+}
+/* Logo link wrapper — keep the same visual footprint as the bare img */
+.project-hero .hero-logo-link {
+  flex-shrink: 0;
+  display: inline-block;
+  line-height: 0;
+  transition:
+    transform 0.15s,
+    box-shadow 0.15s;
+  border-radius: 16px;
+}
+.project-hero .hero-logo-link:hover .hero-logo {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 var(--ink);
+}
+.project-hero .hero-logo-link .hero-logo {
+  transition:
+    transform 0.15s,
+    box-shadow 0.15s;
+  display: block;
+}
+
+/* ============ EDU + INTERESTS ============ */
+.twocol {
+  max-width: 1180px;
+  margin: 0 auto 80px;
+  padding: 0 32px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 56px;
+  position: relative;
+  z-index: 2;
+}
+.twocol h2 {
+  font-family: "Bungee", "Silkscreen", monospace;
+  font-size: 30px;
+  margin: 0 0 24px;
+  padding-bottom: 12px;
+  border-bottom: 4px dashed var(--ink);
+  letter-spacing: 0;
+  text-shadow:
+    3px 3px 0 var(--sparkle),
+    5px 5px 0 var(--ink);
+}
+.twocol h2 em {
+  color: var(--poke);
+  font-style: normal;
+  text-shadow:
+    3px 3px 0 #fff,
+    5px 5px 0 var(--ink);
+}
+
+.edu-item {
+  margin-bottom: 22px;
+}
+.edu-item .school {
+  font-family: "Fraunces", serif;
+  font-variation-settings:
+    "opsz" 60,
+    "wght" 500;
+  font-size: 19px;
+  color: var(--ink);
+}
+.edu-item .deg {
+  font-family: "Newsreader", serif;
+  font-style: italic;
+  font-size: 15px;
+  color: var(--ink-2);
+  margin: 2px 0 6px;
+}
+.edu-item .date {
+  font-family: "Silkscreen", monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+.edu-item ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  font-size: 14.5px;
+  color: var(--ink-2);
+}
+
+.types {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+.type-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 18px;
+  border: 2.5px solid var(--ink);
+  background: var(--paper);
+  box-shadow: 3px 3px 0 var(--ink);
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  min-height: 88px;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
+}
+.type-card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0 var(--ink);
+}
+.type-card .sprite-mini {
+  width: 68px;
+  height: 68px;
+  background: var(--type-bg, var(--t-normal));
+  border: 2px solid var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  image-rendering: pixelated;
+  flex-shrink: 0;
+}
+.type-card .sprite-mini img {
+  width: 58px;
+  height: 58px;
+  image-rendering: pixelated;
+}
+.type-card .badges {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 3px;
+  flex-shrink: 0;
+}
+.type-card .info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.type-card .name {
+  font-family: "Silkscreen", monospace;
+  font-size: 14px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.type-card .yrs {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.type-card .badge {
+  font-family: "Silkscreen", monospace;
+  font-size: 10px;
+  padding: 4px 8px;
+  color: white;
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.3);
+}
+
+/* Hover/focus reveal — Pokédex flavor-text overlay over the card */
+.type-card .hover-desc {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  padding: 14px 18px;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 13px;
+  font-style: italic;
+  line-height: 1.45;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s ease;
+}
+.type-card:hover .hover-desc,
+.type-card:focus-within .hover-desc,
+.type-card:focus .hover-desc {
+  opacity: 1;
+}
+.type-card:focus {
+  outline: 2px solid var(--ink);
+  outline-offset: 1px;
+}
+
+/* ============ FOOTER ============ */
+footer {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 40px 32px 64px;
+  border-top: 4px dashed var(--ink);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: "Press Start 2P", monospace;
+  font-size: 9px;
+  letter-spacing: 0.05em;
+  color: var(--ink);
+  position: relative;
+  z-index: 2;
+  text-transform: uppercase;
+}
+footer .mark {
+  font-family: "Bungee", "Silkscreen", monospace;
+  font-style: normal;
+  font-size: 16px;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--poke);
+  text-shadow:
+    2px 2px 0 var(--sparkle),
+    3px 3px 0 var(--ink);
+  padding: 0 14px;
+  transform: rotate(-2deg);
+}
+footer .footer-ball {
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+
+/* ============ RESPONSIVE ============ */
+@media (max-width: 900px) {
+  .hero {
+    grid-template-columns: 1fr;
+    gap: 36px;
+    padding: 56px 22px 40px;
+  }
+  .trainer {
+    margin-top: 0;
+  }
+  .now-grid {
+    grid-template-columns: 1fr;
+  }
+  .project-grid {
+    grid-template-columns: 1fr;
+  }
+  .twocol {
+    grid-template-columns: 1fr;
+    padding: 0 22px;
+    gap: 40px;
+  }
+  .timeline-section {
+    padding: 0 22px;
+  }
+  .timeline {
+    padding: 56px 4px 20px;
+    gap: 16px;
+  }
+  .timeline::before {
+    top: 100px;
+    left: 0;
+    right: 0;
+  }
+  .entry {
+    width: 220px;
+  }
+  .sprite {
+    width: 80px;
+    height: 80px;
+  }
+  .sprite img {
+    width: 62px;
+    height: 62px;
+  }
+  .strip-inner {
+    padding: 10px 18px;
+    gap: 12px;
+  }
+  .strip-links {
+    gap: 12px;
+    font-size: 10.5px;
+  }
+  .types {
+    grid-template-columns: 1fr;
+  }
+  .quest h3 {
+    padding-right: 0;
+  }
+  .quest .corner-sprite {
+    top: -16px;
+    right: 12px;
+  }
+
+  /* Section heads stack to vertical */
+  .section-head {
+    grid-template-columns: 1fr;
+    gap: 4px;
+    align-items: start;
+  }
+  .section-head .pretitle,
+  .section-head .count {
+    padding-bottom: 0;
+  }
+  .section-head h2 {
+    font-size: clamp(36px, 6.5vw, 52px);
+  }
+
+  /* Overlap ribbon hugs the mobile spine */
+  .overlap-ribbon {
+    left: 22px;
+    transform: none;
+  }
+
+  /* Now-head can wrap */
+  .now-head {
+    flex-wrap: wrap;
+  }
+  .now-tag {
+    margin-left: 0;
+  }
+
+  /* Hero right column: trainer + game boy stack centred */
+  .hero-right {
+    margin-top: 0;
+    align-items: stretch;
+  }
+  .gameboy-mini {
+    align-self: center;
+  }
+}
+
+@media (max-width: 720px) {
+  /* Allow the route map to scroll horizontally so bars stay legible */
+  .route-map {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+  .route-grid,
+  .year-axis {
+    min-width: 540px;
+  }
+  .route-head {
+    min-width: 540px;
+  }
+}
+
+@media (max-width: 640px) {
+  body {
+    font-size: 16px;
+  }
+
+  /* HERO */
+  .hero {
+    padding: 36px 18px 28px;
+    gap: 24px;
+  }
+  .hero h1 {
+    font-size: clamp(40px, 11vw, 60px);
+    margin-bottom: 18px;
+    line-height: 0.98;
+  }
+  .hero-lede {
+    font-size: 17px;
+    margin-bottom: 16px;
+  }
+  /* Disable the desktop drop cap on mobile — the speech bubble is too small for it */
+  .hero-lede::first-letter {
+    font-size: inherit;
+    float: none;
+    padding: 0;
+    color: inherit;
+    line-height: inherit;
+  }
+  .hero-sub {
+    font-size: 14.5px;
+  }
+  .eyebrow {
+    font-size: 10px;
+    margin-bottom: 18px;
+  }
+
+  /* TRAINER / DEVELOPER CARD */
+  .trainer {
+    padding: 16px;
+    box-shadow: 4px 4px 0 var(--ink);
+  }
+  .trainer-portrait {
+    width: 56px;
+    height: 56px;
+  }
+  .trainer-portrait img {
+    width: 48px;
+    height: 48px;
+  }
+  .trainer-name {
+    font-size: 12px;
+  }
+  .trainer-id {
+    font-size: 9px;
+  }
+  .stats {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px 16px;
+  }
+  .stat-val {
+    font-size: 24px;
+  }
+
+  /* STRIP NAV — stacked 2-row layout: meta on top, nav links wrap onto a full-width row below */
+  .strip-inner {
+    flex-wrap: wrap;
+    padding: 10px 14px;
+    gap: 8px 12px;
+    align-items: center;
+  }
+  .strip-meta {
+    font-size: 9.5px;
+    line-height: 1.3;
+  }
+  .pokeball {
+    width: 26px;
+    height: 26px;
+    flex-shrink: 0;
+  }
+  .strip-links {
+    flex-basis: 100%;
+    width: 100%;
+    margin-left: 0;
+    display: flex;
+    gap: 6px;
+    justify-content: space-between;
+    padding-top: 8px;
+    border-top: 1.5px dashed var(--rule);
+    overflow: visible;
+    font-size: 9px;
+  }
+  .strip-links a {
+    flex: 1;
+    text-align: center;
+    padding: 6px 4px;
+    font-size: 8.5px;
+    box-shadow: 2px 2px 0 var(--ink);
+    white-space: nowrap;
+  }
+
+  /* NOW QUESTS */
+  .now {
+    padding: 0 18px;
+    margin-bottom: 64px;
+  }
+  .now-head h2 {
+    font-size: 24px;
+  }
+  .now-tag {
+    font-size: 9.5px;
+  }
+  .quest {
+    padding: 18px 16px 14px;
+    box-shadow: 3px 3px 0 var(--ink);
+  }
+  .quest h3 {
+    font-size: 22px;
+    padding-right: 0;
+    line-height: 1.1;
+  }
+  .quest p {
+    font-size: 14px;
+  }
+  .quest .corner-sprite {
+    width: 44px;
+    height: 44px;
+    top: -12px;
+    right: 10px;
+  }
+  .quest .corner-sprite img {
+    width: 34px;
+    height: 34px;
+  }
+
+  /* TIMELINE / JOURNEY (horizontal compact) */
+  .timeline-section {
+    padding: 0 18px;
+    margin-bottom: 56px;
+  }
+  .section-head {
+    margin-bottom: 28px;
+    padding-bottom: 12px;
+  }
+  .section-head h2 {
+    font-size: 28px;
+  }
+  .pretitle,
+  .count {
+    font-size: 9.5px;
+  }
+  .timeline {
+    padding: 48px 4px 18px;
+    gap: 14px;
+  }
+  .timeline::before {
+    top: 88px;
+  }
+  .entry {
+    width: 200px;
+  }
+  .sprite {
+    width: 70px;
+    height: 70px;
+    box-shadow: 3px 3px 0 var(--ink);
+  }
+  .sprite img {
+    width: 54px;
+    height: 54px;
+  }
+  .node .year {
+    font-size: 9px;
+    padding: 2px 5px;
+  }
+  .node .dex {
+    font-size: 8px;
+  }
+  .card {
+    padding: 12px 14px;
+    box-shadow: 3px 3px 0 var(--ink);
+  }
+  .card h3 {
+    font-size: 17px;
+  }
+  .card .role {
+    font-size: 12.5px;
+  }
+  .card .highlight {
+    font-size: 12.5px;
+    line-height: 1.5;
+    -webkit-line-clamp: 4;
+  }
+  .card .meta {
+    flex-wrap: wrap;
+    gap: 4px;
+    font-size: 8.5px;
+  }
+  .card .types-row {
+    gap: 4px;
+    margin-bottom: 6px;
+  }
+  .type-pill {
+    font-size: 8.5px;
+    padding: 3px 6px;
+  }
+  .card .concurrent {
+    gap: 4px;
+    padding-top: 6px;
+    margin-top: 8px;
+  }
+  .card .conc-chip {
+    font-size: 8.5px;
+    padding: 2px 6px;
+  }
+  .card .concurrent-label {
+    font-size: 8.5px;
+  }
+
+  /* ROUTE MAP — keep readable */
+  .route-map {
+    padding: 16px 14px 14px;
+    margin-bottom: 44px;
+  }
+  .route-head {
+    padding-bottom: 10px;
+    margin-bottom: 12px;
+  }
+  .route-head .title {
+    font-size: 11px;
+  }
+  .route-head .legend {
+    font-size: 8px;
+    gap: 10px;
+  }
+  .route-grid,
+  .year-axis {
+    padding-left: 80px;
+  }
+  .route-row {
+    height: 30px;
+    margin-bottom: 5px;
+  }
+  .route-row .row-label {
+    left: -80px;
+    width: 72px;
+    font-size: 7.5px;
+    padding-right: 6px;
+  }
+  .route-bar {
+    font-size: 7.5px;
+    padding-left: 28px;
+    letter-spacing: 0.04em;
+  }
+  .route-bar .bar-sprite {
+    width: 24px;
+    height: 24px;
+    left: -8px;
+  }
+  .route-bar .bar-sprite img {
+    width: 18px;
+    height: 18px;
+  }
+  .route-bar .now-flag,
+  .route-bar .side-flag {
+    font-size: 7px;
+    padding: 1px 4px;
+  }
+  .year-axis {
+    font-size: 7.5px;
+  }
+  .now-marker::before {
+    width: 12px;
+    height: 12px;
+    left: -5px;
+    top: -6px;
+  }
+
+  /* PROJECTS */
+  .projects {
+    padding: 0 18px;
+    margin-bottom: 64px;
+  }
+  .project {
+    padding: 16px 18px;
+    box-shadow: 2px 2px 0 var(--ink);
+  }
+  .project h3 {
+    font-size: 19px;
+  }
+  .project p {
+    font-size: 14px;
+  }
+
+  /* EDU + INTERESTS */
+  .twocol {
+    padding: 0 18px;
+    gap: 32px;
+    margin-bottom: 56px;
+  }
+  .twocol h2 {
+    font-size: 26px;
+  }
+  .edu-item .school {
+    font-size: 17px;
+  }
+  .edu-item .deg {
+    font-size: 14px;
+  }
+  .type-card {
+    padding: 8px 10px;
+  }
+  .type-card .sprite-mini {
+    width: 34px;
+    height: 34px;
+  }
+  .type-card .sprite-mini img {
+    width: 28px;
+    height: 28px;
+  }
+  .type-card .name {
+    font-size: 10px;
+  }
+  .type-card .yrs {
+    font-size: 10px;
+  }
+
+  /* FOOTER */
+  footer {
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+    text-align: center;
+    padding: 28px 20px 40px;
+    font-size: 9.5px;
+  }
+  footer .mark {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 420px) {
+  /* Tighten the stacked nav for very narrow phones */
+  .strip-inner {
+    padding: 9px 12px;
+    gap: 6px 10px;
+  }
+  .strip-meta {
+    font-size: 9px;
+  }
+  .pokeball {
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+  }
+  .strip-links {
+    gap: 4px;
+    padding-top: 6px;
+  }
+  .strip-links a {
+    padding: 5px 3px;
+    font-size: 8px;
+    box-shadow: 1.5px 1.5px 0 var(--ink);
+  }
+
+  .hero h1 {
+    font-size: clamp(34px, 10.5vw, 50px);
+  }
+  .stats {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  /* Compact phones — Pokédex still big and readable */
+  .gameboy-mini {
+    width: 290px;
+    height: 420px;
+    padding: 16px 16px 12px;
+    border-radius: 12px 12px 12px 54px;
+    box-shadow: 8px 8px 0 var(--ink);
+  }
+  .gb-top {
+    font-size: 8px;
+    padding-bottom: 6px;
+    margin-bottom: 6px;
+  }
+  .gb-top .gb-led {
+    width: 8px;
+    height: 8px;
+  }
+  .gb-screen {
+    height: 286px;
+    padding: 10px 11px;
+  }
+  .gb-party-slot::after { bottom: calc(100% + 195px); font-size: 6.5px; padding: 5px 8px; }
+  .gb-scr-header {
+    font-size: 8px;
+    padding-bottom: 6px;
+    margin-bottom: 8px;
+  }
+  .gb-scr-portrait {
+    width: 78px;
+    height: 78px;
+  }
+  .gb-scr-portrait img {
+    width: 68px;
+    height: 68px;
+  }
+  .gb-scr-name {
+    font-size: 11px;
+  }
+  .gb-scr-role {
+    font-size: 7px;
+  }
+  .gb-scr-type {
+    font-size: 6.5px;
+    padding: 3px 5px;
+  }
+  .gb-stat-row {
+    gap: 3px;
+    font-size: 6.5px;
+  }
+  .gb-stat-row .gb-stat-val {
+    font-size: 8px;
+  }
+  .gb-stat-row .gb-stat-bar {
+    height: 7px;
+  }
+  .gb-party {
+    bottom: 12px;
+    left: 2px;
+    right: 2px;
+    gap: 1px;
+  }
+  .gb-party img {
+    width: 36px;
+    height: 36px;
+  }
+  .gb-grass {
+    height: 12px;
+  }
+  .gb-controls {
+    margin-bottom: 4px;
+  }
+  .gb-dpad {
+    width: 30px;
+    height: 30px;
+  }
+  .gb-dpad::before {
+    height: 9px;
+  }
+  .gb-dpad::after {
+    width: 9px;
+  }
+  .gb-btn {
+    width: 17px;
+    height: 17px;
+  }
+  .gb-pill {
+    width: 17px;
+    height: 4px;
+  }
+  .gb-btn::after,
+  .gb-pill::after {
+    font-size: 6.5px;
+    margin-top: 2px;
+  }
+}

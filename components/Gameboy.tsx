@@ -27,9 +27,13 @@ export const Gameboy = () => {
       if (!video || video.duration === 0) return;
 
       // Calculate scroll percentage
-      const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const scrollHeight =
+        document.documentElement.scrollHeight - window.innerHeight;
       const scrollPosition = window.scrollY;
-      const scrollPercentage = Math.min(Math.max(scrollPosition / scrollHeight, 0), 1);
+      const scrollPercentage = Math.min(
+        Math.max(scrollPosition / scrollHeight, 0),
+        1,
+      );
 
       // Set video time based on scroll
       const targetTime = scrollPercentage * video.duration;
@@ -44,14 +48,14 @@ export const Gameboy = () => {
       video.pause();
       handleScroll();
     } else {
-      video.addEventListener('loadedmetadata', handleLoadedMetadata);
+      video.addEventListener("loadedmetadata", handleLoadedMetadata);
     }
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener("scroll", handleScroll, { passive: true });
 
     return () => {
-      video?.removeEventListener('loadedmetadata', handleLoadedMetadata);
-      window.removeEventListener('scroll', handleScroll);
+      video?.removeEventListener("loadedmetadata", handleLoadedMetadata);
+      window.removeEventListener("scroll", handleScroll);
     };
   }, []);
 
@@ -114,8 +118,7 @@ export const Gameboy = () => {
               preload="auto"
               className="absolute top-0 left-0 w-full h-full object-contain pixelated bg-[#9BBB0F]"
               style={{
-                filter:
-                  "sepia(1) hue-rotate(60deg) saturate(2) contrast(1.2)",
+                filter: "sepia(1) hue-rotate(60deg) saturate(2) contrast(1.2)",
               }}
             >
               <source src="/pokemon-red-start.mp4" type="video/mp4" />
