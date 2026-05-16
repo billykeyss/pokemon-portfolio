@@ -243,26 +243,26 @@ html {
   background-attachment: fixed;
 }
 
-/* Confetti dot scatter */
+/* Confetti dot scatter — randomized via /public/dots.svg (66 dots in a
+   480px tile). Two layered copies at different positions break the seam,
+   and the whole thing drifts one tile-length per loop for ambient motion. */
 .dossier-root::before {
   content: "";
   position: fixed;
   inset: 0;
   pointer-events: none;
   z-index: 1;
-  opacity: 0.45;
-  background-image:
-    radial-gradient(circle, var(--poke) 1.5px, transparent 2px),
-    radial-gradient(circle, var(--sparkle) 1.5px, transparent 2px),
-    radial-gradient(circle, var(--leaf) 1.5px, transparent 2px);
-  background-size:
-    64px 64px,
-    96px 96px,
-    128px 128px;
-  background-position:
-    0 0,
-    32px 48px,
-    16px 80px;
+  opacity: 0.55;
+  background-image: url("/dots.svg"), url("/dots.svg");
+  background-size: 480px 480px, 480px 480px;
+  background-position: 0 0, 220px 140px;
+  animation: dotsDrift 80s linear infinite;
+}
+@keyframes dotsDrift {
+  to { background-position: 480px 480px, -260px -340px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dossier-root::before { animation: none; }
 }
 .dossier-root::after {
   content: "";
@@ -1593,8 +1593,31 @@ a {
 .gb-scr-stats {
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 10px;
   margin-bottom: 8px;
+}
+.gb-stat-divider {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 2px 0 -2px;
+  font-family: "Press Start 2P", monospace;
+  font-size: 6px;
+  letter-spacing: 0.18em;
+  color: #1a2a1a;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+.gb-stat-divider::before,
+.gb-stat-divider::after {
+  content: "";
+  flex: 1;
+  height: 1.5px;
+  background: repeating-linear-gradient(
+    90deg,
+    #2a301e 0 3px,
+    transparent 3px 6px
+  );
 }
 .gb-stat-row {
   display: flex;
@@ -1642,36 +1665,29 @@ a {
   font-weight: 400;
   color: #1a2a1a;
 }
-/* Link variant of a stat row — clickable LinkedIn / GitHub etc. */
+/* Link variant of a stat row — single-line clickable LinkedIn / GitHub etc. */
 a.gb-stat-link {
   text-decoration: none;
   color: inherit;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+  display: block;
   cursor: pointer;
-  transition: transform 0.12s ease;
+  padding: 2px 0;
+  border-bottom: 1px dotted rgba(42, 48, 30, 0.25);
+  transition:
+    color 0.12s ease,
+    border-color 0.12s ease;
 }
 a.gb-stat-link:hover {
-  transform: translateX(2px);
+  color: #2a4d2a;
+  border-bottom-color: #2a4d2a;
 }
-a.gb-stat-link:hover .gb-stat-arrow {
-  background: rgba(42, 48, 30, 0.35);
+a.gb-stat-link .gb-link-arrow {
+  display: inline-block;
+  margin-left: 2px;
+  transition: transform 0.12s ease;
 }
-.gb-stat-row .gb-stat-arrow {
-  height: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  padding: 0 6px;
-  background: rgba(42, 48, 30, 0.18);
-  border: 1.5px solid #2a301e;
-  font-family: "Press Start 2P", monospace;
-  font-size: 6px;
-  letter-spacing: 0.06em;
-  color: #1a2a1a;
-  text-transform: uppercase;
-  transition: background 0.12s ease;
+a.gb-stat-link:hover .gb-link-arrow {
+  transform: translate(2px, -2px);
 }
 
 /* Walking sprite still drifts across the bottom of the screen */

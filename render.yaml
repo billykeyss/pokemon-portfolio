@@ -1,0 +1,56 @@
+# Render Blueprint — pokemon-resume
+# https://render.com/docs/blueprint-spec
+#
+# Deploys the Next.js static export (`output: "export"` in next.config.js)
+# as a Render static site. Connect this repo at https://dashboard.render.com/
+# → "New" → "Blueprint" → pick this branch.
+
+services:
+  - type: web
+    name: resume
+    runtime: static
+    branch: main
+    autoDeploy: true
+    pullRequestPreviewsEnabled: true
+
+    # Install pnpm via corepack, install deps with the committed lockfile, build.
+    # `next build` writes the static site to ./out (because of `output: "export"`).
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm run build
+    staticPublishPath: ./out
+
+    envVars:
+      # pnpm 11 (what corepack pulls by default) requires Node ≥22.13.
+      - key: NODE_VERSION
+        value: 22.13.1
+
+    # Next.js static export emits e.g. /mockups/hobby-cards.html for the route
+    # /mockups/hobby-cards. Without these rewrites Render would 404 on the
+    # extensionless URL. The catch-all maps any not-found path to its .html
+    # counterpart; the root rewrite serves index.html for "/".
+    routes:
+      - type: rewrite
+        source: /
+        destination: /index.html
+      - type: rewrite
+        source: /*
+        destination: /:splat.html
+
+    # Security + caching headers
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
+      # Long-cache the hashed Next.js asset bundles (filename includes a hash).
+      - path: /_next/static/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+      # Long-cache project image assets that don't change often.
+      - path: /projects/*
+        name: Cache-Control
+        value: public, max-age=86400

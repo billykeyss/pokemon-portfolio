@@ -482,41 +482,40 @@ export default function V2DossierPage() {
               </div>
 
               <div className="gb-scr-stats">
-                {TRAINER_STATS.map((s) => {
-                  const inner = (
-                    <>
-                      <div className="gb-stat-meta">
-                        <span className="gb-stat-label">{s.label}</span>
-                        <span className="gb-stat-val">{s.value}</span>
-                      </div>
-                      {s.link ? (
-                        <div className="gb-stat-arrow" aria-hidden="true">▸ open ↗</div>
-                      ) : (
-                        <div
-                          className="gb-stat-bar"
-                          style={
-                            { ["--fill" as string]: `${s.fill ?? 0}%` } as CSSProperties
-                          }
-                        />
-                      )}
-                    </>
-                  );
-                  return s.link ? (
-                    <a
-                      key={s.label}
-                      href={s.link}
-                      target="_blank"
-                      rel="noopener"
-                      className="gb-stat-row gb-stat-link"
-                    >
-                      {inner}
-                    </a>
-                  ) : (
-                    <div key={s.label} className="gb-stat-row">
-                      {inner}
+                {TRAINER_STATS.filter((s) => !s.link).map((s) => (
+                  <div key={s.label} className="gb-stat-row">
+                    <div className="gb-stat-meta">
+                      <span className="gb-stat-label">{s.label}</span>
+                      <span className="gb-stat-val">{s.value}</span>
                     </div>
-                  );
-                })}
+                    <div
+                      className="gb-stat-bar"
+                      style={
+                        { ["--fill" as string]: `${s.fill ?? 0}%` } as CSSProperties
+                      }
+                    />
+                  </div>
+                ))}
+
+                <div className="gb-stat-divider"><span>Contact</span></div>
+
+                {TRAINER_STATS.filter((s) => s.link).map((s) => (
+                  <a
+                    key={s.label}
+                    href={s.link}
+                    target="_blank"
+                    rel="noopener"
+                    className="gb-stat-row gb-stat-link"
+                  >
+                    <div className="gb-stat-meta">
+                      <span className="gb-stat-label">{s.label}</span>
+                      <span className="gb-stat-val">
+                        {s.value}
+                        <span className="gb-link-arrow" aria-hidden="true"> ↗</span>
+                      </span>
+                    </div>
+                  </a>
+                ))}
               </div>
 
               <div className="gb-grass" aria-hidden="true" />
