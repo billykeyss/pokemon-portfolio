@@ -578,6 +578,11 @@ a {
   padding-left: 14px;
   border-left: 4px solid var(--poke);
 }
+.hero-sub em {
+  font-style: normal;
+  color: var(--poke);
+  font-weight: 600;
+}
 
 /* Developer card panel — Pokédex inspired */
 .trainer {
@@ -3287,5 +3292,97 @@ footer .footer-ball {
   .gb-pill::after {
     font-size: 6.5px;
     margin-top: 2px;
+  }
+}
+
+/* ============================================================
+   MOBILE — strip decorative tilts.
+   The scattered-polaroid rotations on cards, the Gameboy bob,
+   etc. look great on desktop but waste horizontal space and
+   cause overlap on narrow screens. Reset them here.
+   ============================================================ */
+@media (max-width: 720px) {
+  /* Active-quest cards */
+  .quest:nth-child(1),
+  .quest:nth-child(2),
+  .quest:nth-child(3) {
+    transform: none;
+  }
+  .quest:hover {
+    transform: translate(-2px, -3px) scale(1.015);
+  }
+
+  /* Project cards (field notes) */
+  .project:nth-child(3n + 1),
+  .project:nth-child(3n + 2),
+  .project:nth-child(3n) {
+    transform: none;
+  }
+  .project:hover {
+    transform: translate(-2px, -3px) scale(1.02);
+  }
+
+  /* Trainer-card Game Boy — disable the tilt AND the bob keyframe */
+  .gameboy-mini {
+    transform: none;
+    animation: none;
+  }
+  .gameboy-mini:hover {
+    transform: scale(1.02);
+  }
+
+  /* Quest-tag: stack company / role vertically so long role labels
+     ("Chief AI Officer, Co-Founder") can wrap instead of getting clipped
+     by the corner sprite */
+  .quest .quest-tag {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    padding-right: 56px; /* clear the corner sprite */
+  }
+  .quest .quest-tag .role {
+    white-space: normal;
+    line-height: 1.35;
+  }
+
+  /* Concurrent role chips: allow wrap so they don't overshoot the card */
+  .card .concurrent {
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+  .card .conc-chip {
+    max-width: 100%;
+    white-space: normal;
+    word-break: break-word;
+  }
+
+  /* Journey timeline: signal that it's horizontally scrollable.
+     The actual scroll already works; this just makes it discoverable. */
+  .route-map::after {
+    content: "← swipe →";
+    display: block;
+    text-align: center;
+    margin-top: 8px;
+    font-family: "Silkscreen", monospace;
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    color: var(--muted);
+    opacity: 0.7;
+  }
+
+  /* Footer "Gotta Ship 'Em All" mark — drop the rotation + shrink so the
+     pokeball glyph and the text stop colliding on narrow widths */
+  footer .mark {
+    transform: none;
+    font-size: 13px;
+    padding: 0;
+    text-shadow:
+      1px 1px 0 var(--sparkle),
+      2px 2px 0 var(--ink);
+    white-space: nowrap;
+  }
+  footer .footer-ball {
+    width: 14px !important;
+    height: 14px !important;
   }
 }

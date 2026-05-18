@@ -413,7 +413,7 @@ export default function V2DossierPage() {
             <span className="sparkle spark-1">✦</span>
             <span className="sparkle spark-2">✦</span>
             <span className="sparkle spark-3">✦</span>
-            Builds at the seam of <em>code &amp; chaos.</em>
+            Ten years building things that <em>didn&apos;t exist yet.</em>
           </h1>
           <p className="hero-lede">
             Ten years compounding across home robotics, voice agents, retail
@@ -431,9 +431,9 @@ export default function V2DossierPage() {
             for Betaworks Spring 2026: Agent Systems.
           </p>
           <p className="hero-sub">
-            &ldquo;Outside the editor I&apos;m scaling rock faces, carving fresh
-            tracks, or chasing the next horizon. Curiosity is the engine;
-            everything else is finishing work.&rdquo;
+            &ldquo;The best engineers I know are obsessed with one thing for a
+            decade. I&apos;m obsessed with the <em>new</em> thing for a decade
+            running.&rdquo;
           </p>
         </div>
 
