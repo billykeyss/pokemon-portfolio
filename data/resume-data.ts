@@ -121,7 +121,7 @@ export const resumeData: ResumeData = {
       highlight:
         "Co-founded Capsule AI — Agentic Strategy for Life Sciences. The context system of record for pharma and biotech, converting the world's unstructured science into decisions teams can act on. Deployed across Global Top 10 Pharma; leading AI strategy across voice agents, scientific OCR, domain embeddings, and multi-agent orchestration.",
       details: [
-        "Selected for Betaworks Spring 2026 Camp: Agent Systems — 1 of 11 companies chosen from 400+ applicants, culminating in Demo Day on May 14, 2026.",
+        "Selected for [Betaworks Spring 2026 Camp: Agent Systems](https://www.betaworks.com/writing/spring-2026-camp-agent-systems) — 1 of 11 companies chosen from 400+ applicants, culminating in Demo Day on May 14, 2026.",
         "Led development of a pharma-specific voice agent fluent in standard-of-care, emerging therapies, and treatment architecture.",
         "Architected a scientific OCR model that extracts structured data from biomedical graphics — Kaplan-Meier curves, swimmer plots, forest plots, and spider plots.",
         "Drove training of a life-sciences-native embedding model on scientific literature for domain-specific retrieval.",

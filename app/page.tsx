@@ -428,7 +428,16 @@ export default function V2DossierPage() {
               <strong>Capsule</strong>
             </a>{" "}
             — the context system of record for pharma and biotech — selected
-            for Betaworks Spring 2026: Agent Systems.
+            for{" "}
+            <a
+              href="https://www.betaworks.com/writing/spring-2026-camp-agent-systems"
+              target="_blank"
+              rel="noopener"
+              className="lede-link"
+            >
+              <strong>Betaworks Spring 2026: Agent Systems</strong>
+            </a>
+            .
           </p>
           <p className="hero-sub">
             &ldquo;The best engineers I know are obsessed with one thing for a

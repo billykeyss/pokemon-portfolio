@@ -45,6 +45,34 @@ const getDuration = (startDate: string, endDate: string): string => {
   return `${years} yr ${remainingMonths} mo`;
 };
 
+const renderDetail = (text: string) => {
+  const parts: (string | { text: string; href: string })[] = [];
+  const regex = /\[([^\]]+)\]\(([^)]+)\)/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIndex) parts.push(text.slice(lastIndex, match.index));
+    parts.push({ text: match[1], href: match[2] });
+    lastIndex = match.index + match[0].length;
+  }
+  if (lastIndex < text.length) parts.push(text.slice(lastIndex));
+  return parts.map((p, i) =>
+    typeof p === "string" ? (
+      <span key={i}>{p}</span>
+    ) : (
+      <a
+        key={i}
+        href={p.href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="underline underline-offset-2 hover:opacity-80"
+      >
+        {p.text}
+      </a>
+    ),
+  );
+};
+
 // Enhanced timeline utilities
 const getTimelineColors = (index: number, isSpecial: boolean = false) => {
   const colors = [
@@ -802,7 +830,9 @@ export const Experiences = () => {
                               <div
                                 className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${colors.bulletColor}`}
                               />
-                              <span className="leading-relaxed">{detail}</span>
+                              <span className="leading-relaxed">
+                                {renderDetail(detail)}
+                              </span>
                             </motion.li>
                           ))}
                         </ul>
