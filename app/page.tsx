@@ -35,7 +35,7 @@ const EXP_META: Record<Slug, ExpMeta> = {
   capsule: {
     slug: "capsule",
     pokemonId: 65,
-    types: ["psychic", "dragon"],
+    types: ["psychic"],
     overlaps: ["v12", "sesh"],
   },
   keplar: {
@@ -47,14 +47,14 @@ const EXP_META: Record<Slug, ExpMeta> = {
   sesh: {
     slug: "sesh",
     pokemonId: 68,
-    types: ["fighting", "grass"],
+    types: ["fighting"],
     overlaps: ["capsule", "keplar", "v12", "astro"],
     isSide: true,
   },
   v12: {
     slug: "v12",
     pokemonId: 67,
-    types: ["fighting", "steel"],
+    types: ["fighting"],
     overlaps: ["capsule", "keplar", "sesh", "astro"],
     isSide: true,
   },

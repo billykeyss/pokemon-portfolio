@@ -1909,6 +1909,27 @@ a.gb-stat-link:hover .gb-link-arrow {
     height: 312px;
     padding: 11px 12px;
   }
+  .gb-scr-body {
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+  .gb-scr-portrait {
+    width: 74px;
+    height: 74px;
+  }
+  .gb-scr-portrait img {
+    width: 64px;
+    height: 64px;
+  }
+  .gb-scr-stats {
+    gap: 5px;
+  }
+  .gb-stat-divider {
+    margin: 0;
+  }
+  a.gb-stat-link {
+    padding: 1px 0;
+  }
   .gb-party {
     bottom: 14px;
     left: 2px;
@@ -2784,6 +2805,11 @@ footer .footer-ball {
   .section-head .pretitle,
   .section-head .count {
     padding-bottom: 0;
+    transform: none;
+    justify-self: start;
+  }
+  .section-head .count {
+    display: none;
   }
   .section-head h2 {
     font-size: clamp(36px, 6.5vw, 52px);
@@ -3227,12 +3253,19 @@ footer .footer-ball {
     margin-bottom: 8px;
   }
   .gb-scr-portrait {
-    width: 78px;
-    height: 78px;
+    width: 70px;
+    height: 70px;
   }
   .gb-scr-portrait img {
-    width: 68px;
-    height: 68px;
+    width: 60px;
+    height: 60px;
+  }
+  .gb-scr-body {
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+  .gb-scr-stats {
+    gap: 5px;
   }
   .gb-scr-name {
     font-size: 11px;
@@ -3254,15 +3287,21 @@ footer .footer-ball {
   .gb-stat-row .gb-stat-bar {
     height: 7px;
   }
+  .gb-stat-divider {
+    margin: 0;
+  }
+  a.gb-stat-link {
+    padding: 1px 0;
+  }
   .gb-party {
-    bottom: 12px;
+    bottom: 10px;
     left: 2px;
     right: 2px;
     gap: 1px;
   }
   .gb-party img {
-    width: 36px;
-    height: 36px;
+    width: 34px;
+    height: 34px;
   }
   .gb-grass {
     height: 12px;
