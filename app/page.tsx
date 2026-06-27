@@ -19,7 +19,8 @@ type Slug =
   | "sesh"
   | "v12"
   | "amazon"
-  | "training";
+  | "training"
+  | "waterloo";
 
 interface ExpMeta {
   slug: Slug;
@@ -66,7 +67,13 @@ const EXP_META: Record<Slug, ExpMeta> = {
     slug: "training",
     pokemonId: 133, // Eevee — many evolution paths = exploring careers
     types: ["normal"],
-    overlaps: [],
+    overlaps: ["waterloo"],
+  },
+  waterloo: {
+    slug: "waterloo",
+    pokemonId: 65, // Alakazam — the academic / high-IQ era
+    types: ["psychic"],
+    overlaps: ["training"],
   },
 };
 
@@ -121,12 +128,14 @@ const spriteUrl = (id: number) =>
   `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
 
 /* ─────────────────────────── Date math ─────────────────────────────── */
-const TOTAL_MONTHS = 144; // Jan 2015 → Jan 2027
-const NOW_MONTH = 137; // ~ end of May 2026
+const FIRST_YEAR = 2013; // right edge of the axis (start of the Waterloo era)
+const NOW_MONTH = (2026 - FIRST_YEAR) * 12 + 6; // today ≈ mid-2026; bump over time
+const TOTAL_MONTHS = NOW_MONTH + 2; // axis left edge sits just past "now"
 function months(date: string): number {
-  if (!date || date === "Present") return TOTAL_MONTHS;
+  // Ongoing roles end at "now", not at the right end of the axis.
+  if (!date || date === "Present") return NOW_MONTH;
   const [y, m] = date.split("-").map(Number);
-  return (y - 2015) * 12 + (m - 1);
+  return (y - FIRST_YEAR) * 12 + (m - 1);
 }
 const pct = (m: number) => `${((m / TOTAL_MONTHS) * 100).toFixed(1)}%`;
 
@@ -209,7 +218,7 @@ function buildEntries(): DossierEntry[] {
 
     const EVO = [81, 82, 462]; // Magnemite → Magneton → Magnezone
     const levelOf = (role: string) =>
-      /senior/i.test(role) ? "Senior SDE" : /\bII\b/.test(role) ? "SDE II" : "SDE I";
+      /senior/i.test(role) ? "SDE III" : /\bII\b/.test(role) ? "SDE II" : "SDE I";
 
     // Oldest → newest, so the evolution reads base → final, top → bottom
     const stints: StintInfo[] = [...amazonRoles]
@@ -228,12 +237,12 @@ function buildEntries(): DossierEntry[] {
     direct.push({
       slug: "amazon",
       title: "Amazon Lab 126",
-      role: "SDE I → SDE II → Senior SDE · FireTV & Astro",
+      role: "SDE I → SDE II → SDE III · FireTV & Astro",
       start: earliestStart,
       end: latestEnd,
       link: "https://www.aboutamazon.com/news/devices/meet-astro",
       highlight:
-        "Five years at Amazon Lab 126 across FireTV and the Astro home robot, leveling up from SDE I to Senior SDE.",
+        "Five years at Amazon Lab 126 across FireTV and the Astro home robot, leveling up from SDE I to SDE III.",
       meta: EXP_META.amazon,
       stints,
     });
@@ -289,6 +298,23 @@ function buildEntries(): DossierEntry[] {
       highlight: summary,
       meta: EXP_META.training,
       stints: internInfos,
+    });
+  }
+
+  // The University of Waterloo era — the academic foundation the internships
+  // happened within (5-year co-op B.Eng, graduated Apr 2018).
+  const uw = resumeData.education.find((e) => /Waterloo/i.test(e.school));
+  if (uw) {
+    direct.push({
+      slug: "waterloo",
+      title: "University of Waterloo",
+      role: "BASc, Computer Engineering (Co-op)",
+      start: "2013-09",
+      end: "2018-04",
+      link: "https://uwaterloo.ca/",
+      highlight:
+        "Bachelor of Computer Engineering on the co-op program. Capstone: Unreal sensor simulation for autonomous vehicles (Best Presentation Award). Exchange semester at Lund University, Sweden.",
+      meta: EXP_META.waterloo,
     });
   }
 
@@ -871,27 +897,29 @@ export default function V2DossierPage() {
           <h2>
             The <em>Academy.</em>
           </h2>
-          {education.map((e) => (
-            <div key={e.school} className="edu-item">
-              <div className="school">{e.school}</div>
-              <div className="deg">
-                {e.degree}
-                {e.details &&
-                e.details.length === 1 &&
-                e.degree.includes("Diploma")
-                  ? ` · ${e.details[0]}`
-                  : null}
+          <div className="edu-list">
+            {education.map((e) => (
+              <div key={e.school} className="edu-item">
+                <div className="school">{e.school}</div>
+                <div className="deg">
+                  {e.degree}
+                  {e.details &&
+                  e.details.length === 1 &&
+                  e.degree.includes("Diploma")
+                    ? ` · ${e.details[0]}`
+                    : null}
+                </div>
+                <div className="date">{e.date}</div>
+                {e.details && e.details.length > 1 && (
+                  <ul>
+                    {e.details.map((d, i) => (
+                      <li key={i}>{d}</li>
+                    ))}
+                  </ul>
+                )}
               </div>
-              <div className="date">{e.date}</div>
-              {e.details && e.details.length > 1 && (
-                <ul>
-                  {e.details.map((d, i) => (
-                    <li key={i}>{d}</li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
 
         <div id="interests">
@@ -936,7 +964,7 @@ function RouteMap({ entries }: { entries: DossierEntry[] }) {
   return (
     <div className="route-map">
       <div className="route-head">
-        <span className="title">Route 015 ─ 026 · Career Span</span>
+        <span className="title">Route 013 ─ 026 · Career Span</span>
         <div className="legend">
           <span>
             <i className="swatch-past" />
@@ -957,7 +985,8 @@ function RouteMap({ entries }: { entries: DossierEntry[] }) {
         </div>
       </div>
 
-      <div className="route-grid">
+      <div className="route-scroll">
+        <div className="route-grid">
         {ordered.map((e) => {
           const startM = months(e.start);
           const endM = months(e.end);
@@ -991,8 +1020,10 @@ function RouteMap({ entries }: { entries: DossierEntry[] }) {
                             i < arr.length - 1
                               ? months(arr[i + 1].start!)
                               : months(s.end!);
+                          // The lead (newest) segment carries the company name,
+                          // like every other bar; the rest just show the level.
                           const segLabel =
-                            s.name === "Senior SDE" ? "Senior" : s.name;
+                            i === arr.length - 1 ? `Amazon · ${s.name}` : s.name;
                           return (
                             <div
                               key={s.name}
@@ -1088,11 +1119,33 @@ function RouteMap({ entries }: { entries: DossierEntry[] }) {
         })}
       </div>
 
-      <div className="year-axis">
-        {/* Flipped: '26 on the left, '15 on the right to match reversed X axis */}
-        {Array.from({ length: 12 }, (_, i) => (
-          <span key={i}>&apos;{(26 - i).toString().padStart(2, "0")}</span>
-        ))}
+        <div className="year-axis">
+          {/* Month-accurate ticks at 5-year increments; "NOW" marks today.
+              The spacer keeps the axis aligned under the pinned label column. */}
+          <div className="year-axis-spacer" aria-hidden="true" />
+          <div className="year-axis-track">
+            {Array.from(
+              { length: Math.floor(NOW_MONTH / 12) + 1 },
+              (_, i) => FIRST_YEAR + i,
+            ).map((year) => (
+              <span
+                key={year}
+                className="yr"
+                style={{
+                  left: pct(TOTAL_MONTHS - (year - FIRST_YEAR) * 12),
+                }}
+              >
+                &apos;{(year % 100).toString().padStart(2, "0")}
+              </span>
+            ))}
+            <span
+              className="yr now"
+              style={{ left: pct(TOTAL_MONTHS - NOW_MONTH) }}
+            >
+              NOW
+            </span>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -1100,6 +1153,7 @@ function RouteMap({ entries }: { entries: DossierEntry[] }) {
 
 function labelFor(e: DossierEntry): string {
   if (e.slug === "training") return "Internships ×4";
+  if (e.slug === "waterloo") return "UWaterloo";
   if (e.slug === "amazon") return "Amazon Lab 126";
   if (e.slug === "sesh") return "Sesh";
   if (e.slug === "v12") return "V12 Resole";
@@ -1110,7 +1164,8 @@ function labelFor(e: DossierEntry): string {
 
 function shortRoleFor(e: DossierEntry): string {
   if (e.slug === "training") return "Training Arc · 4 Internships";
-  if (e.slug === "amazon") return "Amazon · SDE I → Senior SDE";
+  if (e.slug === "waterloo") return "UWaterloo · Computer Eng";
+  if (e.slug === "amazon") return "Amazon · SDE I → SDE III";
   if (e.slug === "sesh") return "Sesh Climbing · Founder";
   if (e.slug === "v12") return "V12 Resole · CTO";
   if (e.slug === "keplar") return "Keplar · Founding Eng";
@@ -1225,7 +1280,7 @@ function TimelineEntry({
                   <span className="intern-role">{it.role}</span>
                   <p className="intern-highlight">{it.highlight}</p>
                   <ul className="intern-details">
-                    {it.details.slice(0, 3).map((d, j) => (
+                    {it.details.slice(0, 2).map((d, j) => (
                       <li key={j}>{d}</li>
                     ))}
                   </ul>

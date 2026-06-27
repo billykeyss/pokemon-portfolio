@@ -1041,25 +1041,35 @@ a {
   box-shadow: 0 0 6px 1px color-mix(in srgb, var(--gold) 70%, transparent);
 }
 
+/* Horizontal scroll wrapper — grid + axis scroll together; labels stay pinned */
+.route-scroll {
+  overflow-x: auto;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  padding-bottom: 2px;
+}
 .route-grid {
   position: relative;
-  padding-left: 132px;
+  /* Zoomed so ~5 recent years fill the viewport; older years scroll into view */
+  min-width: 2200px;
 }
 .route-row {
-  position: relative;
+  display: flex;
+  align-items: stretch;
   height: 36px;
   margin-bottom: 6px;
 }
 .route-row .row-label {
-  position: absolute;
-  left: -132px;
-  top: 0;
-  width: 122px;
-  height: 100%;
+  position: sticky;
+  left: 0;
+  z-index: 6;
+  flex: 0 0 132px;
   display: flex;
   align-items: center;
   justify-content: flex-end;
   text-align: right;
+  background: var(--paper);
   font-family: "Silkscreen", monospace;
   font-size: 10px;
   letter-spacing: 0.05em;
@@ -1074,21 +1084,13 @@ a {
 }
 .route-track {
   position: relative;
-  height: 100%;
+  flex: 1 1 auto;
   background-color: var(--cream-2);
-  background-image:
-    repeating-linear-gradient(
-      to right,
-      transparent 0,
-      transparent calc(100% / 12 - 1px),
-      rgba(27, 22, 18, 0.15) calc(100% / 12 - 1px),
-      rgba(27, 22, 18, 0.15) calc(100% / 12)
-    ),
-    repeating-linear-gradient(
-      45deg,
-      transparent 0 3px,
-      rgba(27, 22, 18, 0.04) 3px 4px
-    );
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent 0 3px,
+    rgba(27, 22, 18, 0.04) 3px 4px
+  );
   border: 1.5px solid var(--ink);
 }
 .route-bar {
@@ -1312,38 +1314,54 @@ a {
 }
 
 .year-axis {
-  display: grid;
-  grid-template-columns: repeat(12, 1fr);
+  display: flex;
+  align-items: stretch;
   margin-top: 10px;
-  padding-left: 132px;
+  min-width: 2200px;
+}
+/* Pinned spacer under the label column keeps ticks aligned with the bars */
+.year-axis-spacer {
+  flex: 0 0 132px;
+  position: sticky;
+  left: 0;
+  z-index: 6;
+  background: var(--paper);
+}
+/* Track spans exactly the bar area, so % positions line up with bars */
+.year-axis-track {
+  position: relative;
+  flex: 1 1 auto;
+  height: 22px;
+  border-top: 2px solid var(--ink);
   font-family: "Silkscreen", monospace;
   font-size: 10px;
   color: var(--muted);
   letter-spacing: 0.05em;
 }
-.year-axis span {
-  position: relative;
-  padding-top: 6px;
-  text-align: left;
-  border-top: 2px solid var(--ink);
+.year-axis-track .yr {
+  position: absolute;
+  top: 7px;
+  transform: translateX(-50%);
+  white-space: nowrap;
 }
-.year-axis span::before {
+.year-axis-track .yr::before {
   content: "";
   position: absolute;
-  top: -8px;
-  left: -1px;
+  top: -9px;
+  left: 50%;
+  transform: translateX(-50%);
   width: 2px;
   height: 6px;
   background: var(--ink);
 }
-.year-axis span:last-child::after {
-  content: "";
-  position: absolute;
-  top: -8px;
-  right: -1px;
-  width: 2px;
-  height: 6px;
-  background: var(--ink);
+.year-axis-track .yr.now {
+  color: var(--poke);
+  font-weight: 700;
+}
+.year-axis-track .yr.now::before {
+  background: var(--poke);
+  height: 9px;
+  top: -12px;
 }
 
 @media (max-width: 900px) {
@@ -1352,13 +1370,15 @@ a {
   }
   .route-grid,
   .year-axis {
-    padding-left: 92px;
+    min-width: 1650px;
   }
   .route-row .row-label {
-    left: -92px;
-    width: 84px;
+    flex-basis: 92px;
     font-size: 8px;
     padding-right: 8px;
+  }
+  .year-axis-spacer {
+    flex-basis: 92px;
   }
   .route-bar {
     font-size: 8px;
@@ -1372,11 +1392,8 @@ a {
     width: 22px;
     height: 22px;
   }
-  .year-axis {
+  .year-axis-track {
     font-size: 8px;
-  }
-  .year-axis span:nth-child(even) {
-    color: transparent;
   }
 }
 
@@ -2824,10 +2841,16 @@ a.gb-stat-link:hover .gb-link-arrow {
   margin: 0 auto 80px;
   padding: 0 32px;
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 56px;
+  grid-template-columns: 1fr; /* full-width stacked sections */
+  gap: 64px;
   position: relative;
   z-index: 2;
+}
+/* Education entries flow into columns to use the full width */
+.edu-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 8px 48px;
 }
 .twocol h2 {
   font-family: "Bungee", "Silkscreen", monospace;
@@ -2881,8 +2904,8 @@ a.gb-stat-link:hover .gb-link-arrow {
 
 .types {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 12px;
 }
 .type-card {
   display: flex;
@@ -3123,18 +3146,10 @@ footer .footer-ball {
 }
 
 @media (max-width: 720px) {
-  /* Allow the route map to scroll horizontally so bars stay legible */
-  .route-map {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: thin;
-  }
+  /* Bars stay legible by scrolling (handled by .route-scroll) */
   .route-grid,
   .year-axis {
-    min-width: 540px;
-  }
-  .route-head {
-    min-width: 540px;
+    min-width: 1200px;
   }
 }
 
@@ -3370,19 +3385,17 @@ footer .footer-ball {
     font-size: 8px;
     gap: 10px;
   }
-  .route-grid,
-  .year-axis {
-    padding-left: 80px;
-  }
   .route-row {
     height: 30px;
     margin-bottom: 5px;
   }
   .route-row .row-label {
-    left: -80px;
-    width: 72px;
+    flex-basis: 80px;
     font-size: 7.5px;
     padding-right: 6px;
+  }
+  .year-axis-spacer {
+    flex-basis: 80px;
   }
   .route-bar {
     font-size: 7.5px;
@@ -3403,7 +3416,7 @@ footer .footer-ball {
     font-size: 7px;
     padding: 1px 4px;
   }
-  .year-axis {
+  .year-axis-track {
     font-size: 7.5px;
   }
   .now-marker::before {
