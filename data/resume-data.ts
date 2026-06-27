@@ -610,7 +610,7 @@ export const resumeData: ResumeData = {
       featured: true,
       details:
         "A comprehensive ski conditions monitoring platform that aggregates real-time data from ski resorts across California and British Columbia/Alberta. Features live snow reports, weather conditions, trail status, and lift operations. Built with modern web technologies to provide skiers and snowboarders with up-to-date resort information for trip planning.",
-      link: "https://tahoesno.onrender.com/",
+      link: "https://sno.billhuang.me/",
       image: "/projects/tahoe-snow.png",
       techStack: [
         "React",

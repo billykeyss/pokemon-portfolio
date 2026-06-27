@@ -13,13 +13,15 @@ services:
     autoDeploy: true
     pullRequestPreviewsEnabled: true
 
-    # Install pnpm via corepack, install deps with the committed lockfile, build.
+    # Pin pnpm explicitly instead of using corepack: corepack pulls pnpm 11
+    # (latest) by default, which can fail on Render (signing-key verification
+    # errors, and pnpm 11 rejecting this pnpm-10 lockfile under --frozen-lockfile).
+    # This mirrors the install step used by our other working Render services.
     # `next build` writes the static site to ./out (because of `output: "export"`).
-    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm run build
+    buildCommand: npm install -g pnpm@10.11.0 && pnpm install --frozen-lockfile && pnpm run build
     staticPublishPath: ./out
 
     envVars:
-      # pnpm 11 (what corepack pulls by default) requires Node ≥22.13.
       - key: NODE_VERSION
         value: 22.13.1
 

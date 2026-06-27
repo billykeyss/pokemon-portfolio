@@ -18,9 +18,7 @@ type Slug =
   | "keplar"
   | "sesh"
   | "v12"
-  | "astro"
-  | "firetv2"
-  | "firetv1"
+  | "amazon"
   | "training";
 
 interface ExpMeta {
@@ -48,33 +46,21 @@ const EXP_META: Record<Slug, ExpMeta> = {
     slug: "sesh",
     pokemonId: 68,
     types: ["fighting"],
-    overlaps: ["capsule", "keplar", "v12", "astro"],
+    overlaps: ["capsule", "keplar", "v12", "amazon"],
     isSide: true,
   },
   v12: {
     slug: "v12",
     pokemonId: 106, // Hitmonlee — the Kicking Pokémon (feet → climbing shoes)
     types: ["fighting"],
-    overlaps: ["capsule", "keplar", "sesh", "astro"],
+    overlaps: ["capsule", "keplar", "sesh", "amazon"],
     isSide: true,
   },
-  astro: {
-    slug: "astro",
-    pokemonId: 81,
+  amazon: {
+    slug: "amazon",
+    pokemonId: 462, // Magnezone — final form = Senior SDE (the level-up arc)
     types: ["steel", "electric"],
     overlaps: ["sesh", "v12"],
-  },
-  firetv2: {
-    slug: "firetv2",
-    pokemonId: 479,
-    types: ["electric", "ghost"],
-    overlaps: [],
-  },
-  firetv1: {
-    slug: "firetv1",
-    pokemonId: 137, // Porygon — a digital 'program' for the news app
-    types: ["normal"],
-    overlaps: [],
   },
   training: {
     slug: "training",
@@ -84,18 +70,14 @@ const EXP_META: Record<Slug, ExpMeta> = {
   },
 };
 
+// Standalone roles only. Internships are grouped into the Training Arc and the
+// Amazon Lab 126 FTE roles into a single "amazon" entry (see buildEntries).
 function metaFor(exp: Experience): Slug | null {
   const t = exp.title;
-  const r = exp.role;
   if (/Capsule/.test(t)) return "capsule";
   if (/Keplar/.test(t)) return "keplar";
   if (/Sesh/.test(t)) return "sesh";
   if (/V12/.test(t)) return "v12";
-  if (/Lab 126.*Astro/i.test(t) || (/Astro/.test(t) && /Senior/i.test(r)))
-    return "astro";
-  if (/FireTV/i.test(t) && /Engineer II\b/.test(r)) return "firetv2";
-  if (/FireTV/i.test(t) && /Engineer I\b/.test(r)) return "firetv1";
-  if (/intern/i.test(r)) return null; // grouped into Training Arc below
   return null;
 }
 
@@ -158,31 +140,49 @@ const dexNo = (id: number) => id.toString().padStart(3, "0");
 
 /* ─────────────── Build the dossier model from resume-data ──────────── */
 
-type InternInfo = {
-  name: string; // company short name
+// A sub-role inside a grouped entry — one internship (Training Arc) or one
+// Amazon level. pokemonId, when set, renders an evolution-stage sprite on the
+// chip (used for the Amazon SDE I → II → Senior level-up line).
+type StintInfo = {
+  name: string; // company (intern) or level (e.g. "SDE I")
   year: string;
   role: string;
   highlight: string;
   details: string[];
+  pokemonId?: number;
+  start?: string; // "YYYY-MM" — used to draw timeline-bar segments (Amazon)
+  end?: string;
 };
 
 type DossierEntry = {
   slug: Slug;
   title: string;
   role: string;
-  start: string; // "YYYY-MM" or earliest intern start
+  start: string; // "YYYY-MM" or earliest sub-role start
   end: string; // "YYYY-MM" or "Present"
   link?: string;
   highlight: string;
   meta: ExpMeta;
-  interns?: InternInfo[]; // populated only for the Training Arc
+  stints?: StintInfo[]; // populated for grouped entries (Training Arc, Amazon)
 };
 
 function buildEntries(): DossierEntry[] {
   const direct: DossierEntry[] = [];
   const interns: Experience[] = [];
+  const amazonRoles: Experience[] = [];
 
   for (const exp of resumeData.experiences) {
+    // Internships group into the Training Arc — check first, since the 2017
+    // intern is also an "Amazon Lab 126" title.
+    if (/intern/i.test(exp.role)) {
+      interns.push(exp);
+      continue;
+    }
+    // The three Amazon Lab 126 FTE roles group into one level-up entry.
+    if (/Amazon Lab 126/.test(exp.title)) {
+      amazonRoles.push(exp);
+      continue;
+    }
     const slug = metaFor(exp);
     if (slug) {
       direct.push({
@@ -195,9 +195,48 @@ function buildEntries(): DossierEntry[] {
         highlight: exp.highlight,
         meta: EXP_META[slug],
       });
-    } else if (/intern/i.test(exp.role)) {
-      interns.push(exp);
     }
+  }
+
+  // Build a single "Amazon Lab 126" entry from the three FTE roles, shown as an
+  // evolution line (Magnemite → Magneton → Magnezone) in the hover.
+  if (amazonRoles.length) {
+    const startMs = amazonRoles.map((r) => months(r.startDate));
+    const endMs = amazonRoles.map((r) => months(r.endDate));
+    const earliestStart =
+      amazonRoles[startMs.indexOf(Math.min(...startMs))].startDate;
+    const latestEnd = amazonRoles[endMs.indexOf(Math.max(...endMs))].endDate;
+
+    const EVO = [81, 82, 462]; // Magnemite → Magneton → Magnezone
+    const levelOf = (role: string) =>
+      /senior/i.test(role) ? "Senior SDE" : /\bII\b/.test(role) ? "SDE II" : "SDE I";
+
+    // Oldest → newest, so the evolution reads base → final, top → bottom
+    const stints: StintInfo[] = [...amazonRoles]
+      .sort((a, b) => months(a.startDate) - months(b.startDate))
+      .map((r, i) => ({
+        name: levelOf(r.role),
+        year: yearLabel(r.startDate, r.endDate),
+        role: r.role,
+        highlight: r.highlight,
+        details: r.details,
+        pokemonId: EVO[Math.min(i, EVO.length - 1)],
+        start: r.startDate,
+        end: r.endDate,
+      }));
+
+    direct.push({
+      slug: "amazon",
+      title: "Amazon Lab 126",
+      role: "SDE I → SDE II → Senior SDE · FireTV & Astro",
+      start: earliestStart,
+      end: latestEnd,
+      link: "https://www.aboutamazon.com/news/devices/meet-astro",
+      highlight:
+        "Five years at Amazon Lab 126 across FireTV and the Astro home robot, leveling up from SDE I to Senior SDE.",
+      meta: EXP_META.amazon,
+      stints,
+    });
   }
 
   // Build a single "Training Arc" entry from the grouped internships
@@ -217,8 +256,17 @@ function buildEntries(): DossierEntry[] {
           )})** · ${i.highlight}`,
       )
       .join(" ");
+    // A thematically-related Pokémon for each internship
+    const internPokemon = (i: Experience): number => {
+      if (/nanoPay/i.test(i.title)) return 52; // Meowth — fintech / Pay Day
+      if (/Amazon/i.test(i.title)) return 479; // Rotom — possesses the Echo device
+      if (/Connected/i.test(i.title))
+        return i.startDate.slice(0, 4) === "2017" ? 63 : 137; // Abra (AI chatbot) / Porygon (build tooling)
+      return 25; // fallback: Pikachu
+    };
+
     // Per-internship detail, oldest → newest, for the hover-to-inspect list
-    const internInfos: InternInfo[] = [...interns]
+    const internInfos: StintInfo[] = [...interns]
       .sort((a, b) => months(a.startDate) - months(b.startDate))
       .map((i) => ({
         name: i.title.split(",")[0],
@@ -226,6 +274,7 @@ function buildEntries(): DossierEntry[] {
         role: i.role,
         highlight: i.highlight,
         details: i.details,
+        pokemonId: internPokemon(i),
       }));
 
     direct.push({
@@ -239,7 +288,7 @@ function buildEntries(): DossierEntry[] {
       end: latestEnd,
       highlight: summary,
       meta: EXP_META.training,
-      interns: internInfos,
+      stints: internInfos,
     });
   }
 
@@ -925,40 +974,108 @@ function RouteMap({ entries }: { entries: DossierEntry[] }) {
                 {e.meta.isSide && <span className="side">SIDE</span>}
               </div>
               <div className="route-track">
-                <div
-                  className={[
-                    "route-bar",
-                    isCurrent && "current",
-                    e.slug === "capsule" && "main-story",
-                  ]
-                    .filter(Boolean)
-                    .join(" ")}
-                  data-target={e.slug}
-                  role="button"
-                  tabIndex={0}
-                  style={
-                    {
-                      ["--bar-color" as string]: typeVar(primaryType),
-                      left,
-                      width,
-                      ...(isLight
-                        ? {
-                            color: "#1B1612",
-                            textShadow: "1px 1px 0 rgba(255,255,255,0.4)",
-                          }
-                        : {}),
-                    } as CSSProperties
-                  }
-                >
-                  <span className="bar-sprite">
-                    <img src={spriteUrl(e.meta.pokemonId)} alt="" />
-                  </span>
-                  <span className="bar-text">{shortRoleFor(e)}</span>
-                  {isCurrent && e.slug === "capsule" && (
-                    <span className="now-flag">★ Now</span>
-                  )}
-                  {e.meta.isSide && <span className="side-flag">Side</span>}
-                </div>
+                {e.slug === "amazon" && e.stints ? (
+                  (() => {
+                    // Amazon level-up arc: one bar split into three promotion
+                    // segments (SDE I → SDE II → Senior), with evolution arrows
+                    // at each promotion (Magnemite → Magneton → Magnezone).
+                    const arr = [...e.stints].sort(
+                      (a, b) => months(a.start!) - months(b.start!),
+                    );
+                    return (
+                      <>
+                        {arr.map((s, i) => {
+                          const segStart = months(s.start!);
+                          // Snap each segment to the next promotion so they tile
+                          const segEnd =
+                            i < arr.length - 1
+                              ? months(arr[i + 1].start!)
+                              : months(s.end!);
+                          const segLabel =
+                            s.name === "Senior SDE" ? "Senior" : s.name;
+                          return (
+                            <div
+                              key={s.name}
+                              className="route-bar route-seg"
+                              data-target="amazon"
+                              role="button"
+                              tabIndex={0}
+                              title={`${s.name} · ${s.year}`}
+                              style={
+                                {
+                                  left: pct(TOTAL_MONTHS - segEnd),
+                                  width: pct(segEnd - segStart),
+                                  // Darker steel for earlier stages → brightest at Senior
+                                  background: `color-mix(in srgb, var(--t-steel), black ${
+                                    (arr.length - 1 - i) * 16
+                                  }%)`,
+                                } as CSSProperties
+                              }
+                            >
+                              {/* Each segment shows its own evolution stage:
+                                  Magnemite → Magneton → Magnezone */}
+                              <span className="seg-sprite">
+                                <img src={spriteUrl(s.pokemonId!)} alt="" />
+                              </span>
+                              <span className="bar-text">{segLabel}</span>
+                            </div>
+                          );
+                        })}
+                        {/* Evolution arrow at each promotion boundary, pointing
+                            toward the more-evolved (more recent) stage. */}
+                        {arr.slice(0, -1).map((s, i) => (
+                          <span
+                            key={`evo-${s.name}`}
+                            className="evo-arrow"
+                            aria-hidden="true"
+                            style={{
+                              left: pct(
+                                TOTAL_MONTHS - months(arr[i + 1].start!),
+                              ),
+                            }}
+                          >
+                            ◂
+                          </span>
+                        ))}
+                      </>
+                    );
+                  })()
+                ) : (
+                  <div
+                    className={[
+                      "route-bar",
+                      isCurrent && "current",
+                      e.slug === "capsule" && "main-story",
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
+                    data-target={e.slug}
+                    role="button"
+                    tabIndex={0}
+                    style={
+                      {
+                        ["--bar-color" as string]: typeVar(primaryType),
+                        left,
+                        width,
+                        ...(isLight
+                          ? {
+                              color: "#1B1612",
+                              textShadow: "1px 1px 0 rgba(255,255,255,0.4)",
+                            }
+                          : {}),
+                      } as CSSProperties
+                    }
+                  >
+                    <span className="bar-sprite">
+                      <img src={spriteUrl(e.meta.pokemonId)} alt="" />
+                    </span>
+                    <span className="bar-text">{shortRoleFor(e)}</span>
+                    {isCurrent && e.slug === "capsule" && (
+                      <span className="now-flag">★ Now</span>
+                    )}
+                    {e.meta.isSide && <span className="side-flag">Side</span>}
+                  </div>
+                )}
                 {e.slug === "capsule" && (
                   <div
                     className="now-marker"
@@ -983,9 +1100,7 @@ function RouteMap({ entries }: { entries: DossierEntry[] }) {
 
 function labelFor(e: DossierEntry): string {
   if (e.slug === "training") return "Internships ×4";
-  if (e.slug === "firetv1") return "Amazon · SDE I";
-  if (e.slug === "firetv2") return "Amazon · SDE II";
-  if (e.slug === "astro") return "Amazon · Senior SDE";
+  if (e.slug === "amazon") return "Amazon Lab 126";
   if (e.slug === "sesh") return "Sesh";
   if (e.slug === "v12") return "V12 Resole";
   if (e.slug === "keplar") return "Keplar.io";
@@ -995,9 +1110,7 @@ function labelFor(e: DossierEntry): string {
 
 function shortRoleFor(e: DossierEntry): string {
   if (e.slug === "training") return "Training Arc · 4 Internships";
-  if (e.slug === "firetv1") return "Amazon · SDE I";
-  if (e.slug === "firetv2") return "Amazon · SDE II";
-  if (e.slug === "astro") return "Amazon · Senior SDE";
+  if (e.slug === "amazon") return "Amazon · SDE I → Senior SDE";
   if (e.slug === "sesh") return "Sesh Climbing · Founder";
   if (e.slug === "v12") return "V12 Resole · CTO";
   if (e.slug === "keplar") return "Keplar · Founding Eng";
@@ -1014,6 +1127,14 @@ function TimelineEntry({
 }) {
   const m = entry.meta;
   const isCurrent = entry.end === "Present";
+  // Discoverability hint for this card's hover interactions
+  const hint = entry.stints
+    ? entry.slug === "amazon"
+      ? "Hover each promotion below to see what I shipped at that level."
+      : "Hover each internship below to see what I worked on."
+    : m.overlaps.length > 0
+      ? "Hover or click a concurrent role below to jump to it on the timeline."
+      : "Hover the role above to inspect it on the route map.";
   return (
     <article
       className="entry"
@@ -1037,6 +1158,17 @@ function TimelineEntry({
           <span>{entry.title}</span>
           {m.isSide && <span className="side-tag">Side</span>}
           {isCurrent && <span className="now-tag-inline">Now</span>}
+          <span
+            className="info-icon"
+            tabIndex={0}
+            role="note"
+            aria-label={hint}
+          >
+            i
+            <span className="info-tip" role="tooltip">
+              {hint}
+            </span>
+          </span>
         </div>
         <h3>
           {entry.link ? (
@@ -1064,16 +1196,28 @@ function TimelineEntry({
             </span>
           ))}
         </div>
-        {entry.interns ? (
+        {entry.stints ? (
           <div className="intern-arc">
-            <span className="intern-arc-hint">Hover each to inspect ▸</span>
-            {entry.interns.map((it) => (
+            <span className="intern-arc-hint">
+              {entry.slug === "amazon"
+                ? "Leveled up 3× — hover to inspect ▸"
+                : "Hover each to inspect ▸"}
+            </span>
+            {entry.stints.map((it) => (
               <div
                 className="intern-chip"
                 key={`${it.name}-${it.year}`}
                 tabIndex={0}
               >
                 <span className="intern-head">
+                  {it.pokemonId && (
+                    <img
+                      className="intern-evo"
+                      src={spriteUrl(it.pokemonId)}
+                      alt=""
+                      aria-hidden="true"
+                    />
+                  )}
                   <span className="intern-name">{it.name}</span>
                   <span className="intern-year">{it.year}</span>
                 </span>
@@ -1081,7 +1225,7 @@ function TimelineEntry({
                   <span className="intern-role">{it.role}</span>
                   <p className="intern-highlight">{it.highlight}</p>
                   <ul className="intern-details">
-                    {it.details.map((d, j) => (
+                    {it.details.slice(0, 3).map((d, j) => (
                       <li key={j}>{d}</li>
                     ))}
                   </ul>
@@ -1106,15 +1250,11 @@ function TimelineEntry({
                   role="button"
                   tabIndex={0}
                 >
-                  <span
-                    className="swatch"
-                    style={
-                      {
-                        ["--chip-color" as string]: typeVar(
-                          peerEntry.meta.types[0],
-                        ),
-                      } as CSSProperties
-                    }
+                  <img
+                    className="conc-sprite"
+                    src={spriteUrl(peerEntry.meta.pokemonId)}
+                    alt=""
+                    aria-hidden="true"
                   />
                   {shortRoleFor(peerEntry)}
                 </span>
