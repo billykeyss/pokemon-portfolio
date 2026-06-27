@@ -630,7 +630,7 @@ export const resumeData: ResumeData = {
       featured: true,
       details:
         "Developed an interactive weather dashboard that helps foragers determine potential mushroom locations based on historical and forecasted weather conditions. Users can select locations via map interface or coordinates to analyze 10-day historical and future weather patterns optimal for mushroom growth.",
-      link: "https://mushroom-weather.s3.us-west-2.amazonaws.com/index.html",
+      link: "https://mushroom.billhuang.me/",
       image: "/projects/mushroom-weather.png",
       techStack: [
         "React",
@@ -640,6 +640,32 @@ export const resumeData: ResumeData = {
         "TypeScript",
         "Tailwind CSS",
       ],
+    },
+    {
+      title: "Sesh Climbing Gear",
+      description:
+        "Climber-owned e-commerce brand for chalk buckets, brushes, and training gear",
+      year: "2025",
+      category: "web",
+      featured: true,
+      details:
+        "A climber-owned gear brand selling chalk buckets, brushes, training blocks, and bundled kits — all tested at the gym and on the rock and backed by a lifetime guarantee. The storefront features product collections, multiple colorways, savings bundles, global shipping, and a blog with climbing guides.",
+      link: "https://climbingsesh.com/",
+      image: "/placeholder.svg?height=200&width=300",
+      techStack: ["Shopify", "E-commerce", "TypeScript"],
+    },
+    {
+      title: "V12 Resole",
+      description:
+        "Mail-in and dropoff climbing shoe resoling service with standardized pricing",
+      year: "2025",
+      category: "web",
+      featured: true,
+      details:
+        "A climbing shoe repair service that extends the life of climbers' gear through dropoff/pickup locations or mail-in shipping. Built on Shopify, it offers a simple three-step ordering flow, standardized pricing by repair type and region, membership discounts, and partnerships with climbing gyms and events.",
+      link: "https://v12resole.com/",
+      image: "/placeholder.svg?height=200&width=300",
+      techStack: ["Shopify", "E-commerce"],
     },
     {
       title: "Unreal Sensor Simulation",

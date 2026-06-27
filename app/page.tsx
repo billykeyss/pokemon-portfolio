@@ -34,14 +34,14 @@ interface ExpMeta {
 const EXP_META: Record<Slug, ExpMeta> = {
   capsule: {
     slug: "capsule",
-    pokemonId: 65,
+    pokemonId: 150, // Mewtwo — lab-made super-intelligence
     types: ["psychic"],
     overlaps: ["v12", "sesh"],
   },
   keplar: {
     slug: "keplar",
-    pokemonId: 137,
-    types: ["normal", "psychic"],
+    pokemonId: 132, // Ditto — copies anything = audience simulation
+    types: ["normal"],
     overlaps: ["v12", "sesh"],
   },
   sesh: {
@@ -53,7 +53,7 @@ const EXP_META: Record<Slug, ExpMeta> = {
   },
   v12: {
     slug: "v12",
-    pokemonId: 67,
+    pokemonId: 106, // Hitmonlee — the Kicking Pokémon (feet → climbing shoes)
     types: ["fighting"],
     overlaps: ["capsule", "keplar", "sesh", "astro"],
     isSide: true,
@@ -72,14 +72,14 @@ const EXP_META: Record<Slug, ExpMeta> = {
   },
   firetv1: {
     slug: "firetv1",
-    pokemonId: 100,
-    types: ["electric"],
+    pokemonId: 137, // Porygon — a digital 'program' for the news app
+    types: ["normal"],
     overlaps: [],
   },
   training: {
     slug: "training",
-    pokemonId: 100,
-    types: ["electric", "psychic", "normal"],
+    pokemonId: 133, // Eevee — many evolution paths = exploring careers
+    types: ["normal"],
     overlaps: [],
   },
 };
@@ -158,6 +158,14 @@ const dexNo = (id: number) => id.toString().padStart(3, "0");
 
 /* ─────────────── Build the dossier model from resume-data ──────────── */
 
+type InternInfo = {
+  name: string; // company short name
+  year: string;
+  role: string;
+  highlight: string;
+  details: string[];
+};
+
 type DossierEntry = {
   slug: Slug;
   title: string;
@@ -167,6 +175,7 @@ type DossierEntry = {
   link?: string;
   highlight: string;
   meta: ExpMeta;
+  interns?: InternInfo[]; // populated only for the Training Arc
 };
 
 function buildEntries(): DossierEntry[] {
@@ -208,6 +217,17 @@ function buildEntries(): DossierEntry[] {
           )})** · ${i.highlight}`,
       )
       .join(" ");
+    // Per-internship detail, oldest → newest, for the hover-to-inspect list
+    const internInfos: InternInfo[] = [...interns]
+      .sort((a, b) => months(a.startDate) - months(b.startDate))
+      .map((i) => ({
+        name: i.title.split(",")[0],
+        year: i.startDate.slice(0, 4),
+        role: i.role,
+        highlight: i.highlight,
+        details: i.details,
+      }));
+
     direct.push({
       slug: "training",
       title: "The Training Arc",
@@ -219,6 +239,7 @@ function buildEntries(): DossierEntry[] {
       end: latestEnd,
       highlight: summary,
       meta: EXP_META.training,
+      interns: internInfos,
     });
   }
 
@@ -880,6 +901,10 @@ function RouteMap({ entries }: { entries: DossierEntry[] }) {
             <i className="swatch-side" />
             Side Quest
           </span>
+          <span>
+            <i className="swatch-main" />
+            Main Story
+          </span>
         </div>
       </div>
 
@@ -901,7 +926,13 @@ function RouteMap({ entries }: { entries: DossierEntry[] }) {
               </div>
               <div className="route-track">
                 <div
-                  className={isCurrent ? "route-bar current" : "route-bar"}
+                  className={[
+                    "route-bar",
+                    isCurrent && "current",
+                    e.slug === "capsule" && "main-story",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
                   data-target={e.slug}
                   role="button"
                   tabIndex={0}
@@ -1033,7 +1064,34 @@ function TimelineEntry({
             </span>
           ))}
         </div>
-        <p className="highlight">{entry.highlight}</p>
+        {entry.interns ? (
+          <div className="intern-arc">
+            <span className="intern-arc-hint">Hover each to inspect ▸</span>
+            {entry.interns.map((it) => (
+              <div
+                className="intern-chip"
+                key={`${it.name}-${it.year}`}
+                tabIndex={0}
+              >
+                <span className="intern-head">
+                  <span className="intern-name">{it.name}</span>
+                  <span className="intern-year">{it.year}</span>
+                </span>
+                <div className="intern-pop" role="tooltip">
+                  <span className="intern-role">{it.role}</span>
+                  <p className="intern-highlight">{it.highlight}</p>
+                  <ul className="intern-details">
+                    {it.details.map((d, j) => (
+                      <li key={j}>{d}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="highlight">{entry.highlight}</p>
+        )}
         {m.overlaps.length > 0 && (
           <div className="concurrent">
             <span className="concurrent-label">While here</span>

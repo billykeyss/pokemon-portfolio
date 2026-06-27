@@ -1036,6 +1036,10 @@ a {
 .route-head .legend .swatch-past {
   background: var(--t-electric);
 }
+.route-head .legend .swatch-main {
+  background: var(--gold);
+  box-shadow: 0 0 6px 1px color-mix(in srgb, var(--gold) 70%, transparent);
+}
 
 .route-grid {
   position: relative;
@@ -1172,6 +1176,21 @@ a {
     var(--bar-color) 0 8px,
     color-mix(in srgb, var(--bar-color) 80%, white) 8px 16px
   );
+}
+
+/* Main story line — the canon headline role (Capsule). A persistent gold ring
+   + soft glow makes it pop above the rest of the route as the through-line. */
+.route-bar.main-story {
+  box-shadow:
+    0 0 0 2px var(--gold),
+    0 0 12px 2px color-mix(in srgb, var(--gold) 65%, transparent);
+}
+.route-bar.main-story[data-target]:hover,
+.route-bar.main-story[data-target]:focus-visible {
+  box-shadow:
+    3px 3px 0 var(--ink),
+    0 0 0 2px var(--gold),
+    0 0 12px 2px color-mix(in srgb, var(--gold) 65%, transparent);
 }
 .route-bar .now-flag {
   margin-left: auto;
@@ -2139,6 +2158,126 @@ a.gb-stat-link:hover .gb-link-arrow {
   -webkit-line-clamp: 5;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/* ── Training Arc: hover-to-inspect internship list ── */
+.card .intern-arc {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin: 0 0 4px;
+}
+.card .intern-arc-hint {
+  font-family: "Silkscreen", monospace;
+  font-size: 7.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 1px;
+}
+.card .intern-chip {
+  position: relative;
+  border: 1.5px solid var(--ink);
+  border-radius: 7px;
+  background: var(--cream);
+  padding: 5px 9px;
+  cursor: help;
+  transition:
+    background 0.15s ease,
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+.card .intern-chip:hover,
+.card .intern-chip:focus-visible {
+  background: var(--bubble);
+  transform: translateX(2px);
+  box-shadow: 2px 2px 0 var(--ink);
+  outline: none;
+  z-index: 5;
+}
+.card .intern-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.card .intern-name {
+  font-family: "Newsreader", serif;
+  font-weight: 600;
+  font-size: 12.5px;
+  color: var(--ink);
+}
+.card .intern-year {
+  font-family: "Silkscreen", monospace;
+  font-size: 8px;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+/* Popover floats above the chip on hover/focus */
+.card .intern-pop {
+  position: absolute;
+  bottom: calc(100% + 9px);
+  left: -2px;
+  right: -2px;
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  border-radius: 9px;
+  box-shadow: 4px 4px 0 var(--ink);
+  padding: 9px 11px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(6px);
+  transition:
+    opacity 0.16s ease,
+    transform 0.16s ease,
+    visibility 0.16s;
+  z-index: 20;
+  pointer-events: none;
+}
+.card .intern-chip:hover .intern-pop,
+.card .intern-chip:focus-visible .intern-pop,
+.card .intern-chip:focus-within .intern-pop {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+.card .intern-pop::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 22px;
+  width: 10px;
+  height: 10px;
+  background: var(--paper);
+  border-right: 2px solid var(--ink);
+  border-bottom: 2px solid var(--ink);
+  transform: translateY(-6px) rotate(45deg);
+}
+.card .intern-role {
+  display: block;
+  font-family: "Newsreader", serif;
+  font-style: italic;
+  font-size: 12px;
+  color: var(--ink-2);
+  margin-bottom: 4px;
+}
+.card .intern-highlight {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--ink);
+  margin: 0 0 6px;
+}
+.card .intern-details {
+  margin: 0;
+  padding-left: 15px;
+  list-style: square;
+}
+.card .intern-details li {
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--ink-2);
+  margin-bottom: 2px;
 }
 
 /* ============ PROJECTS ============ */
