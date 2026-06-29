@@ -18,6 +18,9 @@ export interface Experience {
   details: string[];
   link?: string;
   isSide?: boolean;
+  coop?: boolean; // a co-op / internship term — grouped into an arc
+  arc?: "training" | "bigtech"; // which arc to group under (default: training)
+  shortLabel?: string; // distinct chip label when title alone is ambiguous (PCL ×2)
 }
 
 export interface EducationItem {
@@ -248,6 +251,8 @@ export const resumeData: ResumeData = {
       role: "Software Development Engineering Intern",
       startDate: "2017-08",
       endDate: "2017-12",
+      coop: true,
+      arc: "bigtech",
       highlight:
         "Built production-ready Amazon Video app for Echo devices with voice support and third-party integrations",
       details: [
@@ -257,47 +262,103 @@ export const resumeData: ResumeData = {
       ],
     },
     {
-      title: "Connected Lab",
-      timelineTitle: "Connected",
-      role: "Solutions Architect Engineering Intern",
-      startDate: "2017-01",
-      endDate: "2017-05",
+      title: "Meta",
+      timelineTitle: "Meta",
+      role: "Research Development Software Engineer (Contract)",
+      startDate: "2017-02",
+      endDate: "2017-04",
+      coop: true,
+      arc: "bigtech",
+      link: "https://about.meta.com/realitylabs/",
       highlight:
-        "Prototyped AI-powered chatbot with Watson NLP and experimental Android face recognition application",
+        "Prototyped early-stage AI products at Meta's Building 8 (now Reality Labs) — applied AI, custom hardware, and next-gen AR.",
       details: [
-        "Implemented programmable chatbot interface using Watson API (NLP).",
-        "Prototyped experimental android application with face recognition.",
-        "Developed video processing interface using Android NDK.",
+        "Built experimental AI systems combining computer-vision models, fast vector/database retrieval, and real-time text-to-speech.",
+        "Enabled novel human–AI interaction by tightly integrating perception, retrieval, and speech.",
+        "Contributed to custom 3D-printed hardware with bone-conduction audio for always-available, AI-mediated AR.",
+        "Iterated rapidly on models and product in a fast-paced R&D environment.",
       ],
     },
     {
       title: "Connected Lab",
       timelineTitle: "Connected",
-      role: "Software Engineering Intern",
-      startDate: "2016-01",
-      endDate: "2016-05",
+      role: "Software Engineer",
+      startDate: "2017-01",
+      endDate: "2017-04",
+      coop: true,
       highlight:
-        "Built React/Node resource allocation tool with Redux architecture and 90% testing time reduction via Jenkins CI/CD",
+        "Built integration-test infrastructure for a Java Spring server and a Watson-powered chatbot, plus experimental Android CV prototypes",
       details: [
-        "Built resource allocation tool using ReactJS and Node.",
-        "Developed core server functionality with Redux.",
-        "Built Jenkins pipeline infrastructure.",
-        "Improved unit testing coverage while reducing testing time by 90%.",
+        "Improved unit-test coverage and built integration-test infrastructure for a Java Spring server.",
+        "Implemented a programmable chatbot interface using the Watson API (NLP) on a Node server.",
+        "Prototyped an experimental Android app using face recognition/detection and a webcam video-processing interface (Android NDK).",
+        "Stack: ReactJS, Node.js, Java Spring, Express, Oracle, MongoDB, Android.",
+      ],
+    },
+    {
+      title: "Connected Lab",
+      timelineTitle: "Connected",
+      role: "Software Engineer",
+      startDate: "2016-01",
+      endDate: "2016-04",
+      coop: true,
+      highlight:
+        "Built a React/Redux resource-allocation tool (33% faster renders) and a Jenkins CI pipeline that cut testing time 90%",
+      details: [
+        "Built a resource-allocation tool in ReactJS + Node, reducing page render time by 33%.",
+        "Developed core server functionality and front-end state management with Redux.",
+        "Built new Jenkins pipeline infrastructure as the main CI tool for pre-production testing.",
+        "Improved unit-test coverage and quality while reducing testing time by 90%.",
       ],
     },
     {
       title: "nanoPay",
       timelineTitle: "nanoPay",
-      role: "Frontend Developer Intern",
+      role: "Front End Developer",
       startDate: "2015-05",
-      endDate: "2015-09",
+      endDate: "2015-08",
+      coop: true,
       highlight:
-        "Developed responsive AngularJS fintech application with payment processing integration and automated CI/CD pipeline",
+        "Built a fintech Android app and AngularJS merchant site from scratch with the executive team",
       details: [
-        "Implemented UI/UX of Android app and AngularJS responsive website.",
-        "Integrated REST APIs and payment processing systems.",
-        "Collaborated with designers to implement high-quality UI components.",
-        "Established CI/CD pipeline for automated testing and deployment.",
+        "Designed and built an Android app UI/UX from scratch to an alpha product (Android Studio, Java, XML).",
+        "Worked with the executive team to implement key features of the nanoPay merchant website and Android app.",
+        "Redesigned and developed the internal merchant website in AngularJS (HTML5, CSS, JavaScript).",
+        "Used Grunt and GitHub in the development workflow.",
+      ],
+    },
+    {
+      title: "PCL Intracon",
+      timelineTitle: "PCL",
+      shortLabel: "PCL · Kearl",
+      role: "EHT Project Coordinator",
+      startDate: "2014-09",
+      endDate: "2014-12",
+      coop: true,
+      highlight:
+        "Owned digital field-tracking and an RFI issue-tracking workflow for electric-heat-tracing systems on the Kearl oil-sands expansion.",
+      details: [
+        "Built and maintained digital work packages and field-progress tracking across construction and QA/QC.",
+        "Created and triaged RFIs (requests for information) — effectively issue tracking for on-site engineering problems.",
+        "Managed materials-ordering data and ran daily progress reporting.",
+        "Performed systems/site inspections across electric-heat-tracing (EHT) installations.",
+      ],
+    },
+    {
+      title: "PCL Intracon",
+      timelineTitle: "PCL",
+      shortLabel: "PCL · Surmont",
+      role: "Project Coordinator",
+      startDate: "2014-01",
+      endDate: "2014-04",
+      coop: true,
+      highlight:
+        "Ran instrumentation 'loop releases' and an RFI workflow for the ConocoPhillips Surmont Phase II oil-sands build — release sign-off and issue tracking at scale.",
+      details: [
+        "Oversaw instrumentation loop releases with superintendents and QC, clearing IQRs to ship verified control loops — analogous to integration testing and release sign-off.",
+        "Ran an RFI workflow to triage and resolve on-site engineering issues (issue tracking at construction scale).",
+        "Built digital field/work packages and automated progress reporting in Excel to maximize team throughput.",
+        "Routed engineering work requests (EWRs) and cost codes across stakeholders.",
       ],
     },
   ],

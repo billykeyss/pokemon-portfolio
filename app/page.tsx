@@ -6,6 +6,7 @@ import { Moon, Sun } from "lucide-react";
 import "./dossier.css";
 import { resumeData, type Experience, type Hobby } from "@/data/resume-data";
 import { GEN1_POKEMON } from "@/utils/pokemon";
+// import ScrollTrainer from "@/components/ScrollTrainer"; // Cycling Road rail — disabled for now
 
 /* ───────────────────────── Augmenting metadata ─────────────────────────
  * resume-data.ts is the source of truth for the *content* of each role,
@@ -20,6 +21,7 @@ type Slug =
   | "v12"
   | "amazon"
   | "training"
+  | "bigtech"
   | "waterloo";
 
 interface ExpMeta {
@@ -67,6 +69,12 @@ const EXP_META: Record<Slug, ExpMeta> = {
     slug: "training",
     pokemonId: 133, // Eevee — many evolution paths = exploring careers
     types: ["normal"],
+    overlaps: ["waterloo"],
+  },
+  bigtech: {
+    slug: "bigtech",
+    pokemonId: 376, // Metagross — supercomputer brain; Metang (Meta) evolved
+    types: ["steel", "psychic"],
     overlaps: ["waterloo"],
   },
   waterloo: {
@@ -177,14 +185,15 @@ type DossierEntry = {
 
 function buildEntries(): DossierEntry[] {
   const direct: DossierEntry[] = [];
-  const interns: Experience[] = [];
+  const trainingCoops: Experience[] = [];
+  const bigtechCoops: Experience[] = [];
   const amazonRoles: Experience[] = [];
 
   for (const exp of resumeData.experiences) {
-    // Internships group into the Training Arc — check first, since the 2017
-    // intern is also an "Amazon Lab 126" title.
-    if (/intern/i.test(exp.role)) {
-      interns.push(exp);
+    // Co-op terms group into an arc — check first, since the 2017 Amazon co-op
+    // also has an "Amazon Lab 126" title.
+    if (exp.coop) {
+      (exp.arc === "bigtech" ? bigtechCoops : trainingCoops).push(exp);
       continue;
     }
     // The three Amazon Lab 126 FTE roles group into one level-up entry.
@@ -207,99 +216,103 @@ function buildEntries(): DossierEntry[] {
     }
   }
 
-  // Build a single "Amazon Lab 126" entry from the three FTE roles, shown as an
-  // evolution line (Magnemite → Magneton → Magnezone) in the hover.
-  if (amazonRoles.length) {
-    const startMs = amazonRoles.map((r) => months(r.startDate));
-    const endMs = amazonRoles.map((r) => months(r.endDate));
+  // The Amazon ascent — Meta → Amazon internship → SDE I → II → III — shown as a
+  // single segmented progression bar (each stage has its own Pokémon).
+  const amazonArcRoles = [...bigtechCoops, ...amazonRoles];
+  if (amazonArcRoles.length) {
+    const stageInfo = (e: Experience): { name: string; pokemonId: number } => {
+      if (/Meta/i.test(e.title)) return { name: "Meta", pokemonId: 375 }; // Metang
+      if (e.coop && /Amazon/i.test(e.title))
+        return { name: "Amazon Intern", pokemonId: 479 }; // Rotom
+      if (/senior/i.test(e.role)) return { name: "SDE III", pokemonId: 462 }; // Magnezone
+      if (/\bII\b/.test(e.role)) return { name: "SDE II", pokemonId: 82 }; // Magneton
+      return { name: "SDE I", pokemonId: 81 }; // Magnemite
+    };
+    const startMs = amazonArcRoles.map((r) => months(r.startDate));
+    const endMs = amazonArcRoles.map((r) => months(r.endDate));
     const earliestStart =
-      amazonRoles[startMs.indexOf(Math.min(...startMs))].startDate;
-    const latestEnd = amazonRoles[endMs.indexOf(Math.max(...endMs))].endDate;
+      amazonArcRoles[startMs.indexOf(Math.min(...startMs))].startDate;
+    const latestEnd = amazonArcRoles[endMs.indexOf(Math.max(...endMs))].endDate;
 
-    const EVO = [81, 82, 462]; // Magnemite → Magneton → Magnezone
-    const levelOf = (role: string) =>
-      /senior/i.test(role) ? "SDE III" : /\bII\b/.test(role) ? "SDE II" : "SDE I";
-
-    // Oldest → newest, so the evolution reads base → final, top → bottom
-    const stints: StintInfo[] = [...amazonRoles]
+    // Oldest → newest, left → right across the segmented bar
+    const stints: StintInfo[] = [...amazonArcRoles]
       .sort((a, b) => months(a.startDate) - months(b.startDate))
-      .map((r, i) => ({
-        name: levelOf(r.role),
+      .map((r) => ({
+        ...stageInfo(r),
         year: yearLabel(r.startDate, r.endDate),
         role: r.role,
         highlight: r.highlight,
         details: r.details,
-        pokemonId: EVO[Math.min(i, EVO.length - 1)],
         start: r.startDate,
         end: r.endDate,
       }));
 
     direct.push({
       slug: "amazon",
-      title: "Amazon Lab 126",
-      role: "SDE I → SDE II → SDE III · FireTV & Astro",
+      title: "Big Tech",
+      role: "Meta → Amazon Intern → SDE I → II → III",
       start: earliestStart,
       end: latestEnd,
       link: "https://www.aboutamazon.com/news/devices/meet-astro",
       highlight:
-        "Five years at Amazon Lab 126 across FireTV and the Astro home robot, leveling up from SDE I to SDE III.",
+        "From a Meta Building 8 contract through an Amazon internship to leveling up SDE I → III at Amazon Lab 126 (FireTV, then the Astro home robot).",
       meta: EXP_META.amazon,
       stints,
     });
   }
 
-  // Build a single "Training Arc" entry from the grouped internships
-  if (interns.length) {
-    const startMonths = interns.map((i) => months(i.startDate));
-    const endMonths = interns.map((i) => months(i.endDate));
-    const earliestStart =
-      interns[startMonths.indexOf(Math.min(...startMonths))].startDate;
-    const latestEnd =
-      interns[endMonths.indexOf(Math.max(...endMonths))].endDate;
-    const summary = interns
-      .map(
-        (i) =>
-          `**${i.title.replace(/, FireTV| Lab/, "").split(",")[0]} (${i.startDate.slice(
-            0,
-            4,
-          )})** · ${i.highlight}`,
-      )
-      .join(" ");
-    // A thematically-related Pokémon for each internship
-    const internPokemon = (i: Experience): number => {
-      if (/nanoPay/i.test(i.title)) return 52; // Meowth — fintech / Pay Day
-      if (/Amazon/i.test(i.title)) return 479; // Rotom — possesses the Echo device
-      if (/Connected/i.test(i.title))
-        return i.startDate.slice(0, 4) === "2017" ? 63 : 137; // Abra (AI chatbot) / Porygon (build tooling)
-      return 25; // fallback: Pikachu
-    };
+  // A thematically-related Pokémon for each co-op
+  const internPokemon = (i: Experience): number => {
+    if (/nanoPay/i.test(i.title)) return 52; // Meowth — fintech / Pay Day
+    if (/Meta/i.test(i.title)) return 375; // Metang — Meta, steel/psychic AI hardware
+    if (/Amazon/i.test(i.title)) return 479; // Rotom — possesses the Echo device
+    if (/PCL/i.test(i.title))
+      return /Kearl|EHT/i.test(`${i.shortLabel ?? ""} ${i.role}`) ? 219 : 323; // Magcargo (heat tracing) / Camerupt (oil sands)
+    if (/Connected/i.test(i.title))
+      return i.startDate.slice(0, 4) === "2017" ? 63 : 137; // Abra (AI chatbot) / Porygon (build tooling)
+    return 25; // fallback: Pikachu
+  };
 
-    // Per-internship detail, oldest → newest, for the hover-to-inspect list
-    const internInfos: StintInfo[] = [...interns]
+  // Build a grouped arc (Training Arc / Big Tech) from a set of co-op terms,
+  // each shown as a hover-to-inspect chip with its own Pokémon.
+  const makeCoopArc = (
+    coops: Experience[],
+    slug: Slug,
+    title: string,
+  ): DossierEntry | null => {
+    if (!coops.length) return null;
+    const startMs = coops.map((i) => months(i.startDate));
+    const endMs = coops.map((i) => months(i.endDate));
+    const earliestStart = coops[startMs.indexOf(Math.min(...startMs))].startDate;
+    const latestEnd = coops[endMs.indexOf(Math.max(...endMs))].endDate;
+    const stints: StintInfo[] = [...coops]
       .sort((a, b) => months(a.startDate) - months(b.startDate))
       .map((i) => ({
-        name: i.title.split(",")[0],
+        name: i.shortLabel ?? i.title.split(",")[0],
         year: i.startDate.slice(0, 4),
         role: i.role,
         highlight: i.highlight,
         details: i.details,
         pokemonId: internPokemon(i),
       }));
-
-    direct.push({
-      slug: "training",
-      title: "The Training Arc",
-      role: `${interns.length} internships · ${interns
-        .map((i) => i.title.split(",")[0])
-        .reverse()
-        .join(" → ")}`,
+    const span =
+      earliestStart.slice(0, 4) === latestEnd.slice(0, 4)
+        ? earliestStart.slice(0, 4)
+        : `${earliestStart.slice(0, 4)}–${latestEnd.slice(0, 4)}`;
+    return {
+      slug,
+      title,
+      role: `${coops.length} co-op term${coops.length > 1 ? "s" : ""} · ${span}`,
       start: earliestStart,
       end: latestEnd,
-      highlight: summary,
-      meta: EXP_META.training,
-      stints: internInfos,
-    });
-  }
+      highlight: "",
+      meta: EXP_META[slug],
+      stints,
+    };
+  };
+
+  const trainingArc = makeCoopArc(trainingCoops, "training", "The Training Arc");
+  if (trainingArc) direct.push(trainingArc);
 
   // The University of Waterloo era — the academic foundation the internships
   // happened within (5-year co-op B.Eng, graduated Apr 2018).
@@ -481,6 +494,8 @@ export default function V2DossierPage() {
 
   return (
     <div ref={rootRef} className="dossier-root">
+      {/* Cycling Road rail — hidden for now (revisit w/ a trainer-on-bike sprite) */}
+      {/* <ScrollTrainer /> */}
       {/* ============ TOP STRIP ============ */}
       <header className="strip">
         <div className="strip-inner">
@@ -1152,9 +1167,10 @@ function RouteMap({ entries }: { entries: DossierEntry[] }) {
 }
 
 function labelFor(e: DossierEntry): string {
-  if (e.slug === "training") return "Internships ×4";
+  if (e.slug === "training") return `Co-ops ×${e.stints?.length ?? ""}`;
+  if (e.slug === "bigtech") return "Big Tech Interns";
   if (e.slug === "waterloo") return "UWaterloo";
-  if (e.slug === "amazon") return "Amazon Lab 126";
+  if (e.slug === "amazon") return "Big Tech";
   if (e.slug === "sesh") return "Sesh";
   if (e.slug === "v12") return "V12 Resole";
   if (e.slug === "keplar") return "Keplar.io";
@@ -1163,9 +1179,12 @@ function labelFor(e: DossierEntry): string {
 }
 
 function shortRoleFor(e: DossierEntry): string {
-  if (e.slug === "training") return "Training Arc · 4 Internships";
+  if (e.slug === "training")
+    return `Training Arc · ${e.stints?.length ?? 0} Co-ops`;
+  if (e.slug === "bigtech")
+    return `Big Tech · ${e.stints?.map((s) => s.name.split(/[ ·]/)[0]).join(" + ")}`;
   if (e.slug === "waterloo") return "UWaterloo · Computer Eng";
-  if (e.slug === "amazon") return "Amazon · SDE I → SDE III";
+  if (e.slug === "amazon") return "Big Tech · Meta → SDE III";
   if (e.slug === "sesh") return "Sesh Climbing · Founder";
   if (e.slug === "v12") return "V12 Resole · CTO";
   if (e.slug === "keplar") return "Keplar · Founding Eng";
@@ -1182,11 +1201,19 @@ function TimelineEntry({
 }) {
   const m = entry.meta;
   const isCurrent = entry.end === "Present";
+  // Expandable highlight: clamp to a few lines, reveal the rest on "Show more"
+  const [expanded, setExpanded] = useState(false);
+  const [clamped, setClamped] = useState(false);
+  const highlightRef = useRef<HTMLParagraphElement>(null);
+  useEffect(() => {
+    const el = highlightRef.current;
+    if (el) setClamped(el.scrollHeight > el.clientHeight + 2);
+  }, []);
   // Discoverability hint for this card's hover interactions
   const hint = entry.stints
     ? entry.slug === "amazon"
       ? "Hover each promotion below to see what I shipped at that level."
-      : "Hover each internship below to see what I worked on."
+      : "Hover each co-op below to see what I worked on."
     : m.overlaps.length > 0
       ? "Hover or click a concurrent role below to jump to it on the timeline."
       : "Hover the role above to inspect it on the route map.";
@@ -1258,10 +1285,10 @@ function TimelineEntry({
                 ? "Leveled up 3× — hover to inspect ▸"
                 : "Hover each to inspect ▸"}
             </span>
-            {entry.stints.map((it) => (
+            {entry.stints.map((it, idx) => (
               <div
                 className="intern-chip"
-                key={`${it.name}-${it.year}`}
+                key={`${entry.slug}-${idx}-${it.name}`}
                 tabIndex={0}
               >
                 <span className="intern-head">
@@ -1289,7 +1316,23 @@ function TimelineEntry({
             ))}
           </div>
         ) : (
-          <p className="highlight">{entry.highlight}</p>
+          <>
+            <p
+              ref={highlightRef}
+              className={`highlight${expanded ? " expanded" : ""}`}
+            >
+              {entry.highlight}
+            </p>
+            {(clamped || expanded) && (
+              <button
+                type="button"
+                className="highlight-toggle"
+                onClick={() => setExpanded((v) => !v)}
+              >
+                {expanded ? "Show less ▴" : "Show more ▾"}
+              </button>
+            )}
+          </>
         )}
         {m.overlaps.length > 0 && (
           <div className="concurrent">
