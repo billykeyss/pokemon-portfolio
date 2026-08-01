@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect } from "react";
 import { GAMES, type ArcadeGame } from "./_shared/registry";
+import { GameIcon } from "./_shared/GameIcon";
 import { PixelPanel } from "./_shared/pixel-ui";
 
 export default function ArcadePage() {
@@ -51,10 +52,7 @@ function Cabinet({ game }: { game: ArcadeGame }) {
   return (
     <PixelPanel className="transition-transform active:translate-x-[2px] active:translate-y-[2px]">
       <div className="flex items-center gap-3">
-        <span
-          className="h-10 w-10 shrink-0 border-4 border-black"
-          style={{ background: game.accent }}
-        />
+        <GameIcon slug={game.slug} accent={game.accent} />
         <div className="min-w-0">
           <h2 className="text-base font-bold uppercase tracking-widest">
             {game.title}
