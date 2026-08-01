@@ -1,8 +1,18 @@
-import { MAX_TYPES } from "./items";
+
 import { generate } from "./generate";
 import { SHELF_WIDTH, type Board, type LevelParams } from "./types";
 
 const MIN_TYPES = 4;
+/**
+ * Goods on the board at once.
+ *
+ * Deliberately below the number of drawings that exist. Every extra kind needs
+ * another shelf, and shelves come out of the same screen — measured, fourteen
+ * kinds shrinks a good to 24px, where a 10x10 drawing is mush. Eight keeps them
+ * at ~53px and legible; the rest of the art earns its keep by rotating through
+ * the cast instead.
+ */
+const MAX_TYPES_PER_LEVEL = 8;
 const FREE_SLOTS = 3;
 
 /**
@@ -20,12 +30,12 @@ const FREE_SLOTS = 3;
  * interesting.
  *
  * The curve flattens once both dials max out, around level 30. Raising it
- * further means more kinds of goods, which means more item art — the type count
- * is capped by how many are drawn, not by anything in the puzzle.
+ * further is a screen-size problem, not an art one: more kinds means more
+ * shelves means smaller goods.
  */
 export function paramsForLevel(level: number): LevelParams {
   const n = Math.max(1, Math.floor(level));
-  const types = Math.min(MAX_TYPES, MIN_TYPES + Math.floor((n - 1) / 4));
+  const types = Math.min(MAX_TYPES_PER_LEVEL, MIN_TYPES + Math.floor((n - 1) / 4));
 
   // Shelves start ahead of the type count and gradually fall behind it.
   const slack = Math.max(-2, 1 - Math.floor((n - 1) / 5));

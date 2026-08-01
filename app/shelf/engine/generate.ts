@@ -25,14 +25,24 @@ export function shuffled<T>(items: readonly T[], rng: Rng): T[] {
  * are the only reason anything can move at all, and a board dealt full is
  * dead on arrival.
  *
+ * *Which* goods appear is drawn from the full set rather than always being the
+ * first N. There is far more art than a level can show at once — a board wide
+ * enough for every drawing would shrink the goods past the point of reading
+ * them — so the cast rotates instead. Levels stay the same size and stop
+ * looking like each other.
+ *
  * Items are dealt round-robin across the slots that are in play, which spreads
  * the depth evenly rather than burying one slot under a tall pile.
  */
 export function deal(params: LevelParams, rng: Rng): Board {
   const types = Math.min(params.types, MAX_TYPES);
+  const cast = shuffled(
+    Array.from({ length: MAX_TYPES }, (_, i) => i),
+    rng,
+  ).slice(0, types);
 
   const items: number[] = [];
-  for (let type = 0; type < types; type++) {
+  for (const type of cast) {
     for (let i = 0; i < SHELF_WIDTH; i++) items.push(type);
   }
 
@@ -80,15 +90,19 @@ export function generate(params: LevelParams, seed: number): Board {
   }
 
   const types = Math.min(params.types, MAX_TYPES);
+  const cast = shuffled(
+    Array.from({ length: MAX_TYPES }, (_, i) => i),
+    rng,
+  ).slice(0, types);
+
   const shelves: Slot[][] = [];
-  for (let s = 0; s < params.shelves; s++) {
-    shelves.push([[], [], []]);
-  }
-  for (let type = 0; type < types; type++) {
-    const shelf = type % params.shelves;
-    const slot = Math.floor(type / params.shelves) % SHELF_WIDTH;
+  for (let s = 0; s < params.shelves; s++) shelves.push([[], [], []]);
+
+  cast.forEach((type, index) => {
+    const shelf = index % params.shelves;
+    const slot = Math.floor(index / params.shelves) % SHELF_WIDTH;
     for (let i = 0; i < SHELF_WIDTH; i++) shelves[shelf][slot].push(type);
-  }
+  });
 
   return { shelves, types };
 }

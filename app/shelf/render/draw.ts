@@ -1,6 +1,7 @@
 import { drawPixelGrid } from "@/app/game/_shared/pixelGrid";
+import type { SpriteMap } from "@/app/game/_shared/useSprites";
 import { flyArc, flyProgress, liftAmount, popScale, type Fly } from "../engine/anim";
-import { itemAt } from "../engine/items";
+import { fallbackArt, goodAt } from "../engine/items";
 import { frontOf } from "../engine/rules";
 import { SHELF_WIDTH, type Board } from "../engine/types";
 import { slotRect, type Rect, type ShelfLayout } from "./layout";
@@ -40,23 +41,39 @@ const SELECT = "#F7D96B";
  */
 const DEPTH_OFFSET = 0.34;
 
+/**
+ * Draw a good, preferring its sprite and falling back to the hand-drawn grid.
+ *
+ * The fallback is not decoration: a sprite that has not arrived yet — or at
+ * all — would otherwise leave an empty slot on a board whose entire mechanic is
+ * comparing what is in the slots.
+ */
 function drawItem(
   ctx: CanvasRenderingContext2D,
   type: number,
   rect: Rect,
+  sprites: SpriteMap,
   alpha = 1,
   scale = 1,
 ): void {
-  const art = itemAt(type);
   const w = rect.w * scale;
   const h = rect.h * scale;
+  const x = rect.x + (rect.w - w) / 2;
+  const y = rect.y + (rect.h - h) / 2;
 
-  drawPixelGrid(
-    ctx,
-    { grid: art.grid, palette: art.palette },
-    { x: rect.x + (rect.w - w) / 2, y: rect.y + (rect.h - h) / 2, w, h },
-    alpha,
-  );
+  const sprite = sprites[goodAt(type).sprite];
+  if (sprite !== undefined) {
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    // Sprites are 16x16 pixel art; smoothing turns them to mush when scaled up.
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(sprite, x, y, w, h);
+    ctx.restore();
+    return;
+  }
+
+  const art = fallbackArt(type);
+  drawPixelGrid(ctx, { grid: art.grid, palette: art.palette }, { x, y, w, h }, alpha);
 }
 
 /**
@@ -72,6 +89,7 @@ function drawSlot(
   rect: Rect,
   stack: number[],
   skipFront: boolean,
+  sprites: SpriteMap,
 ): void {
   ctx.fillStyle = BACKBOARD;
   ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
@@ -92,6 +110,7 @@ function drawSlot(
       ctx,
       stack[i],
       { x: rect.x, y: rect.y - lift, w: rect.w, h: rect.h },
+      sprites,
       back ? Math.max(0.3, 0.62 - (depth - 1) * 0.14) : 1,
       shrink,
     );
@@ -137,6 +156,7 @@ export function drawScene(
   state: DrawState,
   canvasW: number,
   canvasH: number,
+  sprites: SpriteMap,
 ): void {
   const sky = ctx.createLinearGradient(0, 0, 0, canvasH);
   sky.addColorStop(0, BG_TOP);
@@ -174,7 +194,7 @@ export function drawScene(
         state.fly.from.shelf === shelf &&
         state.fly.from.slot === slot;
 
-      drawSlot(ctx, layout, rect, stack, inFlight);
+      drawSlot(ctx, layout, rect, stack, inFlight, sprites);
 
       const chosen =
         state.selected !== null &&
@@ -190,7 +210,7 @@ export function drawScene(
   }
 
   if (state.fly !== null) {
-    drawItem(ctx, state.fly.type, flyRect(layout, state.fly));
+    drawItem(ctx, state.fly.type, flyRect(layout, state.fly), sprites);
   }
 
   // A cleared shelf swells and vanishes.
@@ -202,6 +222,7 @@ export function drawScene(
           ctx,
           state.pop.type,
           slotRect(layout, state.pop.shelf, slot),
+          sprites,
           Math.min(1, scale),
           scale,
         );

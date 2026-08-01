@@ -1,0 +1,14 @@
+Free Pixel Food!
+Henry Software — https://henrysoftware.itch.io/pixel-food
+
+Licence: Creative Commons Zero v1.0 Universal (CC0)
+https://creativecommons.org/publicdomain/zero/1.0/
+
+Public domain dedication. Free to use in personal, educational and commercial
+projects; redistribution permitted; attribution not required. Credited here
+anyway, because knowing where art came from matters when someone later asks
+whether it can ship.
+
+Source file: Food.png — a 128x128 sheet of 64 sprites, 16x16 each.
+Sliced into individual PNGs by `pnpm sprites:food`; the sheet is the source of
+truth and the slices are regenerated from it.

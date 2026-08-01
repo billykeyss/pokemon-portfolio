@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LevelSelect } from "@/app/game/_shared/LevelSelect";
 import { PixelButton, PixelPanel } from "@/app/game/_shared/pixel-ui";
 import { useGameLoop } from "@/app/game/_shared/useGameLoop";
+import { useSprites } from "@/app/game/_shared/useSprites";
 import {
   advanceFly,
   isFlyDone,
@@ -12,6 +13,7 @@ import {
   startFly,
   type Fly,
 } from "./engine/anim";
+import { spriteSources } from "./engine/items";
 import { levelFor, paramsForLevel } from "./engine/level";
 import {
   applyMove,
@@ -39,6 +41,8 @@ const HINT_DURATION = 2.2;
 
 export default function ShelfPage() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const sources = useMemo(spriteSources, []);
+  const { sprites } = useSprites(sources);
 
   const [save, setSave] = useState<ShelfSave>(defaultShelfSave);
   const [loaded, setLoaded] = useState(false);
@@ -237,8 +241,8 @@ export default function ShelfPage() {
       clock: clockRef.current,
     };
 
-    drawScene(ctx, layout, state, canvas.width, canvas.height);
-  }, []);
+    drawScene(ctx, layout, state, canvas.width, canvas.height, sprites.current);
+  }, [sprites]);
 
   useGameLoop({ step, draw, fixedDt: FIXED_DT, running: true });
 

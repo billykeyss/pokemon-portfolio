@@ -10,7 +10,8 @@
     "lint": "next lint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "sprites": "node scripts/sprites/build.mjs"
+    "sprites": "node scripts/sprites/build.mjs",
+    "sprites:food": "node scripts/sprites/slice.mjs"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

@@ -1,5 +1,5 @@
 /**
- * Hand-drawn 10x10 goods, one per type.
+ * Fallback art: hand-drawn 10x10 goods.
  *
  * Pixel grids rather than generated art: at the size a shelf slot draws them, a
  * hand-placed silhouette reads far more clearly than a downscaled illustration
@@ -148,10 +148,168 @@ const ITEMS: readonly ItemArt[] = [
       "...KKKK...",
     ],
   },
+  {
+    name: "carrot",
+    palette: { O: "#F2802B", D: "#B8551A", L: "#4FA83C", K: OUTLINE },
+    grid: [
+      "...KLK....",
+      "..KLLLK...",
+      "..KOOOK...",
+      "..KOOODK..",
+      "..KOOODK..",
+      "...KOODK..",
+      "...KOODK..",
+      "....KODK..",
+      "....KDK...",
+      ".....K....",
+    ],
+  },
+  {
+    name: "fish",
+    palette: { B: "#6FA3C4", D: "#3F6E8C", H: "#A8CFE3", E: "#161A1F", K: OUTLINE },
+    grid: [
+      "..........",
+      "K...KKKK..",
+      "KK.KHHHBK.",
+      "KBKHBBBBBK",
+      "KBBBBEBBBK",
+      "KBBDBBBBBK",
+      "KBKDDDDDBK",
+      "KK.KDDDDK.",
+      "K...KKKK..",
+      "..........",
+    ],
+  },
+  {
+    name: "cookie",
+    palette: { C: "#A9713F", D: "#4A2D18", K: OUTLINE },
+    grid: [
+      "...KKKK...",
+      ".KKCCCCKK.",
+      ".KCCDCCCK.",
+      "KCDCCCCCCK",
+      "KCCCCCDCCK",
+      "KCDCCCCCCK",
+      "KCCCCDCCCK",
+      ".KCCCCCCK.",
+      ".KKCCCCKK.",
+      "...KKKK...",
+    ],
+  },
+  {
+    name: "corn",
+    palette: { Y: "#F5C842", D: "#C99A1E", L: "#5A9E3A", K: OUTLINE },
+    grid: [
+      "....KK....",
+      "...KYYK...",
+      "..LKYYKL..",
+      ".LLKYYYKL.",
+      ".LKYYYYYKL",
+      ".LKYYDYYKL",
+      ".LKYYYYYKL",
+      "..KYYYYYK.",
+      "..KDYYYDK.",
+      "...KKKK...",
+    ],
+  },
+  {
+    name: "ham",
+    palette: { P: "#E88FA0", D: "#B85F72", H: "#FFB8C4", W: "#F6E9E4", K: OUTLINE },
+    grid: [
+      "..KKKKKK..",
+      ".KPPPPPPK.",
+      "KPPPPPPPPK",
+      "KPHPPPPPPK",
+      "KPPPPPPPDK",
+      "KPPWWPPPDK",
+      "KPPWWPPPDK",
+      "KPPPPPPPDK",
+      ".KDDDDDDK.",
+      "..KKKKKK..",
+    ],
+  },
+  {
+    name: "coffee",
+    palette: { B: "#4A3428", L: "#E8D9C0", D: "#6B4A33", K: OUTLINE },
+    grid: [
+      "..KKKKKK..",
+      ".KBBBBBBK.",
+      ".KBBBBBBK.",
+      "KBBBBBBBBK",
+      "KBLLLLLLBK",
+      "KBLDDDDLBK",
+      "KBLLLLLLBK",
+      "KBBBBBBBBK",
+      ".KBBBBBBK.",
+      "..KKKKKK..",
+    ],
+  },
 ];
 
-export const MAX_TYPES = ITEMS.length;
+/**
+ * The goods a level can draw from.
+ *
+ * A curated subset of a 64-sprite CC0 pack rather than the whole thing, and the
+ * curation is doing real work. The pack leans warm — apple, tomato, strawberry
+ * and cherry are all small, round and red — and this game asks one question
+ * over and over: are these three the same? Two goods a player has to squint to
+ * tell apart turn a puzzle into a guess.
+ *
+ * So the pool is chosen for separation on *both* axes. Where several share a
+ * colour, their silhouettes do not: the browns are a disc, a knot, a wedge, a
+ * drumstick and a roast, which read apart instantly even at slot size.
+ */
+export interface Good {
+  name: string;
+  /** Basename of the PNG in public/game/shelf/. */
+  sprite: string;
+}
 
-export function itemAt(type: number): ItemArt {
+export const GOODS: readonly Good[] = [
+  { name: "cookie", sprite: "food-00" },
+  { name: "tankard", sprite: "food-02" },
+  { name: "honey pot", sprite: "food-05" },
+  { name: "bento", sprite: "food-06" },
+  { name: "apple", sprite: "food-12" },
+  { name: "grapes", sprite: "food-14" },
+  { name: "fried eggs", sprite: "food-16" },
+  { name: "pineapple", sprite: "food-18" },
+  { name: "beer", sprite: "food-20" },
+  { name: "cheese", sprite: "food-24" },
+  { name: "roast", sprite: "food-25" },
+  { name: "aubergine", sprite: "food-27" },
+  { name: "pepper", sprite: "food-29" },
+  { name: "pie", sprite: "food-36" },
+  { name: "pickle", sprite: "food-39" },
+  { name: "pretzel", sprite: "food-40" },
+  { name: "banana", sprite: "food-47" },
+  { name: "watermelon", sprite: "food-48" },
+  { name: "drumstick", sprite: "food-50" },
+  { name: "avocado", sprite: "food-56" },
+  { name: "shrimp", sprite: "food-63" },
+];
+
+/** How many goods exist. Not how many appear in one level. */
+export const MAX_TYPES = GOODS.length;
+
+export function goodAt(type: number): Good {
+  return GOODS[type % GOODS.length];
+}
+
+/**
+ * Drawn stand-in for a good whose sprite has not loaded.
+ *
+ * There are fewer grids than goods, so this wraps — it exists so a failed image
+ * request degrades to a playable board rather than an empty shelf, not to be a
+ * faithful likeness.
+ */
+export function fallbackArt(type: number): ItemArt {
   return ITEMS[type % ITEMS.length];
+}
+
+/** Sources for useSprites: every good's PNG, keyed by its sprite name. */
+export function spriteSources(): Record<string, string> {
+  return Object.fromEntries(
+    GOODS.map((g) => [g.sprite, `/game/shelf/${g.sprite}.png`]),
+  );
 }
