@@ -16,6 +16,7 @@ export const metadata: Metadata = {
     "Portfolio",
   ],
   authors: [{ name: "Bill Huang" }],
+  manifest: "/manifest.webmanifest",
   openGraph: {
     title: "Bill Huang | Software Engineer",
     description:
