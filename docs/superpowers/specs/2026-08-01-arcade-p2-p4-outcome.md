@@ -50,9 +50,10 @@ part-way through**, so:
 - three-cell trucks in Traffic Jam have no generated art and fall back to a
   drawn shape. This reads as a different kind of vehicle, which is correct, not
   as a broken car;
-- Shelf Sort items are hand-authored 10×10 pixel grids. At tray size they draw
-  about 40px across, where a placed silhouette beats a downscaled illustration
-  anyway — this is a better outcome than the original plan, not a compromise.
+- Shelf Sort goods are hand-authored 10×10 pixel grids. At the size a slot
+  draws them, a placed silhouette beats a downscaled illustration anyway — this
+  is a better outcome than the original plan, not a compromise. The number of
+  grids is also what caps the difficulty curve.
 
 To add generated art later: drop files in `assets/sprites/raw/<game>/`, run
 `pnpm sprites`. The renderer prefers a loaded sprite and falls back when one is
@@ -102,21 +103,52 @@ starts already escaped, and no *other* horizontal vehicle sits on the exit row
 
 ## P4 — Shelf Sort
 
-Shelf wall of item columns plus a holding tray. Only the front item of a column
-is reachable; three matching items on the tray clear together. **Filling the
-tray with items that cannot pair is a real fail state** — a wrong take can
-strand you, which is what separates this from the sorting games.
+**Built twice.** The first version was the wrong game.
 
-- Tray size, not item count, is the difficulty dial: at seven slots almost any
-  order works out, at five the player must think about what a take strands. It
-  never drops below five, the point where one wrong pick stops being
-  recoverable.
-- Shelves and tray are sized independently. The tray always holds more slots
-  across the same width, so a shared item size left the shelves — the part being
-  read — small and marooned. The item in flight scales between the two sizes so
-  it does not overflow the slot it lands in.
-- Generation is cheap here (~200ms for 30 levels): a generous tray forgives a
-  lot, so most random deals are solvable and the first attempt usually stands.
+### The mistake
+
+Shipped first was a shelf wall plus a seven-slot holding tray: tap goods into
+the tray, three of a kind clear, game over if the tray fills with seven
+mismatches. That is a faithful implementation — of **Triple Match 3D / Zen
+Match**, whose signature mechanic is exactly that tray. It is not Goods Sort,
+and it was wearing that name.
+
+Worth recording *why*, because the reasoning looked sound at the time: an early
+sketch had "an item may move to a shelf only if it already holds one of that
+type", which was judged too easy and abandoned for the tray. The real game
+solves the same problem differently — three-slot shelves plus items buried
+behind other items — and that is where its difficulty comes from. Checking what
+the genre actually was would have cost one search.
+
+### What it is now
+
+- Shelves are **three slots wide**; each slot stacks items front-to-back.
+- Only the **front** item of a slot can be moved. Ones behind show dimmed,
+  smaller and offset up — visible but out of reach.
+- A move takes a front item to **any shelf with a free slot**. Which slot it
+  lands in is not a decision the game asks for, so the destination is a shelf
+  and the code never names a slot.
+- **Three matching fronts on one shelf clear**, and clearing cascades: uncovering
+  what was behind can complete another match immediately.
+- **Deadlock is real**: every shelf full with no match is a dead board.
+
+Two things carry the design:
+
+- The difficulty dial is **how the shelf count compares to the type count**, not
+  the item count. One more shelf than types means every item has its own slot
+  and the whole board is visible — a clean tutorial. As shelves fall behind,
+  items bury each other.
+- **Free slots stay at three.** They are the only reason anything can move;
+  below three, boards deadlock before they get interesting.
+
+Buried items are drawn large enough to *identify*, not merely to notice.
+Knowing something is behind is not a decision a player can act on; knowing it is
+the third apple is the entire reason to show it.
+
+Generation is cheap (2–5ms per level) — most random deals are solvable, so the
+first attempt usually stands. The curve flattens around level 30 when both dials
+max out; raising it further means more kinds of goods, which means more item
+art. The type cap is set by how many are drawn, not by anything in the puzzle.
 
 ## Cross-cutting fix
 
