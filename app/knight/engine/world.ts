@@ -1,4 +1,5 @@
 import type { Arena, Entity, Vec2 } from "./types";
+import { steerHero } from "./move";
 
 /** Simulation runs at a fixed 120Hz regardless of render frame rate. */
 export const FIXED_DT = 1 / 120;
@@ -76,6 +77,11 @@ function clampToArena(e: Entity, arena: Arena): void {
  */
 export function stepWorld(world: World): void {
   if (world.over) return;
+
+  const steering = heroOf(world);
+  if (steering && steering.deadAtTick < 0) {
+    steerHero(steering, world.moveTarget, FIXED_DT);
+  }
 
   for (const e of world.entities) {
     if (e.deadAtTick >= 0) continue;

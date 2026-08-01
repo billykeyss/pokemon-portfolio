@@ -101,3 +101,23 @@ describe("stepWorld", () => {
     expect(w.over).toBe(true);
   });
 });
+
+describe("drag to move", () => {
+  it("walks the hero toward the drag target", () => {
+    const w = fresh();
+    const h = spawnHero(w, { x: 180, y: 400 });
+    w.moveTarget = { x: 180, y: 120 };
+    for (let i = 0; i < 240; i++) stepWorld(w);
+    expect(h.pos.y).toBeLessThan(400);
+  });
+
+  it("does not move a dead hero", () => {
+    const w = fresh();
+    const h = spawnHero(w, { x: 180, y: 400 });
+    h.deadAtTick = 0;
+    w.moveTarget = { x: 180, y: 120 };
+    const before = { ...h.pos };
+    stepWorld(w);
+    expect(h.pos).toEqual(before);
+  });
+});
