@@ -1,4 +1,5 @@
 import {
+  ease,
   timelineAt,
   timelineDuration,
   type Phase,
@@ -21,27 +22,27 @@ export interface Pour {
 export type PhaseAt = TimelinePhaseAt<PhaseName>;
 
 /**
- * Tuned so a full four-unit pour lands comfortably under a second. This game is
- * played in fast bursts of taps — an animation the player has to wait out turns
- * a puzzle into a queue.
+ * Paced to be watched rather than got through: a full four-unit pour runs about
+ * 1.15s, a single unit about 0.85s.
+ *
+ * These were deliberately tighter once, on the reasoning that every tap pays
+ * the cost and the board is played in bursts. That traded the wrong way — the
+ * pour is the most satisfying thing on screen, and hurrying it made the motion
+ * read as a state change rather than as liquid moving.
  *
  * Travel and tilt overlap in feel rather than reading as separate beats: travel
  * is the longest phase and carries an arc, so the bottle is already swinging by
  * the time it starts to tip.
- *
- * Smoothness comes from the arc, the eased phases and the settle — not from
- * spending longer. Stretching these to sell the motion just makes every tap
- * cost more, and the whole board is played in bursts of them.
  */
-const LIFT = 0.06;
-const TRAVEL = 0.15;
-const TILT = 0.08;
-const PER_UNIT = 0.07;
-const UNTILT = 0.07;
-const RETURN = 0.1;
+const LIFT = 0.09;
+const TRAVEL = 0.24;
+const TILT = 0.13;
+const PER_UNIT = 0.1;
+const UNTILT = 0.12;
+const RETURN = 0.16;
 
 /** How long the destination's surface keeps sloshing after liquid lands. */
-export const WOBBLE_DURATION = 0.36;
+export const WOBBLE_DURATION = 0.46;
 
 /**
  * Tilt magnitudes in radians. Both are past a right angle on purpose: below 90
@@ -85,6 +86,11 @@ export function isDone(pour: Pour): boolean {
 /**
  * Fractional units transferred so far. Fractional rather than stepped is what
  * makes the liquid read as flowing instead of teleporting.
+ *
+ * Eased rather than linear. A linear transfer starts and stops at full rate,
+ * so the stream snaps on at the first frame of the pour and snaps off at the
+ * last — the single biggest thing that made this look mechanical. Easing lets
+ * the flow build and taper the way tipping a bottle actually behaves.
  */
 export function pouredUnits(pour: Pour): number {
   const at = phaseAt(pour.t, pour.units);
@@ -94,10 +100,23 @@ export function pouredUnits(pour: Pour): number {
     case "tilt":
       return 0;
     case "pour":
-      return at.u * pour.units;
+      return ease(at.u) * pour.units;
     default:
       return pour.units;
   }
+}
+
+/**
+ * How hard the liquid is flowing right now, 0..1, peaking mid-pour.
+ *
+ * This is the rate that `pouredUnits` is the integral of, so the stream can be
+ * drawn thin as it starts, full mid-pour and thin again as it stops, instead of
+ * being a bar that blinks in and out at constant width.
+ */
+export function pourRate(pour: Pour): number {
+  const at = phaseAt(pour.t, pour.units);
+  if (at.name !== "pour") return 0;
+  return 4 * at.u * (1 - at.u);
 }
 
 /**

@@ -1,6 +1,7 @@
 import { ease } from "@/app/game/_shared/phases";
 import {
   phaseAt,
+  pourRate,
   pouredUnits,
   sincePour,
   surfaceWobble,
@@ -33,7 +34,9 @@ const SHELF = "#33254a";
 const SHELF_LIP = "#4a3768";
 const GLASS_RIM = "rgba(248, 240, 224, 0.55)";
 const GLASS_RIM_DIM = "rgba(248, 240, 224, 0.38)";
-const GLASS_RIM_DONE = "#8BE06A";
+const CORK = "#C89A63";
+const CORK_DARK = "#8F6537";
+const CORK_LIGHT = "#E5C293";
 /**
  * Empty glass is a faint tint, not a dark fill. Filling it opaquely turned
  * every neck into a black blob sitting above the liquid and made empty bottles
@@ -336,9 +339,8 @@ function drawBottle(
 
   drawContents(ctx, box, contents, capacity, partialFraction, partialColor, wobble);
 
-  const done = isComplete(contents, capacity);
   ctx.lineWidth = Math.max(2, box.w * 0.055);
-  ctx.strokeStyle = done ? GLASS_RIM_DONE : highlight ? GLASS_RIM : GLASS_RIM_DIM;
+  ctx.strokeStyle = highlight ? GLASS_RIM : GLASS_RIM_DIM;
   bottlePath(ctx, box);
   ctx.stroke();
 
@@ -351,10 +353,83 @@ function drawBottle(
   ctx.ellipse(box.x + box.w / 2, box.y + lipRy * 0.6, lipRx, lipRy, 0, 0, Math.PI * 2);
   ctx.stroke();
 
+  if (isComplete(contents, capacity)) {
+    drawCork(ctx, box);
+    return;
+  }
+
   ctx.fillStyle = "rgba(10, 8, 18, 0.35)";
   ctx.beginPath();
   ctx.ellipse(box.x + box.w / 2, box.y + lipRy * 0.6, lipRx * 0.72, lipRy * 0.6, 0, 0, Math.PI * 2);
   ctx.fill();
+}
+
+/**
+ * A stopper in the neck, marking a bottle as finished.
+ *
+ * This was a green outline round the glass, which announced "correct" in the
+ * language of form validation rather than of the game. A cork says the same
+ * thing from inside the fiction — that one's sealed, set it aside — and it
+ * reads at a glance across a board of twenty-odd bottles, which a rim colour
+ * competing with the liquid inside it does not.
+ */
+function drawCork(ctx: CanvasRenderingContext2D, box: BottleLayout): void {
+  const cx = box.x + box.w / 2;
+  const neckW = box.w * NECK_W;
+  const plugW = neckW * 0.86;
+  const headW = neckW * 1.24;
+  const headH = Math.max(3, box.h * 0.05);
+  const headTop = box.y - headH;
+  const plugBottom = box.y + box.h * NECK_H * 0.66;
+
+  ctx.save();
+
+  // Plug first, so the head overlaps it and hides the seam. Darker than the
+  // head because it sits behind glass.
+  ctx.fillStyle = CORK_DARK;
+  ctx.beginPath();
+  ctx.moveTo(cx - plugW / 2, box.y);
+  ctx.lineTo(cx - plugW / 2, plugBottom - plugW * 0.22);
+  ctx.quadraticCurveTo(cx - plugW / 2, plugBottom, cx, plugBottom);
+  ctx.quadraticCurveTo(cx + plugW / 2, plugBottom, cx + plugW / 2, plugBottom - plugW * 0.22);
+  ctx.lineTo(cx + plugW / 2, box.y);
+  ctx.closePath();
+  ctx.fill();
+
+  // Shaded across its width rather than flat-filled — that alone is the
+  // difference between a cylinder and a tab stuck on the front.
+  const barrel = ctx.createLinearGradient(cx - headW / 2, 0, cx + headW / 2, 0);
+  barrel.addColorStop(0, CORK_DARK);
+  barrel.addColorStop(0.32, CORK_LIGHT);
+  barrel.addColorStop(0.66, CORK);
+  barrel.addColorStop(1, CORK_DARK);
+
+  const headBottom = box.y + headH * 0.55;
+  const r = Math.min(headW * 0.26, headH * 0.85);
+
+  ctx.fillStyle = barrel;
+  ctx.beginPath();
+  ctx.moveTo(cx - headW / 2, headBottom);
+  ctx.lineTo(cx - headW / 2, headTop + r);
+  ctx.quadraticCurveTo(cx - headW / 2, headTop, cx - headW / 2 + r, headTop);
+  ctx.lineTo(cx + headW / 2 - r, headTop);
+  ctx.quadraticCurveTo(cx + headW / 2, headTop, cx + headW / 2, headTop + r);
+  ctx.lineTo(cx + headW / 2, headBottom);
+  ctx.closePath();
+  ctx.fill();
+
+  // Two short pits. Cork is porous; without them the head reads as plastic.
+  ctx.strokeStyle = "rgba(112, 76, 40, 0.5)";
+  ctx.lineWidth = Math.max(1, box.w * 0.018);
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.moveTo(cx - headW * 0.18, headTop + headH * 0.45);
+  ctx.lineTo(cx - headW * 0.04, headTop + headH * 0.45);
+  ctx.moveTo(cx + headW * 0.08, headTop + headH * 1.05);
+  ctx.lineTo(cx + headW * 0.22, headTop + headH * 1.05);
+  ctx.stroke();
+
+  ctx.restore();
 }
 
 /**
@@ -363,6 +438,10 @@ function drawBottle(
  * Drawn as a tapering ribbon rather than a rectangle: it narrows as it falls
  * and drifts slightly toward the centre of the target, which is enough to read
  * as a stream under gravity instead of a bar connecting two shapes.
+ *
+ * Its width also tracks the flow rate, so it swells as the bottle tips and
+ * thins to nothing as it empties. A constant-width stream blinked in and out at
+ * the pour boundaries, which was the most mechanical thing on screen.
  */
 function drawStream(
   ctx: CanvasRenderingContext2D,
@@ -374,17 +453,24 @@ function drawStream(
   if (pour === null) return;
   if (phaseAt(pour.t, pour.units).name !== "pour") return;
 
+  // Square-rooted so the stream spends most of the pour near full width and
+  // only tapers at the very ends; the raw rate spends too long looking like a
+  // trickle.
+  const flow = Math.sqrt(pourRate(pour));
+  if (flow < 0.02) return;
+
   const { dst, mouthX, mouthY } = pourGeometry(layout, pour);
   const m = metricsFor(dst, state.puzzle.capacity);
   const surfaceY = Math.min(m.liquidBottom, m.liquidBottom - destUnits * m.unitH);
   if (surfaceY <= mouthY) return;
 
   const potion = PALETTE[pour.color % PALETTE.length];
-  const topW = Math.max(3, dst.w * 0.15);
+  const topW = Math.max(1, dst.w * 0.15 * flow);
   const bottomW = topW * 0.62;
   const landX = dst.x + dst.w * 0.5;
 
   ctx.save();
+  ctx.globalAlpha = Math.min(1, 0.4 + flow);
   ctx.fillStyle = potion.hex;
   ctx.beginPath();
   ctx.moveTo(mouthX - topW / 2, mouthY);
@@ -409,7 +495,7 @@ function drawStream(
   ctx.fill();
 
   // A brighter core keeps the stream legible against a dark background.
-  ctx.globalAlpha = 0.35;
+  ctx.globalAlpha = 0.35 * flow;
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(mouthX - topW * 0.16, mouthY, Math.max(1, topW * 0.22), (surfaceY - mouthY) * 0.55);
   ctx.restore();

@@ -4,6 +4,7 @@ import {
   isDone,
   phaseAt,
   phaseDurations,
+  pourRate,
   pouredUnits,
   sincePour,
   startPour,
@@ -52,9 +53,13 @@ describe("totalDuration", () => {
     expect(totalDuration(4)).toBeGreaterThan(totalDuration(1));
   });
 
-  it("stays under a second even for a full-bottle pour", () => {
-    // A pour the player has to sit through is worse than one they barely catch.
-    expect(totalDuration(4)).toBeLessThan(1);
+  it("is long enough to watch but never a wait", () => {
+    // This once asserted the opposite — under a second for a full pour, on the
+    // reasoning that the player pays the animation on every tap. Hurrying it
+    // made the pour read as a state change rather than as liquid moving, so
+    // the bound is now a floor as well as a ceiling.
+    expect(totalDuration(4)).toBeGreaterThan(1);
+    expect(totalDuration(4)).toBeLessThan(1.6);
   });
 });
 
@@ -127,6 +132,64 @@ describe("pouredUnits", () => {
       const pour = advance(startPour({ from: 0, to: 1 }, 4, 0), t);
       expect(pouredUnits(pour)).toBeLessThanOrEqual(4);
       expect(pouredUnits(pour)).toBeGreaterThanOrEqual(0);
+    }
+  });
+
+  it("only ever rises — liquid never flows back up the stream", () => {
+    // Easing the transfer is what stops the stream snapping on and off, but it
+    // must not overshoot and correct: the destination's level is drawn from
+    // this, so a dip would show as the bottle un-filling.
+    const total = totalDuration(4);
+    let previous = -1;
+    for (let t = 0; t <= total; t += total / 400) {
+      const now = pouredUnits(advance(startPour({ from: 0, to: 1 }, 4, 0), t));
+      expect(now).toBeGreaterThanOrEqual(previous - 1e-9);
+      previous = now;
+    }
+  });
+
+  it("eases in and out rather than transferring at a flat rate", () => {
+    const phases = phaseDurations(4);
+    const start = phases.slice(0, 3).reduce((n, p) => n + p.dur, 0);
+    const at = (u: number) =>
+      pouredUnits(advance(startPour({ from: 0, to: 1 }, 4, 0), start + phases[3].dur * u));
+
+    // A linear transfer would put exactly one unit through by a quarter of the
+    // way in; eased, the pour is still building.
+    expect(at(0.25)).toBeLessThan(1);
+    expect(at(0.75)).toBeGreaterThan(3);
+    expect(at(0.5)).toBeCloseTo(2);
+  });
+});
+
+describe("pourRate", () => {
+  const start = phaseDurations(3)
+    .slice(0, 3)
+    .reduce((n, p) => n + p.dur, 0);
+  const pourDur = phaseDurations(3)[3].dur;
+  const rateAt = (u: number) =>
+    pourRate(advance(startPour({ from: 0, to: 1 }, 3, 0), start + pourDur * u));
+
+  it("is zero outside the pour phase", () => {
+    expect(pourRate(startPour({ from: 0, to: 1 }, 3, 0))).toBe(0);
+    expect(pourRate(advance(startPour({ from: 0, to: 1 }, 3, 0), totalDuration(3)))).toBe(0);
+  });
+
+  it("starts and ends at nothing, so the stream never pops", () => {
+    expect(rateAt(0)).toBeCloseTo(0);
+    expect(rateAt(0.999)).toBeLessThan(0.02);
+  });
+
+  it("peaks in the middle of the pour", () => {
+    expect(rateAt(0.5)).toBeGreaterThan(rateAt(0.15));
+    expect(rateAt(0.5)).toBeGreaterThan(rateAt(0.85));
+    expect(rateAt(0.5)).toBeCloseTo(1);
+  });
+
+  it("stays within 0..1, since callers scale widths by it", () => {
+    for (let u = 0; u < 1; u += 0.01) {
+      expect(rateAt(u)).toBeGreaterThanOrEqual(0);
+      expect(rateAt(u)).toBeLessThanOrEqual(1);
     }
   });
 });
