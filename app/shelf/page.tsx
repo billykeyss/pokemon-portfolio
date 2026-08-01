@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { LevelSelect } from "@/app/game/_shared/LevelSelect";
 import { PixelButton, PixelPanel } from "@/app/game/_shared/pixel-ui";
 import { useGameLoop } from "@/app/game/_shared/useGameLoop";
 import {
@@ -45,6 +46,7 @@ export default function ShelfPage() {
   const [won, setWon] = useState(false);
   const [stuck, setStuck] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [showLevels, setShowLevels] = useState(false);
 
   const flyRef = useRef<Fly | null>(null);
   const beforeRef = useRef<Shelf | null>(null);
@@ -117,7 +119,7 @@ export default function ShelfPage() {
 
   const onPointerDown = useCallback(
     (event: React.PointerEvent<HTMLCanvasElement>) => {
-      if (flyRef.current !== null || won || stuck) return;
+      if (flyRef.current !== null || won || stuck || showLevels) return;
 
       const canvas = canvasRef.current;
       if (canvas === null) return;
@@ -138,7 +140,7 @@ export default function ShelfPage() {
       const column = columnAt(layout, x, y);
       if (column !== null) take(column);
     },
-    [stuck, take, won],
+    [showLevels, stuck, take, won],
   );
 
   const step = useCallback(() => {
@@ -279,7 +281,13 @@ export default function ShelfPage() {
 
         <div className="space-y-3">
           <div className="flex items-center justify-between text-xs uppercase tracking-widest">
-            <span>Level {save.level}</span>
+            <button
+              type="button"
+              onClick={() => setShowLevels(true)}
+              className="underline decoration-dotted underline-offset-4"
+            >
+              Level {save.level}
+            </button>
             <span className="opacity-60">Takes {moves}</span>
             <span className="opacity-60">Best {save.best}</span>
           </div>
@@ -312,6 +320,20 @@ export default function ShelfPage() {
             Tap a shelf to bag its front item &middot; three match to clear
           </p>
         </div>
+
+        {showLevels && (
+          <LevelSelect
+            best={save.best}
+            current={save.level}
+            scoreByLevel={save.movesByLevel}
+            scoreLabel="takes"
+            onPick={(level) => {
+              setShowLevels(false);
+              loadLevel(level);
+            }}
+            onClose={() => setShowLevels(false)}
+          />
+        )}
 
         {(won || stuck) && (
           <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/70 p-4">

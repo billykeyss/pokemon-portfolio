@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { LevelSelect } from "@/app/game/_shared/LevelSelect";
 import { PixelButton, PixelPanel } from "@/app/game/_shared/pixel-ui";
 import { useGameLoop } from "@/app/game/_shared/useGameLoop";
 import { useSprites } from "@/app/game/_shared/useSprites";
@@ -48,6 +49,7 @@ export default function TrafficPage() {
   const [moves, setMoves] = useState(0);
   const [won, setWon] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [showLevels, setShowLevels] = useState(false);
 
   const slideRef = useRef<Slide | null>(null);
   const exitRef = useRef<number | null>(null);
@@ -124,7 +126,7 @@ export default function TrafficPage() {
 
   const onPointerDown = useCallback(
     (event: React.PointerEvent<HTMLCanvasElement>) => {
-      if (slideRef.current !== null || won) return;
+      if (slideRef.current !== null || won || showLevels) return;
 
       const canvas = canvasRef.current;
       if (canvas === null) return;
@@ -185,7 +187,7 @@ export default function TrafficPage() {
 
       commitMove({ id: chosen, delta });
     },
-    [commitMove, select, won],
+    [commitMove, select, showLevels, won],
   );
 
   const step = useCallback(() => {
@@ -316,7 +318,13 @@ export default function TrafficPage() {
 
         <div className="space-y-3">
           <div className="flex items-center justify-between text-xs uppercase tracking-widest">
-            <span>Level {save.level}</span>
+            <button
+              type="button"
+              onClick={() => setShowLevels(true)}
+              className="underline decoration-dotted underline-offset-4"
+            >
+              Level {save.level}
+            </button>
             <span className="opacity-60">Moves {moves}</span>
             <span className="opacity-60">Best {save.best}</span>
           </div>
@@ -349,6 +357,20 @@ export default function TrafficPage() {
             Tap a car, then tap where it should go
           </p>
         </div>
+
+        {showLevels && (
+          <LevelSelect
+            best={save.best}
+            current={save.level}
+            scoreByLevel={save.movesByLevel}
+            scoreLabel="moves"
+            onPick={(level) => {
+              setShowLevels(false);
+              loadLevel(level);
+            }}
+            onClose={() => setShowLevels(false)}
+          />
+        )}
 
         {won && (
           <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/70 p-4">

@@ -5,7 +5,8 @@ import {
   popScale,
   type Fly,
 } from "../engine/anim";
-import { itemAt, SPRITE_SIZE } from "../engine/items";
+import { drawPixelGrid } from "@/app/game/_shared/pixelGrid";
+import { itemAt } from "../engine/items";
 import type { Shelf } from "../engine/types";
 import { itemSlot, type Rect, type ShelfLayout } from "./layout";
 
@@ -31,7 +32,7 @@ const SHELF_EDGE = "#4a3a5e";
 const SLOT_EMPTY = "rgba(248, 240, 224, 0.07)";
 const SLOT_EDGE = "rgba(248, 240, 224, 0.28)";
 
-/** Draw one item's pixel grid into a box. */
+/** Draw one item's pixel grid into a box, optionally shrunk about its centre. */
 function drawItem(
   ctx: CanvasRenderingContext2D,
   type: number,
@@ -40,33 +41,15 @@ function drawItem(
   scale = 1,
 ): void {
   const art = itemAt(type);
-  const size = (rect.w * scale) / SPRITE_SIZE;
-  const originX = rect.x + (rect.w - rect.w * scale) / 2;
-  const originY = rect.y + (rect.h - rect.h * scale) / 2;
+  const w = rect.w * scale;
+  const h = rect.h * scale;
 
-  ctx.save();
-  ctx.globalAlpha = alpha;
-
-  for (let row = 0; row < art.grid.length; row++) {
-    const line = art.grid[row];
-    for (let col = 0; col < line.length; col++) {
-      const key = line[col];
-      if (key === ".") continue;
-      const color = art.palette[key];
-      if (color === undefined) continue;
-
-      ctx.fillStyle = color;
-      // Rounded up so neighbouring pixels never leave a seam.
-      ctx.fillRect(
-        originX + col * size,
-        originY + row * size,
-        Math.ceil(size),
-        Math.ceil(size),
-      );
-    }
-  }
-
-  ctx.restore();
+  drawPixelGrid(
+    ctx,
+    { grid: art.grid, palette: art.palette },
+    { x: rect.x + (rect.w - w) / 2, y: rect.y + (rect.h - h) / 2, w, h },
+    alpha,
+  );
 }
 
 /** Where an item in flight sits this frame. */

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { LevelSelect } from "@/app/game/_shared/LevelSelect";
 import { PixelPanel } from "@/app/game/_shared/pixel-ui";
 import { nextSpeed } from "@/app/game/_shared/speed";
 import { useGameLoop } from "@/app/game/_shared/useGameLoop";
@@ -26,7 +27,6 @@ import type { Move, Puzzle } from "./engine/types";
 import { drawScene, type DrawState } from "./render/draw";
 import { hitTest, layoutBottles } from "./render/layout";
 import { Hud } from "./ui/Hud";
-import { LevelSelect } from "./ui/LevelSelect";
 import { WinBanner } from "./ui/WinBanner";
 
 const FIXED_DT = 1 / 60;
@@ -345,7 +345,8 @@ export default function SortPage() {
           <LevelSelect
             best={save.best}
             current={save.level}
-            movesByLevel={save.movesByLevel}
+            scoreByLevel={save.movesByLevel}
+            scoreLabel="moves"
             onPick={(level) => {
               setShowLevels(false);
               loadLevel(level);
