@@ -64,4 +64,12 @@ export const GAMES: readonly ArcadeGame[] = [
     accent: "#C9A227",
     available: true,
   },
+  {
+    slug: "critter-knight",
+    title: "CRITTER KNIGHT",
+    tagline: "Drag to move. Stop to swing.",
+    href: "/knight",
+    accent: "#E05050",
+    available: true,
+  },
 ];
