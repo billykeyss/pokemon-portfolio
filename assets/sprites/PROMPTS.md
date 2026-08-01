@@ -64,8 +64,9 @@ Then in `app/traffic/render/draw.ts`, add the names to `SPRITE_NAMES` and drop
 the `vehicle.len !== 2` guard in `spriteFor` so trucks pick up their art.
 
 **Shelf Sort goods** (`raw/shelf/`) — currently hand-drawn 10x10 grids in
-`app/shelf/engine/items.ts`, which honestly read better at tray size than a
-downscaled illustration would. If replacing them, generate one per type:
+`app/shelf/engine/items.ts`, which honestly read better at the size a shelf slot
+draws them than a downscaled illustration would. If replacing them, generate one
+per type:
 
 ```
 apple, milk carton, loaf of bread, soda can, wedge of cheese,

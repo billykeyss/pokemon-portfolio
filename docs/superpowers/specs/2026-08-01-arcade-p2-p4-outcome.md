@@ -169,7 +169,7 @@ developing, unregister the service worker and clear its caches first.
 
 536 tests across 34 files, all passing. `pnpm build` exports every route
 statically. Each game was additionally driven to a win through its real UI in a
-browser — the pour, the drive-out, and the shelf-to-tray flight were all
+browser — the pour, the drive-out, and the shelf-to-shelf move were all
 verified by playing, not by assertion.
 
 ## Not done
