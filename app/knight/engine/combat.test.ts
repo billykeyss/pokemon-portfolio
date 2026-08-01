@@ -137,11 +137,13 @@ describe("swing lifecycle", () => {
     const w = fresh();
     const h = spawnHero(w, { x: 180, y: 300 });
     h.facing = { x: 0, y: -1 };
-    // The hero must survive the whole window, or its death truncates the loop
-    // before a per-tick bug could multiply — which is exactly how an earlier
-    // version of this test passed under the very regression it names.
-    h.hp = 100000;
-    h.maxHp = 100000;
+    // The enemy needs HP well beyond what one swing can deal so it survives
+    // the whole window: a per-tick bug needs several ticks of "active" to
+    // show up as cumulative overdamage, and a dead enemy would truncate the
+    // measurement early. The hero, by contrast, no longer needs inflating —
+    // stepWorld now runs updateAttack for the hero only (see world.ts), so
+    // this enemy cannot swing back; real HERO_HP survives 60 ticks of mere
+    // contact damage with room to spare.
     const e = spawnEnemy(w, { x: 180, y: 300 - 30 }, 100000);
     for (let i = 0; i < 60; i++) stepWorld(w);
     const dealt = 100000 - e.hp;

@@ -69,18 +69,32 @@ export function damageEntity(
 }
 
 /**
- * True when a living entity of the *opposite* kind sits inside the attacker's
- * swing wedge.
+ * The nearest living entity of the *opposite* kind within swing reach, or
+ * null. Ties resolve by lowest `id` so the choice is deterministic.
  *
- * It must be the opposite kind, not literally "enemy": stepWorld runs
- * updateAttack over every entity, and inSwingArc returns true at zero
- * distance, so a hardcoded kind check makes every stationary enemy match
- * itself and wind up forever regardless of where the hero is.
+ * Distance-only, not arc-gated: this runs at the moment an attacker decides
+ * whether to *start* a swing, before facing has been pointed at anyone. Its
+ * result becomes that facing (see updateAttack's "idle" case), so gating on
+ * inSwingArc here would be circular — it would reject the very foe the
+ * attacker is about to turn toward. It must also be the opposite kind, not
+ * literally "enemy": stepWorld used to run updateAttack over every entity,
+ * and zero distance always satisfies an arc check, so a hardcoded kind check
+ * made every stationary enemy match itself and wind up forever regardless of
+ * where the hero was.
  */
-function foeInReach(world: World, attacker: Entity): boolean {
-  return world.entities.some(
-    (t) => t.kind !== attacker.kind && t.deadAtTick < 0 && inSwingArc(attacker, t),
-  );
+function foeInReach(world: World, attacker: Entity): Entity | null {
+  let best: Entity | null = null;
+  let bestDist = Infinity;
+  for (const t of world.entities) {
+    if (t.kind === attacker.kind || t.deadAtTick >= 0) continue;
+    const dist = Math.hypot(t.pos.x - attacker.pos.x, t.pos.y - attacker.pos.y);
+    if (dist > SWING_REACH + t.radius) continue;
+    if (dist < bestDist || (dist === bestDist && (best === null || t.id < best.id))) {
+      best = t;
+      bestDist = dist;
+    }
+  }
+  return best;
 }
 
 /**
@@ -100,13 +114,28 @@ export function updateAttack(world: World, e: Entity): SwingHit[] {
   const hits: SwingHit[] = [];
 
   switch (e.attack.phase) {
-    case "idle":
+    case "idle": {
       // Stopping next to something is the whole input for attacking.
-      if (isStandingStill(e) && foeInReach(world, e)) {
-        e.attack.phase = "windup";
-        e.attack.startedAtTick = world.tick;
-      }
+      if (!isStandingStill(e)) break;
+      const foe = foeInReach(world, e);
+      if (!foe) break;
+      e.attack.phase = "windup";
+      e.attack.startedAtTick = world.tick;
+
+      // Auto-aim: face the foe we are about to swing at, right now, as the
+      // swing begins. Facing must not be left to whatever `vel` last pointed
+      // at — damageEntity writes knockback straight into vel (see below),
+      // and steerHero derives walking facing from vel, so a hero that was
+      // just hit turns to face away from its attacker. Setting facing here,
+      // from intent rather than from stale knockback velocity, is what makes
+      // the "auto-aim so the player never fights the controls" promise real.
+      const dx = foe.pos.x - e.pos.x;
+      const dy = foe.pos.y - e.pos.y;
+      const dist = Math.hypot(dx, dy) || 1;
+      e.facing.x = dx / dist;
+      e.facing.y = dy / dist;
       break;
+    }
 
     case "windup":
       if (elapsed >= WINDUP_TICKS) {

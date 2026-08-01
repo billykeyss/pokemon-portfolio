@@ -106,6 +106,16 @@ export function stepWorld(world: World): void {
 
   world.hits.length = 0;
   for (const e of world.entities) {
+    // Slice 1 enemies harm the hero by contact only (applyTouchDamage,
+    // above, already gated by i-frames). Swinging is reserved for the hero:
+    // SWING_DAMAGE and HERO_HP are different units in disguise — hit points
+    // for enemies, hearts for the hero — so an enemy swing landing
+    // SWING_DAMAGE through the same damageEntity used to one-shot a
+    // full-health hero. Enemy swinging was never specified for slice 1; it
+    // was an accident of running updateAttack over every entity. Enemies get
+    // their own attack, and their own damage unit, when weapons and armor
+    // arrive in slice 3.
+    if (e.kind !== "hero") continue;
     const swings = updateAttack(world, e);
     if (e.attack.phase === "active" && world.tick === e.attack.startedAtTick) {
       pushFx(world, {

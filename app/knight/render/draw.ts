@@ -12,9 +12,18 @@ export interface DrawOptions {
   reducedMotion: boolean;
 }
 
-const BG = "#141020";
-const FLOOR = "#1d1730";
-const GRID = "#251d3a";
+// Contrast is load-bearing here, not decorative: the previous palette
+// (BG #141020, FLOOR #1d1730, GRID #251d3a) measured 1.08:1 floor-vs-surround
+// and 1.09:1 grid-vs-floor under WCAG's relative-luminance formula — both
+// far below the 1.5:1 threshold where a boundary starts to read as a
+// boundary at all, so the room rendered as a borderless void. These measure:
+//   FLOOR vs BG     1.63:1  (target >= 1.6:1)
+//   GRID  vs FLOOR  1.36:1  (target >= 1.3:1)
+//   BORDER vs FLOOR 4.71:1  (target >= 2.5:1)
+const BG = "#080613";
+const FLOOR = "#372d5e";
+const GRID = "#4c4079";
+const BORDER = "#a897d0";
 
 const px = (n: number) => Math.round(n);
 
@@ -66,7 +75,7 @@ function drawFloor(ctx: CanvasRenderingContext2D, w: number, h: number): void {
   ctx.stroke();
 
   // Walls read as a border so the play area has an edge.
-  ctx.strokeStyle = "#3a2f55";
+  ctx.strokeStyle = BORDER;
   ctx.lineWidth = 4;
   ctx.strokeRect(2, 2, w - 4, h - 4);
 }
