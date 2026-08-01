@@ -44,4 +44,12 @@ export const GAMES: readonly ArcadeGame[] = [
     accent: "#78C850",
     available: true,
   },
+  {
+    slug: "arrows",
+    title: "ARROW ESCAPE",
+    tagline: "Read the board. Only the clear ones fly.",
+    href: "/arrows",
+    accent: "#8FA8F0",
+    available: true,
+  },
 ];
