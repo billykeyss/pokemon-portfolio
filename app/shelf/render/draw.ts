@@ -5,6 +5,8 @@ import { fallbackArt, goodAt } from "../engine/items";
 import { frontOf } from "../engine/rules";
 import { SHELF_WIDTH, type Board } from "../engine/types";
 import { slotRect, type Rect, type ShelfLayout } from "./layout";
+import { librarianAt, librarianSprite } from "./librarian";
+import { buntingRow, buntingSag, moteAt, moteField } from "./scenery";
 
 export interface Pop {
   shelf: number;
@@ -23,8 +25,15 @@ export interface DrawState {
   clock: number;
 }
 
-const BG_TOP = "#241a2e";
-const BG_BOTTOM = "#150f1d";
+const BG_TOP = "#2E2136";
+const BG_BOTTOM = "#191223";
+const WALLPAPER = "rgba(255, 236, 200, 0.032)";
+const LAMP = "#F7DFA8";
+const STRING = "rgba(255, 236, 200, 0.25)";
+const FRAME = "#7A5433";
+const FRAME_LIP = "#9A6D45";
+const FRAME_DARK = "#4E331E";
+const FLOOR = "#3A2A22";
 const WOOD = "#6B4A2F";
 const WOOD_LIP = "#8A6340";
 const WOOD_SHADE = "#4A3220";
@@ -40,6 +49,9 @@ const SELECT = "#F7D96B";
  * the third apple is the whole point of being able to see it at all.
  */
 const DEPTH_OFFSET = 0.34;
+
+const MOTES = moteField(38);
+const BUNTING = buntingRow(9);
 
 /**
  * Draw a good, preferring its sprite and falling back to the hand-drawn grid.
@@ -150,6 +162,151 @@ function flyRect(layout: ShelfLayout, fly: Fly): Rect {
   };
 }
 
+/** Papered wall, a warm pool of lamplight, bunting and drifting dust. */
+function drawShop(
+  ctx: CanvasRenderingContext2D,
+  layout: ShelfLayout,
+  clock: number,
+  canvasW: number,
+  canvasH: number,
+): void {
+  const wall = ctx.createLinearGradient(0, 0, 0, canvasH);
+  wall.addColorStop(0, BG_TOP);
+  wall.addColorStop(1, BG_BOTTOM);
+  ctx.fillStyle = wall;
+  ctx.fillRect(0, 0, canvasW, canvasH);
+
+  // Wallpaper stripes, barely there — enough to stop the wall reading as a void.
+  ctx.fillStyle = WALLPAPER;
+  const stripe = canvasW / 14;
+  for (let x = 0; x < canvasW; x += stripe * 2) ctx.fillRect(x, 0, stripe, canvasH);
+
+  // A pool of lamplight from above, which is what the dust is catching.
+  const lamp = ctx.createRadialGradient(
+    canvasW / 2, -canvasH * 0.1, canvasW * 0.05,
+    canvasW / 2, canvasH * 0.35, canvasH * 0.85,
+  );
+  lamp.addColorStop(0, "rgba(247, 223, 168, 0.16)");
+  lamp.addColorStop(1, "rgba(247, 223, 168, 0)");
+  ctx.fillStyle = lamp;
+  ctx.fillRect(0, 0, canvasW, canvasH);
+
+  // Bunting across the top.
+  const spanY = canvasH * 0.035;
+  const sagMax = canvasH * 0.03;
+  ctx.strokeStyle = STRING;
+  ctx.lineWidth = Math.max(1, canvasW * 0.003);
+  ctx.beginPath();
+  for (let i = 0; i <= 40; i++) {
+    const t = i / 40;
+    const y = spanY + buntingSag(t, clock) * sagMax;
+    if (i === 0) ctx.moveTo(0, y);
+    else ctx.lineTo(t * canvasW, y);
+  }
+  ctx.stroke();
+
+  const flagH = canvasH * 0.028;
+  const flagW = canvasW * 0.028;
+  for (const flag of BUNTING) {
+    const x = flag.t * canvasW;
+    const y = spanY + buntingSag(flag.t, clock) * sagMax;
+    ctx.fillStyle = flag.color;
+    ctx.globalAlpha = 0.75;
+    ctx.beginPath();
+    ctx.moveTo(x - flagW / 2, y);
+    ctx.lineTo(x + flagW / 2, y);
+    ctx.lineTo(x, y + flagH);
+    ctx.closePath();
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+
+  // Floorboards under the cabinets.
+  ctx.fillStyle = FLOOR;
+  ctx.fillRect(0, layout.floorY, canvasW, canvasH - layout.floorY);
+  ctx.strokeStyle = "rgba(0, 0, 0, 0.18)";
+  ctx.lineWidth = 1;
+  for (let x = 0; x < canvasW; x += canvasW / 7) {
+    ctx.beginPath();
+    ctx.moveTo(x, layout.floorY);
+    ctx.lineTo(x, canvasH);
+    ctx.stroke();
+  }
+
+  ctx.save();
+  for (const mote of MOTES) {
+    const { x, y, r } = moteAt(mote, clock, canvasW, canvasH);
+    ctx.globalAlpha = mote.alpha;
+    ctx.fillStyle = LAMP;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+/** The wooden carcass each column of shelves sits inside. */
+function drawCabinets(ctx: CanvasRenderingContext2D, layout: ShelfLayout): void {
+  const post = Math.max(4, layout.item * 0.16);
+
+  for (const box of layout.cabinets) {
+    ctx.fillStyle = "rgba(0, 0, 0, 0.22)";
+    ctx.fillRect(box.x + post * 0.5, box.y + post * 0.6, box.w, box.h);
+
+    // Side posts and a top rail, so the shelves read as one piece of furniture.
+    ctx.fillStyle = FRAME;
+    ctx.fillRect(box.x - post, box.y - post, post, box.h + post * 2);
+    ctx.fillRect(box.x + box.w, box.y - post, post, box.h + post * 2);
+    ctx.fillRect(box.x - post, box.y - post, box.w + post * 2, post);
+    ctx.fillRect(box.x - post, box.y + box.h, box.w + post * 2, post);
+
+    ctx.fillStyle = FRAME_LIP;
+    ctx.fillRect(box.x - post, box.y - post, box.w + post * 2, post * 0.3);
+    ctx.fillRect(box.x - post, box.y - post, post * 0.3, box.h + post * 2);
+
+    ctx.fillStyle = FRAME_DARK;
+    ctx.fillRect(box.x + box.w + post * 0.7, box.y - post, post * 0.3, box.h + post * 2);
+  }
+}
+
+/**
+ * The librarian pacing the floor.
+ *
+ * Sized against the floor band rather than against a shelf item: measured from
+ * the item she is half again as tall as a good, which puts her head inside the
+ * bottom cabinet. The floor is the space she actually has, so it is the space
+ * she is fitted to.
+ */
+function drawLibrarian(
+  ctx: CanvasRenderingContext2D,
+  layout: ShelfLayout,
+  clock: number,
+  canvasW: number,
+  canvasH: number,
+): void {
+  const band = canvasH - layout.floorY;
+  if (band <= 0) return;
+
+  const pose = librarianAt(clock);
+  const h = Math.min(layout.item * 1.6, band * 0.66);
+  const w = h * (10 / 12);
+
+  const margin = canvasW * 0.08;
+  const x = margin + pose.x * (canvasW - margin * 2 - w);
+  // Feet planted a little way down the boards, so she stands on the floor
+  // rather than on the line where it starts.
+  const y = layout.floorY + band * 0.82 - h + pose.bob * layout.item * 0.06;
+
+  ctx.save();
+  if (pose.flipped) {
+    ctx.translate(x + w / 2, 0);
+    ctx.scale(-1, 1);
+    ctx.translate(-(x + w / 2), 0);
+  }
+  drawPixelGrid(ctx, librarianSprite(pose.pose), { x, y, w, h });
+  ctx.restore();
+}
+
 export function drawScene(
   ctx: CanvasRenderingContext2D,
   layout: ShelfLayout,
@@ -158,11 +315,9 @@ export function drawScene(
   canvasH: number,
   sprites: SpriteMap,
 ): void {
-  const sky = ctx.createLinearGradient(0, 0, 0, canvasH);
-  sky.addColorStop(0, BG_TOP);
-  sky.addColorStop(1, BG_BOTTOM);
-  ctx.fillStyle = sky;
-  ctx.fillRect(0, 0, canvasW, canvasH);
+  drawShop(ctx, layout, state.clock, canvasW, canvasH);
+  drawCabinets(ctx, layout);
+  drawLibrarian(ctx, layout, state.clock, canvasW, canvasH);
 
   // While an item flies, the shelves show the arrangement it left, so it is
   // never drawn in two places at once.

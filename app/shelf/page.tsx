@@ -313,7 +313,9 @@ export default function ShelfPage() {
           <canvas
             ref={canvasRef}
             onPointerDown={onPointerDown}
-            className="block h-[62vh] w-full touch-none select-none"
+            // Sized to the board rather than the viewport: with two cabinets
+            // the width binds, so a taller canvas only adds empty floor.
+            className="block aspect-[4/5] w-full touch-none select-none"
           />
         </PixelPanel>
 

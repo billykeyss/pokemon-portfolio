@@ -97,19 +97,19 @@ describe("generate", () => {
 describe("paramsForLevel", () => {
   it("starts with more shelves than types, so nothing is buried", () => {
     const p = paramsForLevel(1);
-    expect(p).toEqual({ types: 6, shelves: 7, freeSlots: 3 });
-    // 21 slots for 18 items: every item gets its own slot.
+    expect(p).toEqual({ types: 7, shelves: 8, freeSlots: 3 });
+    // 24 slots for 21 items: every item gets its own slot.
     expect(p.shelves * SHELF_WIDTH).toBeGreaterThan(p.types * SHELF_WIDTH);
   });
 
   it("opens on a full wall rather than a handful of shelves", () => {
     // A sparse opening board reads as an unfinished game, not an easy one.
-    expect(paramsForLevel(1).shelves).toBeGreaterThanOrEqual(7);
+    expect(paramsForLevel(1).shelves).toBeGreaterThanOrEqual(8);
   });
 
   it("adds a kind of goods every four levels", () => {
-    expect(paramsForLevel(5).types).toBe(7);
-    expect(paramsForLevel(9).types).toBe(8);
+    expect(paramsForLevel(5).types).toBe(8);
+    expect(paramsForLevel(9).types).toBe(9);
   });
 
   it("lets shelves fall behind the type count, which is what buries items", () => {
