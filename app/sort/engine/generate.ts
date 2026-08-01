@@ -16,7 +16,49 @@ export function shuffled<T>(items: readonly T[], rng: Rng): T[] {
   return out;
 }
 
-/** Shuffle all units, then deal them into full bottles plus the spares. */
+/**
+ * How full each bottle starts.
+ *
+ * Dealing one full bottle per colour plus a couple of empties — the obvious
+ * layout — means every bottle on the board is either brim-full or bone-empty,
+ * and every level opens looking like the last one. Spreading the same liquid
+ * across one extra bottle leaves slack *inside* bottles, so they start at
+ * varying depths.
+ *
+ * The empties are carved out first and never shaved into, because they are what
+ * makes the puzzle movable at all: without somewhere to decant, only a bottle
+ * whose top already matches another's can be poured.
+ */
+export function fillPattern(params: LevelParams, rng: Rng): number[] {
+  const holders = Math.max(1, params.bottles - params.empty);
+  const total = params.colors * params.capacity;
+
+  const fills = Array<number>(holders).fill(0);
+
+  // A floor of one in every holder first, so the spread is between depths
+  // rather than between "full" and "empty" — extra empty bottles are extra
+  // maneuvering room, which is the opposite of what this is for.
+  let left = total;
+  for (let i = 0; i < holders && left > 0; i++) {
+    fills[i] = 1;
+    left--;
+  }
+
+  // Then scatter what remains. Filling greedily instead would top every bottle
+  // up to capacity in turn and leave nothing to vary.
+  let guard = 0;
+  while (left > 0 && guard++ < 10_000) {
+    const i = rng.int(holders);
+    if (fills[i] >= params.capacity) continue;
+    fills[i]++;
+    left--;
+  }
+
+  for (let i = 0; i < params.empty; i++) fills.push(0);
+  return shuffled(fills, rng);
+}
+
+/** Shuffle all units, then deal them into bottles at the chosen depths. */
 export function deal(params: LevelParams, rng: Rng): Puzzle {
   const units: number[] = [];
   for (let c = 0; c < params.colors; c++) {
@@ -24,11 +66,14 @@ export function deal(params: LevelParams, rng: Rng): Puzzle {
   }
 
   const mixed = shuffled(units, rng);
+  const fills = fillPattern(params, rng);
+
   const bottles: number[][] = [];
-  for (let i = 0; i < params.colors; i++) {
-    bottles.push(mixed.slice(i * params.capacity, (i + 1) * params.capacity));
+  let cursor = 0;
+  for (const fill of fills) {
+    bottles.push(mixed.slice(cursor, cursor + fill));
+    cursor += fill;
   }
-  for (let i = 0; i < params.free; i++) bottles.push([]);
 
   return { bottles, capacity: params.capacity, colors: params.colors };
 }
@@ -61,7 +106,9 @@ export function shuffleFromSolved(params: LevelParams, rng: Rng): Puzzle {
   for (let c = 0; c < params.colors; c++) {
     bottles.push(Array<number>(params.capacity).fill(c));
   }
-  for (let i = 0; i < params.free; i++) bottles.push([]);
+  // Pad to the board's full width, not just the guaranteed empties — the deal
+  // this stands in for spreads the same liquid over more bottles.
+  while (bottles.length < params.bottles) bottles.push([]);
 
   const steps = params.colors * params.capacity * 6;
   for (let step = 0; step < steps; step++) {

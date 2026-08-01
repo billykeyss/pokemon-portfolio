@@ -5,7 +5,7 @@ import { isComplete } from "./rules";
 import { solve } from "./solve";
 import type { LevelParams } from "./types";
 
-const params: LevelParams = { colors: 4, free: 2, capacity: 4 };
+const params: LevelParams = { colors: 4, capacity: 4, bottles: 8, empty: 2 };
 
 describe("shuffled", () => {
   it("preserves the multiset", () => {
@@ -28,14 +28,36 @@ describe("shuffled", () => {
 });
 
 describe("deal", () => {
-  it("creates one bottle per colour plus the free bottles", () => {
+  it("lays out the full width of the board", () => {
     const p = deal(params, makeRng(3));
-    expect(p.bottles).toHaveLength(params.colors + params.free);
+    expect(p.bottles).toHaveLength(params.bottles);
   });
 
-  it("leaves the free bottles empty", () => {
-    const p = deal(params, makeRng(3));
-    expect(p.bottles.filter((b) => b.length === 0)).toHaveLength(params.free);
+  it("always leaves at least the guaranteed empties", () => {
+    for (let seed = 0; seed < 12; seed++) {
+      const p = deal(params, makeRng(seed));
+      expect(p.bottles.filter((b) => b.length === 0).length).toBeGreaterThanOrEqual(
+        params.empty,
+      );
+    }
+  });
+
+  it("starts bottles at varying depths, not just full or empty", () => {
+    // The whole point of dealing across more bottles than there are colours:
+    // otherwise every board opens looking identical.
+    const depths = new Set<number>();
+    for (let seed = 0; seed < 12; seed++) {
+      for (const b of deal(params, makeRng(seed)).bottles) depths.add(b.length);
+    }
+    expect(depths.has(0)).toBe(true);
+    expect([...depths].some((d) => d > 0 && d < params.capacity)).toBe(true);
+  });
+
+  it("never overfills a bottle", () => {
+    for (let seed = 0; seed < 12; seed++) {
+      const p = deal(params, makeRng(seed));
+      expect(p.bottles.every((b) => b.length <= params.capacity)).toBe(true);
+    }
   });
 
   it("gives every colour exactly `capacity` units", () => {
@@ -82,10 +104,10 @@ describe("shuffleFromSolved", () => {
   // matching colours and silently produced unsolvable levels.
   it("is solvable by construction across a range of shapes", () => {
     for (const shape of [
-      { colors: 3, free: 2, capacity: 4 },
-      { colors: 6, free: 2, capacity: 4 },
-      { colors: 10, free: 1, capacity: 4 },
-      { colors: 12, free: 1, capacity: 4 },
+      { colors: 3, capacity: 4, bottles: 7, empty: 2 },
+      { colors: 6, capacity: 4, bottles: 10, empty: 2 },
+      { colors: 10, capacity: 4, bottles: 14, empty: 2 },
+      { colors: 12, capacity: 4, bottles: 16, empty: 2 },
     ]) {
       for (let seed = 0; seed < 6; seed++) {
         const p = shuffleFromSolved(shape, makeRng(seed));
@@ -95,7 +117,7 @@ describe("shuffleFromSolved", () => {
   }, 60_000);
 
   it("conserves every colour's unit count", () => {
-    const p = shuffleFromSolved({ colors: 5, free: 2, capacity: 4 }, makeRng(2));
+    const p = shuffleFromSolved({ colors: 5, capacity: 4, bottles: 9, empty: 2 }, makeRng(2));
     const counts = new Map<number, number>();
     for (const b of p.bottles) {
       for (const c of b) counts.set(c, (counts.get(c) ?? 0) + 1);
@@ -104,7 +126,7 @@ describe("shuffleFromSolved", () => {
   });
 
   it("never overfills a bottle", () => {
-    const p = shuffleFromSolved({ colors: 8, free: 1, capacity: 4 }, makeRng(4));
+    const p = shuffleFromSolved({ colors: 8, capacity: 4, bottles: 11, empty: 2 }, makeRng(4));
     expect(p.bottles.every((b) => b.length <= 4)).toBe(true);
   });
 });
@@ -130,7 +152,7 @@ describe("generate", () => {
   });
 
   it("conserves the colour multiset at twelve colours", () => {
-    const wide: LevelParams = { colors: 12, free: 2, capacity: 4 };
+    const wide: LevelParams = { colors: 12, capacity: 4, bottles: 16, empty: 2 };
     const p = generate(wide, 5);
     const counts = new Map<number, number>();
     for (const b of p.bottles) {

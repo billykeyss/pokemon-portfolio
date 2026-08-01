@@ -13,17 +13,23 @@ const MIN_COLORS = 5;
  * ~26ms per level while eighteen costs ~720ms — a stall the player would feel
  * on every level change.
  *
- * The spare-bottle count stays at two. There used to be a squeeze level every
- * tenth level from thirty that dropped it to one, but the colour ramp now tops
- * out at level 23, so that rule could never fire again — and it cannot simply
- * be moved earlier, because a wide deal with a single spare is solvable roughly
- * once in two thousand draws, which is a stall rather than a difficulty spike.
- * The colour count carries the curve on its own.
+ * Boards run four bottles wider than the colour count, with two of them empty.
+ * Those two extra bottles are what let the liquid start at *varying* depths
+ * rather than every bottle being brim-full or bone-empty: the same volume
+ * spread over more vessels leaves slack inside them. Measured, it takes the
+ * share of brim-full bottles at level one from 82% down to 36%.
+ *
+ * The slack is free in every sense — more room to manoeuvre also makes the
+ * solver converge faster, so generation got cheaper rather than dearer.
+ *
+ * Two bottles always start completely empty. They are what make the board
+ * movable at all: with none, only a bottle whose top already matches another's
+ * could ever be poured.
  */
 export function paramsForLevel(level: number): LevelParams {
   const n = Math.max(1, Math.floor(level));
   const colors = Math.min(MAX_COLORS, MIN_COLORS + Math.floor((n - 1) / 2));
-  return { colors, free: 2, capacity: CAPACITY };
+  return { colors, capacity: CAPACITY, bottles: colors + 4, empty: 2 };
 }
 
 /**

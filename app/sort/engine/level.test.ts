@@ -5,8 +5,13 @@ import { isComplete } from "./rules";
 import { solve } from "./solve";
 
 describe("paramsForLevel", () => {
-  it("starts at seven bottles", () => {
-    expect(paramsForLevel(1)).toEqual({ colors: 5, free: 2, capacity: 4 });
+  it("starts at nine bottles for five colours", () => {
+    expect(paramsForLevel(1)).toEqual({
+      colors: 5,
+      capacity: 4,
+      bottles: 9,
+      empty: 2,
+    });
   });
 
   it("adds a colour every two levels", () => {
@@ -14,10 +19,10 @@ describe("paramsForLevel", () => {
     expect(paramsForLevel(5).colors).toBe(7);
   });
 
-  it("caps at sixteen colours, which is eighteen bottles", () => {
+  it("caps at sixteen colours, which is twenty bottles", () => {
     expect(paramsForLevel(23).colors).toBe(16);
     expect(paramsForLevel(500).colors).toBe(16);
-    expect(paramsForLevel(500).colors + paramsForLevel(500).free).toBe(18);
+    expect(paramsForLevel(500).bottles).toBe(20);
   });
 
   it("never drops below five colours for zero or negative input", () => {
@@ -25,9 +30,16 @@ describe("paramsForLevel", () => {
     expect(paramsForLevel(-5).colors).toBe(5);
   });
 
-  it("always leaves two spare bottles", () => {
+  it("always keeps two bottles empty", () => {
     for (const n of [1, 10, 30, 40, 100]) {
-      expect(paramsForLevel(n).free).toBe(2);
+      expect(paramsForLevel(n).empty).toBe(2);
+    }
+  });
+
+  it("always runs wider than the colour count, so depths can vary", () => {
+    for (let n = 1; n <= 60; n++) {
+      const p = paramsForLevel(n);
+      expect(p.bottles - p.empty).toBeGreaterThan(p.colors);
     }
   });
 
@@ -70,9 +82,7 @@ describe("levelFor", () => {
   });
 
   it("has the right bottle count for its params", () => {
-    const p = levelFor(12);
-    const params = paramsForLevel(12);
-    expect(p.bottles).toHaveLength(params.colors + params.free);
+    expect(levelFor(12).bottles).toHaveLength(paramsForLevel(12).bottles);
   });
 
   it("produces solvable, non-trivial puzzles across the curve", () => {

@@ -16,7 +16,9 @@ export interface Move {
 
 export interface LevelParams {
   colors: number;
-  /** Empty bottles beyond the one-per-colour minimum. */
-  free: number;
   capacity: number;
+  /** Total bottles on the board, including the empty ones. */
+  bottles: number;
+  /** How many of those start completely empty. */
+  empty: number;
 }
