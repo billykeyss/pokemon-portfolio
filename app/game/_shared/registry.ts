@@ -3,7 +3,11 @@ export interface ArcadeGame {
   slug: string;
   title: string;
   tagline: string;
-  /** Absolute route. Games are not confined to any one URL prefix. */
+  /**
+   * Where the cabinet leads. An absolute path for games in this app, or a full
+   * URL for one that lives elsewhere — games are not confined to one origin,
+   * let alone one URL prefix.
+   */
   href: string;
   /** Hex colour for the cabinet accent. */
   accent: string;
@@ -50,6 +54,14 @@ export const GAMES: readonly ArcadeGame[] = [
     tagline: "Read the board. Only the clear ones fly.",
     href: "/arrows",
     accent: "#8FA8F0",
+    available: true,
+  },
+  {
+    slug: "chronicle",
+    title: "CHRONICLES",
+    tagline: "Place events on the timeline. Three strikes.",
+    href: "https://chronicle.billhuang.me/",
+    accent: "#C9A227",
     available: true,
   },
 ];

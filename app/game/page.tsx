@@ -6,6 +6,9 @@ import { GAMES, type ArcadeGame } from "./_shared/registry";
 import { GameIcon } from "./_shared/GameIcon";
 import { PixelPanel } from "./_shared/pixel-ui";
 
+/** Does this cabinet live somewhere other than this app? */
+const isExternal = (href: string) => /^https?:\/\//.test(href);
+
 export default function ArcadePage() {
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
@@ -27,14 +30,21 @@ export default function ArcadePage() {
         <ul className="space-y-4">
           {GAMES.map((game) => (
             <li key={game.slug}>
-              {game.available ? (
-                <Link href={game.href} className="block">
-                  <Cabinet game={game} />
-                </Link>
-              ) : (
+              {!game.available ? (
                 <div className="opacity-40">
                   <Cabinet game={game} />
                 </div>
+              ) : isExternal(game.href) ? (
+                // A cabinet that lives on another origin. Next's Link is for
+                // routes inside this app; handing it a full URL just makes it
+                // fall back to an anchor anyway, with a prefetch it cannot use.
+                <a href={game.href} className="block">
+                  <Cabinet game={game} />
+                </a>
+              ) : (
+                <Link href={game.href} className="block">
+                  <Cabinet game={game} />
+                </Link>
               )}
             </li>
           ))}

@@ -108,6 +108,25 @@ const ARROWS: PixelSprite = {
   ],
 };
 
+/** An hourglass over a timeline: events placed against running time. */
+const CHRONICLE: PixelSprite = {
+  palette: { K: OUTLINE, G: "#E8DCC0", S: "#C9A227", T: "#6B5A2E", M: "#F2E7D2" },
+  grid: [
+    "..KKKKKKKK..",
+    "..KGGGGGGK..",
+    "...KSSSSK...",
+    "....KSSK....",
+    ".....KK.....",
+    "....KMMK....",
+    "...KSSSSK...",
+    "..KSSSSSSK..",
+    "..KGGGGGGK..",
+    "..KKKKKKKK..",
+    "............",
+    "KTKTKTKTKTKT",
+  ],
+};
+
 /** Keyed by the registry slug, so a cabinet finds its own badge. */
 export const GAME_ICONS: Record<string, PixelSprite> = {
   bouncedex: BOUNCEDEX,
@@ -115,4 +134,5 @@ export const GAME_ICONS: Record<string, PixelSprite> = {
   traffic: TRAFFIC,
   shelf: SHELF,
   arrows: ARROWS,
+  chronicle: CHRONICLE,
 };
