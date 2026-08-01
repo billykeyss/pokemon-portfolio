@@ -79,8 +79,15 @@ describe("fx", () => {
     const w = fresh();
     spawnProjectile(w, "boulder", { x: 200, y: 400 }, { x: 0, y: -500 });
     spawnEnemy(w, { x: 200, y: 350 }, 1, 14);
-    for (let i = 0; i < 60; i++) stepWorld(w);
-    expect(w.fx.some((f) => f.kind === "kill")).toBe(true);
+
+    // Sample as we go: effects expire after FX_TICKS, so checking only at the
+    // end would miss a kill that happened early.
+    let sawKill = false;
+    for (let i = 0; i < 60; i++) {
+      stepWorld(w);
+      if (w.fx.some((f) => f.kind === "kill")) sawKill = true;
+    }
+    expect(sawKill).toBe(true);
   });
 
   it("expires effects rather than accumulating them forever", () => {

@@ -178,3 +178,18 @@ describe("floor reflection", () => {
     expect(b.vel.y).toBeGreaterThan(0);
   });
 });
+
+describe("floor is springy", () => {
+  it("returns more energy than a soft critter's own restitution would", () => {
+    const soft = makeBody({ pos: { x: 200, y: 698 }, vel: { x: 0, y: 400 }, radius: 10, restitution: 0.35 });
+    collideWalls(soft, ARENA, 1, true);
+    // A plain reflection would give back only 0.35 * 400 = 140.
+    expect(Math.abs(soft.vel.y)).toBeGreaterThan(300);
+  });
+
+  it("still never returns more than it received", () => {
+    const b = makeBody({ pos: { x: 200, y: 698 }, vel: { x: 0, y: 400 }, radius: 10, restitution: 1 });
+    collideWalls(b, ARENA, 5, true);
+    expect(Math.abs(b.vel.y)).toBeLessThanOrEqual(400);
+  });
+});

@@ -74,7 +74,10 @@ export function collideWalls(
     hit = true;
   } else if (reflectBottom && body.pos.y + body.radius > arena.height) {
     body.pos.y = arena.height - body.radius;
-    body.vel.y = -Math.abs(body.vel.y) * e;
+    // The floor is a springy rail, not a wall. A plain reflection let critters
+    // shed their last energy down here and pile up by the nest, leaving the
+    // top of the board bare; kicking them back keeps bumpers well spread.
+    body.vel.y = -Math.abs(body.vel.y) * Math.min(1, Math.max(e, 0.92));
     hit = true;
   }
 

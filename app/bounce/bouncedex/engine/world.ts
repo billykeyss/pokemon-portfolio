@@ -232,6 +232,48 @@ function recordFx(world: World, ev: ImpactEvent, target: Body): void {
   }
 }
 
+/** The settled bumper under a point, if any. Used for drag-to-reposition. */
+export function bumperAt(world: World, x: number, y: number): Body | null {
+  let best: Body | null = null;
+  let bestSq = Infinity;
+  for (const b of world.bodies) {
+    if (!b.settled) continue;
+    const dx = b.pos.x - x;
+    const dy = b.pos.y - y;
+    const dSq = dx * dx + dy * dy;
+    // A little slop so a fingertip does not have to be pixel-perfect.
+    const r = b.radius + 10;
+    if (dSq <= r * r && dSq < bestSq) {
+      bestSq = dSq;
+      best = b;
+    }
+  }
+  return best;
+}
+
+/**
+ * Drop a dragged bumper. If it lands on another of the same critter, the two
+ * fuse: the survivor keeps their combined progress toward evolving, which is
+ * what makes tending the board worth doing. Returns true if a merge happened.
+ */
+export function dropBumper(world: World, bodyId: number): boolean {
+  const body = world.bodies.find((b) => b.id === bodyId);
+  if (!body || !body.settled || body.critterId === null) return false;
+
+  const twin = world.bodies.find(
+    (o) =>
+      o.id !== body.id &&
+      o.settled &&
+      o.critterId === body.critterId &&
+      overlaps(o, body),
+  );
+  if (!twin) return false;
+
+  body.hitsDealt += twin.hitsDealt;
+  world.bodies = world.bodies.filter((b) => b.id !== twin.id);
+  return true;
+}
+
 /** Nearest enemy to a point within `range`, or null. */
 function nearestEnemy(world: World, from: Vec2, range: number): Body | null {
   let best: Body | null = null;

@@ -10,6 +10,9 @@ export function Hud({
   queue,
   reload,
   charge,
+  overdrive,
+  overdriveActive,
+  onOverdrive,
   autoMode,
   speed,
   onToggleAuto,
@@ -25,6 +28,10 @@ export function Hud({
   reload: number;
   /** Charge held on the current shot, 0..1. */
   charge: number;
+  /** Overdrive meter, 0..1. */
+  overdrive: number;
+  overdriveActive: boolean;
+  onOverdrive: () => void;
   autoMode: boolean;
   speed: number;
   onToggleAuto: () => void;
@@ -82,6 +89,28 @@ export function Hud({
           ))}
         </div>
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onOverdrive}
+            disabled={overdrive < 1 && !overdriveActive}
+            aria-label="Overdrive"
+            className={`relative overflow-hidden border-2 px-2 py-1 text-xs font-bold uppercase tracking-wider ${
+              overdriveActive
+                ? "border-[#F8D030] bg-[#F8D030] text-[#1b1428]"
+                : overdrive >= 1
+                  ? "border-[#F8D030] text-[#F8D030]"
+                  : "border-[#4a3f6b] text-[#6d6188]"
+            }`}
+          >
+            {/* The meter fills the button itself. */}
+            {!overdriveActive && overdrive < 1 && (
+              <span
+                className="absolute inset-y-0 left-0 bg-[#3a2f55]"
+                style={{ width: `${overdrive * 100}%` }}
+              />
+            )}
+            <span className="relative">OD</span>
+          </button>
           <button
             type="button"
             onClick={onCycleSpeed}

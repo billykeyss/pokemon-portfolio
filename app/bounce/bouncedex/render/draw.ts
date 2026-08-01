@@ -1,4 +1,4 @@
-import { EVOLVE_FLASH_TICKS, type World } from "../engine/world";
+import { EVOLVE_FLASH_TICKS, FX_TICKS, isOverdrive, type World } from "../engine/world";
 import type { Body } from "../engine/types";
 import type { Vec2 } from "../engine/vec";
 import { getCritter } from "../data/critters";
@@ -185,7 +185,49 @@ export function drawWorld(
   for (const b of world.bodies) if (b.settled) drawBody(ctx, b, world.tick);
   for (const b of world.bodies) if (!b.settled) drawBody(ctx, b, world.tick);
 
+  drawFx(ctx, world);
   drawNest(ctx, world);
+
+  // Overdrive tints the arena so the window is unmistakable.
+  if (isOverdrive(world)) {
+    ctx.fillStyle = "rgba(248, 208, 48, 0.10)";
+    ctx.fillRect(0, 0, arena.width, arena.height);
+    ctx.strokeStyle = "#F8D030";
+    ctx.lineWidth = 4;
+    ctx.strokeRect(2, 2, arena.width - 4, arena.height - 4);
+  }
+
+  ctx.restore();
+}
+
+/** Floating numbers and kill bursts. */
+function drawFx(ctx: CanvasRenderingContext2D, world: World): void {
+  ctx.save();
+  ctx.textAlign = "center";
+
+  for (const f of world.fx) {
+    const t = (world.tick - f.tick) / FX_TICKS;
+    if (t < 0 || t >= 1) continue;
+    const rise = t * 26;
+    const alpha = 1 - t * t;
+
+    if (f.kind === "kill") {
+      // Burst of four shards flying out from the corpse.
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = "#f8f0e0";
+      const r = 4 + t * 20;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+        ctx.fillRect(px(f.x + dx * r) - 2, px(f.y + dy * r) - 2, 4, 4);
+      }
+    }
+
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle =
+      f.kind === "big" ? "#F8D030" : f.kind === "kill" ? "#ffffff" : "#d8cfe8";
+    ctx.font = `bold ${f.kind === "big" ? 16 : 12}px ui-monospace, monospace`;
+    ctx.fillText(String(f.value), px(f.x), px(f.y - rise));
+  }
+
   ctx.restore();
 }
 

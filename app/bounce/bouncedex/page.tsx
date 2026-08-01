@@ -16,6 +16,11 @@ import {
   stepWorld,
   FIXED_DT,
   CHARGE_SPEED_BONUS,
+  OVERDRIVE_CHARGE,
+  isOverdrive,
+  triggerOverdrive,
+  bumperAt,
+  dropBumper,
   type World,
 } from "./engine/world";
 import { autoAim, aimFromDrag, predictPath, LAUNCH_SPEED } from "./engine/aim";
@@ -61,6 +66,7 @@ export default function BouncedexPage() {
   const autoTimerRef = useRef(0);
   const lastTouchRef = useRef(0);
   const dragRef = useRef<Vec2 | null>(null);
+  const draggingBumperRef = useRef<number | null>(null);
   const chargeStartRef = useRef(0);
   const chargeRef = useRef(0);
   const waveRngRef = useRef(makeRng(1));
@@ -89,6 +95,8 @@ export default function BouncedexPage() {
     queue: [] as string[],
     reload: 0,
     charge: 0,
+    overdrive: 0,
+    overdriveActive: false,
   });
 
   // localStorage is unavailable during the static build, so the save must load
@@ -249,6 +257,8 @@ export default function BouncedexPage() {
       prev.queue.length === queue.length &&
       Math.round(prev.reload * 8) === Math.round(reloadRef.current * 8) &&
       Math.round(prev.charge * 8) === Math.round(chargeRef.current * 8) &&
+      Math.round(prev.overdrive * 20) === Math.round((world.overdrive / OVERDRIVE_CHARGE) * 20) &&
+      prev.overdriveActive === isOverdrive(world) &&
       prev.queue.every((id, i) => id === queue[i])
         ? prev
         : {
@@ -259,6 +269,8 @@ export default function BouncedexPage() {
             queue: [...queue],
             reload: reloadRef.current,
             charge: chargeRef.current,
+            overdrive: world.overdrive / OVERDRIVE_CHARGE,
+            overdriveActive: isOverdrive(world),
           },
     );
   }, [reducedMotion]);
@@ -361,6 +373,9 @@ export default function BouncedexPage() {
         queue={hud.queue}
         reload={hud.reload}
         charge={hud.charge}
+        overdrive={hud.overdrive}
+        overdriveActive={hud.overdriveActive}
+        onOverdrive={() => triggerOverdrive(worldRef.current)}
         autoMode={autoMode}
         speed={speed}
         onToggleAuto={() => setAutoMode((v) => !v)}
@@ -384,12 +399,38 @@ export default function BouncedexPage() {
           onPointerDown={(e) => {
             e.preventDefault();
             e.currentTarget.setPointerCapture(e.pointerId);
-            dragRef.current = toCanvasSpace(e);
+            const at = toCanvasSpace(e);
+
+            // Touching an existing bumper picks it up instead of aiming, so
+            // the board is something you tend rather than just scenery.
+            const grabbed = bumperAt(worldRef.current, at.x, at.y);
+            if (grabbed) {
+              draggingBumperRef.current = grabbed.id;
+              lastTouchRef.current = performance.now();
+              return;
+            }
+
+            dragRef.current = at;
             chargeStartRef.current = performance.now();
             chargeRef.current = 0;
             lastTouchRef.current = performance.now();
           }}
           onPointerMove={(e) => {
+            const held = draggingBumperRef.current;
+            if (held !== null) {
+              e.preventDefault();
+              const at = toCanvasSpace(e);
+              const body = worldRef.current.bodies.find((b) => b.id === held);
+              if (body) {
+                // Keep it inside the arena so a bumper cannot be parked in a wall.
+                const { width, height } = worldRef.current.arena;
+                body.pos.x = Math.max(body.radius, Math.min(width - body.radius, at.x));
+                body.pos.y = Math.max(body.radius, Math.min(height - body.radius, at.y));
+              }
+              lastTouchRef.current = performance.now();
+              return;
+            }
+
             if (!dragRef.current) return;
             e.preventDefault();
             dragRef.current = toCanvasSpace(e);
@@ -397,6 +438,13 @@ export default function BouncedexPage() {
           }}
           onPointerUp={(e) => {
             e.preventDefault();
+            if (draggingBumperRef.current !== null) {
+              dropBumper(worldRef.current, draggingBumperRef.current);
+              draggingBumperRef.current = null;
+              lastTouchRef.current = performance.now();
+              return;
+            }
+
             if (dragRef.current) {
               launch(aimFromDrag(LAUNCH_ORIGIN, dragRef.current), chargeRef.current);
             }
@@ -407,6 +455,7 @@ export default function BouncedexPage() {
           onPointerCancel={() => {
             dragRef.current = null;
             chargeRef.current = 0;
+            draggingBumperRef.current = null;
           }}
         />
 
