@@ -3,7 +3,7 @@ import { hitTest, layoutBottles, type Layout, type Rect } from "./layout";
 
 const W = 400;
 const H = 500;
-const COUNTS = [3, 5, 8, 12, 14];
+const COUNTS = [3, 5, 7, 8, 12, 14, 16, 18];
 
 /** A row sized exactly to the canvas lands on zero with float noise attached. */
 const EPS = 1e-9;
@@ -51,6 +51,20 @@ describe("layoutBottles", () => {
   it("uses a single row for small counts and wraps for large ones", () => {
     expect(layoutBottles(4, 4, W, H).rows).toBe(1);
     expect(layoutBottles(14, 4, W, H).rows).toBeGreaterThan(1);
+  });
+
+  it("keeps a full eighteen-bottle board on screen and legible", () => {
+    // The widest level the curve produces. Bottles must still be wide enough
+    // to read a colour in, not slivers.
+    const l = layoutBottles(18, 4, W, H);
+    expect(l.rows).toBeGreaterThanOrEqual(3);
+    for (const b of l.bottles) {
+      expect(b.x).toBeGreaterThanOrEqual(-EPS);
+      expect(b.y).toBeGreaterThanOrEqual(-EPS);
+      expect(b.x + b.w).toBeLessThanOrEqual(W + EPS);
+      expect(b.y + b.h).toBeLessThanOrEqual(H + EPS);
+      expect(b.w).toBeGreaterThan(W / 12);
+    }
   });
 
   it("balances bottles across rows rather than stranding one", () => {

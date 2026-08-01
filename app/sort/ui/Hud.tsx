@@ -8,7 +8,6 @@ export interface HudProps {
   moves: number;
   best: number;
   speed: Speed;
-  symbols: boolean;
   canUndo: boolean;
   canAddBottle: boolean;
   busy: boolean;
@@ -17,7 +16,6 @@ export interface HudProps {
   onHint: () => void;
   onAddBottle: () => void;
   onToggleSpeed: () => void;
-  onToggleSymbols: () => void;
   onOpenLevels: () => void;
 }
 
@@ -67,16 +65,9 @@ export function Hud(props: HudProps) {
         </PixelButton>
       </div>
 
-      <div className="flex items-center justify-between text-[10px] uppercase tracking-widest">
+      <div className="flex items-center justify-center text-[10px] uppercase tracking-widest">
         <button type="button" onClick={props.onToggleSpeed} className="opacity-70">
           Speed {props.speed}x
-        </button>
-        <button
-          type="button"
-          onClick={props.onToggleSymbols}
-          className="opacity-70"
-        >
-          Glyphs {props.symbols ? "on" : "off"}
         </button>
       </div>
     </div>

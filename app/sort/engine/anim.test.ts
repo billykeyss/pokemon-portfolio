@@ -5,9 +5,13 @@ import {
   phaseAt,
   phaseDurations,
   pouredUnits,
+  sincePour,
   startPour,
+  surfaceWobble,
   tiltAngle,
   totalDuration,
+  travelArc,
+  WOBBLE_DURATION,
 } from "./anim";
 
 describe("phaseDurations", () => {
@@ -178,5 +182,94 @@ describe("advance / isDone", () => {
     expect(p.move).toEqual({ from: 2, to: 5 });
     expect(p.color).toBe(7);
     expect(p.units).toBe(3);
+  });
+});
+
+describe("travelArc", () => {
+  it("is flat at both ends", () => {
+    expect(travelArc(0)).toBeCloseTo(0);
+    expect(travelArc(1)).toBeCloseTo(0);
+  });
+
+  it("lifts the bottle in between", () => {
+    expect(travelArc(0.5)).toBeGreaterThan(0.8);
+  });
+
+  it("never dips below the straight path", () => {
+    for (let u = 0; u <= 1; u += 0.05) {
+      expect(travelArc(u)).toBeGreaterThanOrEqual(0);
+    }
+  });
+
+  it("peaks before halfway, so the bottle settles rather than drops", () => {
+    let peak = 0;
+    let peakAt = 0;
+    for (let u = 0; u <= 1; u += 0.01) {
+      const v = travelArc(u);
+      if (v > peak) {
+        peak = v;
+        peakAt = u;
+      }
+    }
+    expect(peakAt).toBeLessThan(0.5);
+  });
+
+  it("clamps outside its range", () => {
+    expect(travelArc(-3)).toBeCloseTo(0);
+    expect(travelArc(9)).toBeCloseTo(0);
+  });
+});
+
+describe("surfaceWobble", () => {
+  it("is zero before it starts and after it settles", () => {
+    expect(surfaceWobble(-1)).toBe(0);
+    expect(surfaceWobble(WOBBLE_DURATION)).toBe(0);
+    expect(surfaceWobble(WOBBLE_DURATION * 3)).toBe(0);
+  });
+
+  it("oscillates — crossing zero in both directions", () => {
+    const samples = [];
+    for (let t = 0; t < WOBBLE_DURATION; t += WOBBLE_DURATION / 60) {
+      samples.push(surfaceWobble(t));
+    }
+    expect(samples.some((v) => v > 0.01)).toBe(true);
+    expect(samples.some((v) => v < -0.01)).toBe(true);
+  });
+
+  it("damps, so later swings are smaller than earlier ones", () => {
+    const early = Math.abs(surfaceWobble(WOBBLE_DURATION * 0.12));
+    const late = Math.abs(surfaceWobble(WOBBLE_DURATION * 0.85));
+    expect(late).toBeLessThan(early);
+  });
+
+  it("stays a small fraction of a unit — a slosh, not a jump", () => {
+    for (let t = 0; t < WOBBLE_DURATION; t += WOBBLE_DURATION / 60) {
+      expect(Math.abs(surfaceWobble(t))).toBeLessThan(0.25);
+    }
+  });
+});
+
+describe("sincePour", () => {
+  it("is null while liquid is still falling", () => {
+    expect(sincePour(startPour({ from: 0, to: 1 }, 2, 0))).toBeNull();
+
+    const midPour = phaseDurations(2)
+      .slice(0, 3)
+      .reduce((n, p) => n + p.dur, 0);
+    expect(sincePour(advance(startPour({ from: 0, to: 1 }, 2, 0), midPour + 0.01))).toBeNull();
+  });
+
+  it("starts counting once the pour phase ends", () => {
+    const pourEnds = phaseDurations(2)
+      .slice(0, 4)
+      .reduce((n, p) => n + p.dur, 0);
+    const after = sincePour(advance(startPour({ from: 0, to: 1 }, 2, 0), pourEnds + 0.05));
+    expect(after).not.toBeNull();
+    expect(after ?? -1).toBeCloseTo(0.05);
+  });
+
+  it("keeps growing through the end of the animation", () => {
+    const done = sincePour(advance(startPour({ from: 0, to: 1 }, 2, 0), totalDuration(2)));
+    expect(done ?? -1).toBeGreaterThan(0);
   });
 });

@@ -2,23 +2,28 @@ import { generate } from "./generate";
 import { CAPACITY, MAX_COLORS } from "./palette";
 import type { LevelParams, Puzzle } from "./types";
 
-const MIN_COLORS = 3;
+const MIN_COLORS = 5;
 
 /**
- * Three colours and two spare bottles at level one, widening to twelve colours
- * by level 46 and flat thereafter. From level 30, every tenth level is a squeeze
- * with a single spare.
+ * Seven bottles at level one, climbing to eighteen.
  *
- * The squeeze stops once the colour count maxes out. Not for difficulty reasons
- * — measured, a random twelve-colour deal with one spare bottle is solvable
- * roughly one time in two thousand, so generating one costs a visible pause.
- * Past that point the colour count is carrying the difficulty anyway.
+ * Sixteen is where the colour count stops, and it is a measured limit rather
+ * than an aesthetic one: generation verifies every candidate deal with a
+ * search, and the state space grows fast enough that sixteen colours costs
+ * ~26ms per level while eighteen costs ~720ms — a stall the player would feel
+ * on every level change.
+ *
+ * The spare-bottle count stays at two. There used to be a squeeze level every
+ * tenth level from thirty that dropped it to one, but the colour ramp now tops
+ * out at level 23, so that rule could never fire again — and it cannot simply
+ * be moved earlier, because a wide deal with a single spare is solvable roughly
+ * once in two thousand draws, which is a stall rather than a difficulty spike.
+ * The colour count carries the curve on its own.
  */
 export function paramsForLevel(level: number): LevelParams {
   const n = Math.max(1, Math.floor(level));
-  const colors = Math.min(MAX_COLORS, MIN_COLORS + Math.floor((n - 1) / 5));
-  const squeeze = n >= 30 && n % 10 === 0 && colors < MAX_COLORS;
-  return { colors, free: squeeze ? 1 : 2, capacity: CAPACITY };
+  const colors = Math.min(MAX_COLORS, MIN_COLORS + Math.floor((n - 1) / 2));
+  return { colors, free: 2, capacity: CAPACITY };
 }
 
 /**

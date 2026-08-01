@@ -1,4 +1,13 @@
-import { phaseAt, pouredUnits, tiltAngle, type Pour } from "../engine/anim";
+import { ease } from "@/app/game/_shared/phases";
+import {
+  phaseAt,
+  pouredUnits,
+  sincePour,
+  surfaceWobble,
+  tiltAngle,
+  travelArc,
+  type Pour,
+} from "../engine/anim";
 import { PALETTE } from "../engine/palette";
 import { isComplete } from "../engine/rules";
 import type { Puzzle } from "../engine/types";
@@ -12,29 +21,81 @@ export interface DrawState {
   pour: Pour | null;
   selected: number | null;
   hinted: { from: number; to: number } | null;
-  symbols: boolean;
   shake: { index: number; t: number } | null;
   /** Seconds since mount, for effects that pulse. */
   clock: number;
 }
 
 const BG = "#0d0a15";
-const GLASS = "#f8f0e0";
-const GLASS_DIM = "rgba(248, 240, 224, 0.3)";
-const GLASS_DONE = "#78C850";
-const CAVITY = "#150f22";
-const BORDER = 4;
-const LIFT_PX = 0.22;
+const GLASS_RIM = "rgba(248, 240, 224, 0.55)";
+const GLASS_RIM_DIM = "rgba(248, 240, 224, 0.38)";
+const GLASS_RIM_DONE = "#8BE06A";
+const CAVITY = "rgba(12, 9, 20, 0.72)";
+const LIFT_PX = 0.2;
 const SHAKE_DURATION = 0.35;
 
-/** Smoothstep — no easing library needed for six phases. */
-const ease = (u: number): number => u * u * (3 - 2 * u);
+/** Proportions of the bottle silhouette, as fractions of its box. */
+const NECK_W = 0.5;
+const NECK_H = 0.13;
+const SHOULDER_H = 0.11;
+const BASE_R = 0.2;
+
+interface Metrics {
+  cx: number;
+  neckW: number;
+  bodyTop: number;
+  /** Liquid sits between bodyTop and the inner base. */
+  liquidTop: number;
+  liquidBottom: number;
+  unitH: number;
+}
+
+function metricsFor(box: BottleLayout, capacity: number): Metrics {
+  const bodyTop = box.y + box.h * (NECK_H + SHOULDER_H);
+  const liquidBottom = box.y + box.h;
+  return {
+    cx: box.x + box.w / 2,
+    neckW: box.w * NECK_W,
+    bodyTop,
+    liquidTop: bodyTop,
+    liquidBottom,
+    unitH: (liquidBottom - bodyTop) / Math.max(1, capacity),
+  };
+}
 
 /**
- * How full each bottle appears right now. Whole units come from replaying the
- * committed move up to the current progress; the unit in flight is returned
- * separately so it can be drawn as a partial slab in the destination.
+ * Outline of a bottle: a narrow neck, sloped shoulders, straight flanks and a
+ * rounded base.
+ *
+ * Everything else about the bottle is drawn by clipping to this one path —
+ * liquid included — so the contents pick up the taper at the shoulders and the
+ * curve at the base for free, instead of being rectangles that happen to sit
+ * inside an outline.
  */
+function bottlePath(ctx: CanvasRenderingContext2D, box: BottleLayout): void {
+  const { x, y, w, h } = box;
+  const cx = x + w / 2;
+  const neckW = w * NECK_W;
+  const neckBottom = y + h * NECK_H;
+  const bodyTop = y + h * (NECK_H + SHOULDER_H);
+  const r = w * BASE_R;
+
+  ctx.beginPath();
+  ctx.moveTo(cx - neckW / 2, y);
+  ctx.lineTo(cx - neckW / 2, neckBottom);
+  // Shoulder: neck flares out to the full width of the body.
+  ctx.bezierCurveTo(cx - neckW / 2, bodyTop, cx - w / 2, neckBottom, cx - w / 2, bodyTop);
+  ctx.lineTo(cx - w / 2, y + h - r);
+  ctx.quadraticCurveTo(cx - w / 2, y + h, cx - w / 2 + r, y + h);
+  ctx.lineTo(cx + w / 2 - r, y + h);
+  ctx.quadraticCurveTo(cx + w / 2, y + h, cx + w / 2, y + h - r);
+  ctx.lineTo(cx + w / 2, bodyTop);
+  ctx.bezierCurveTo(cx + w / 2, neckBottom, cx + neckW / 2, bodyTop, cx + neckW / 2, neckBottom);
+  ctx.lineTo(cx + neckW / 2, y);
+  ctx.closePath();
+}
+
+/** How full each bottle looks right now, and the unit currently in flight. */
 function displayState(state: DrawState): {
   bottles: number[][];
   partial: { bottle: number; color: number; fraction: number } | null;
@@ -66,12 +127,9 @@ function displayState(state: DrawState): {
 }
 
 /**
- * Where the pouring bottle's mouth parks, and which way it tips.
- *
- * The bottle rotates about its own mouth rather than its base, and the mouth is
- * parked just above the destination's rim. That keeps the spout anchored over
- * the target for the whole pour while the body swings up behind it — pivoting
- * about the base instead throws the mouth away from the bottle it is filling.
+ * Where the pouring bottle's mouth parks, and which way it tips. The bottle
+ * rotates about its own mouth, so the spout stays anchored over the target for
+ * the whole pour while the body swings up behind it.
  */
 function pourGeometry(
   layout: Layout,
@@ -79,20 +137,17 @@ function pourGeometry(
 ): { src: BottleLayout; dst: BottleLayout; dir: number; mouthX: number; mouthY: number } {
   const src = layout.bottles[pour.move.from];
   const dst = layout.bottles[pour.move.to];
-  // Tip toward the destination: a bottle pouring leftward rotates the other way.
   const dir = dst.x >= src.x ? 1 : -1;
 
   return {
     src,
     dst,
     dir,
-    // Offset back toward the source so the body leans over its own side.
-    mouthX: dst.x + dst.w * 0.5 - dir * dst.w * 0.22,
-    mouthY: dst.y - dst.h * 0.3,
+    mouthX: dst.x + dst.w * 0.5 - dir * dst.w * 0.24,
+    mouthY: dst.y - dst.h * 0.26,
   };
 }
 
-/** Where a bottle sits and how far it is tipped, this frame. */
 function bottleTransform(
   state: DrawState,
   index: number,
@@ -102,7 +157,7 @@ function bottleTransform(
   const box = layout.bottles[index];
 
   if (pour === null || pour.move.from !== index) {
-    const raised = state.selected === index ? -box.h * LIFT_PX * 0.6 : 0;
+    const raised = state.selected === index ? -box.h * LIFT_PX * 0.55 : 0;
     return { dx: 0, dy: raised, angle: 0 };
   }
 
@@ -110,7 +165,6 @@ function bottleTransform(
   const at = phaseAt(pour.t, pour.units);
   const lift = src.h * LIFT_PX;
 
-  // Displacement that carries the bottle's own mouth onto the parking spot.
   const targetDx = mouthX - (src.x + src.w * 0.5);
   const targetDy = mouthY - src.y;
 
@@ -123,139 +177,180 @@ function bottleTransform(
       return { dx: 0, dy: -lift * ease(at.u), angle: 0 };
     case "travel": {
       const u = ease(at.u);
-      return { dx: targetDx * u, dy: -lift + (targetDy + lift) * u, angle: 0 };
+      return {
+        dx: targetDx * u,
+        // Arc over the gap, and start tipping on the way in so the tilt phase
+        // finishes a motion already underway rather than starting a new one.
+        dy: -lift + (targetDy + lift) * u - travelArc(at.u) * src.h * 0.16,
+        angle: fullTilt * u * 0.25,
+      };
     }
     case "tilt":
-      return { dx: targetDx, dy: targetDy, angle: fullTilt * ease(at.u) };
+      return {
+        dx: targetDx,
+        dy: targetDy,
+        angle: fullTilt * (0.25 + 0.75 * ease(at.u)),
+      };
     case "pour":
       return { dx: targetDx, dy: targetDy, angle: fullTilt };
     case "untilt":
       return { dx: targetDx, dy: targetDy, angle: fullTilt * (1 - ease(at.u)) };
     default: {
       const u = ease(at.u);
-      return { dx: targetDx * (1 - u), dy: targetDy * (1 - u), angle: 0 };
+      return {
+        dx: targetDx * (1 - u),
+        dy: targetDy * (1 - u) - travelArc(at.u) * src.h * 0.1,
+        angle: 0,
+      };
     }
   }
 }
 
-function drawUnit(
+/** Liquid, clipped to the bottle so it takes the vessel's shape. */
+function drawContents(
   ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  colorIndex: number,
-  symbols: boolean,
+  box: BottleLayout,
+  contents: number[],
+  capacity: number,
+  partialFraction: number,
+  partialColor: number,
+  wobble: number,
 ): void {
-  const potion = PALETTE[colorIndex % PALETTE.length];
+  const m = metricsFor(box, capacity);
 
-  ctx.fillStyle = potion.hex;
-  ctx.fillRect(x, y, w, h);
+  ctx.save();
+  bottlePath(ctx, box);
+  ctx.clip();
 
-  // A lighter band along the top edge reads as a liquid surface.
-  ctx.fillStyle = "rgba(255, 255, 255, 0.22)";
-  ctx.fillRect(x, y, w, Math.max(1, h * 0.16));
+  ctx.fillStyle = CAVITY;
+  ctx.fillRect(box.x, box.y, box.w, box.h);
 
-  if (symbols && h > 9) {
-    ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
-    ctx.font = `bold ${Math.max(8, Math.floor(h * 0.52))}px ui-monospace, monospace`;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(potion.glyph, x + w / 2, y + h / 2 + h * 0.05);
+  const surfaceOf = (units: number) => m.liquidBottom - units * m.unitH;
+
+  for (let i = 0; i < contents.length; i++) {
+    const potion = PALETTE[contents[i] % PALETTE.length];
+    const top = surfaceOf(i + 1);
+    // Only the topmost surface sloshes; the ones buried below cannot move.
+    const offset = i === contents.length - 1 ? wobble * m.unitH : 0;
+
+    // One band per unit. Filling down to the base instead would let the
+    // topmost colour paint over every unit beneath it, and the bottle would
+    // render as a single solid colour.
+    ctx.fillStyle = potion.hex;
+    ctx.fillRect(box.x, top + offset, box.w, m.unitH - offset + 1);
   }
+
+  if (partialFraction > 0) {
+    const potion = PALETTE[partialColor % PALETTE.length];
+    const base = surfaceOf(contents.length);
+    ctx.fillStyle = potion.hex;
+    ctx.fillRect(box.x, base - m.unitH * partialFraction, box.w, m.unitH * partialFraction + 1);
+  }
+
+  // Meniscus: a bright lip on the top surface, which is what sells it as liquid
+  // rather than a stack of coloured bars.
+  const total = contents.length + (partialFraction > 0 ? partialFraction : 0);
+  if (total > 0) {
+    const top = surfaceOf(total) + wobble * m.unitH;
+    ctx.fillStyle = "rgba(255, 255, 255, 0.30)";
+    ctx.fillRect(box.x, top, box.w, Math.max(1, box.h * 0.012));
+  }
+
+  // Glass: a soft highlight down one flank and a shadow down the other, drawn
+  // over the liquid so the bottle reads as in front of its contents.
+  const gradient = ctx.createLinearGradient(box.x, 0, box.x + box.w, 0);
+  gradient.addColorStop(0, "rgba(255, 255, 255, 0.16)");
+  gradient.addColorStop(0.22, "rgba(255, 255, 255, 0.05)");
+  gradient.addColorStop(0.62, "rgba(0, 0, 0, 0.0)");
+  gradient.addColorStop(1, "rgba(0, 0, 0, 0.24)");
+  ctx.fillStyle = gradient;
+  ctx.fillRect(box.x, box.y, box.w, box.h);
+
+  ctx.restore();
 }
 
 function drawBottle(
   ctx: CanvasRenderingContext2D,
   box: BottleLayout,
   contents: number[],
+  capacity: number,
   partialFraction: number,
   partialColor: number,
-  state: DrawState,
+  wobble: number,
   highlight: boolean,
 ): void {
-  const { x, y, w, h, unitH } = box;
-  const innerX = x + BORDER;
-  const innerW = w - BORDER * 2;
+  drawContents(ctx, box, contents, capacity, partialFraction, partialColor, wobble);
 
-  ctx.fillStyle = CAVITY;
-  ctx.fillRect(x, y, w, h);
+  const done = isComplete(contents, capacity);
+  ctx.lineWidth = Math.max(2, box.w * 0.055);
+  ctx.strokeStyle = done ? GLASS_RIM_DONE : highlight ? GLASS_RIM : GLASS_RIM_DIM;
+  bottlePath(ctx, box);
+  ctx.stroke();
 
-  for (let i = 0; i < contents.length; i++) {
-    drawUnit(
-      ctx,
-      innerX,
-      y + h - (i + 1) * unitH,
-      innerW,
-      unitH,
-      contents[i],
-      state.symbols,
-    );
-  }
-
-  // The unit currently landing, drawn as a growing slab on top of the stack.
-  if (partialFraction > 0) {
-    const slabH = unitH * partialFraction;
-    drawUnit(
-      ctx,
-      innerX,
-      y + h - contents.length * unitH - slabH,
-      innerW,
-      slabH,
-      partialColor,
-      false,
-    );
-  }
-
-  const done = isComplete(contents, state.puzzle.capacity);
-  ctx.lineWidth = BORDER;
-  ctx.strokeStyle = done ? GLASS_DONE : highlight ? GLASS : GLASS_DIM;
-  ctx.strokeRect(x + BORDER / 2, y + BORDER / 2, w - BORDER, h - BORDER);
-
-  // Neck: a narrower band at the top so a bottle reads as a bottle, not a bar.
-  const neckW = w * 0.5;
-  const neckX = x + (w - neckW) / 2;
-  ctx.fillStyle = BG;
-  ctx.fillRect(x - 1, y - BORDER, w + 2, BORDER);
-  ctx.fillStyle = CAVITY;
-  ctx.fillRect(neckX, y - BORDER * 2, neckW, BORDER * 2);
-  ctx.strokeStyle = done ? GLASS_DONE : highlight ? GLASS : GLASS_DIM;
-  ctx.strokeRect(
-    neckX + BORDER / 2,
-    y - BORDER * 2,
-    neckW - BORDER,
-    BORDER * 2 + BORDER,
-  );
+  // A thicker band across the mouth reads as the rolled lip of the glass.
+  ctx.beginPath();
+  ctx.lineWidth = Math.max(2, box.w * 0.075);
+  ctx.moveTo(box.x + box.w * (0.5 - NECK_W / 2), box.y + 1);
+  ctx.lineTo(box.x + box.w * (0.5 + NECK_W / 2), box.y + 1);
+  ctx.stroke();
 }
 
 /**
- * The falling column of liquid, from the tipped bottle's mouth down to the
- * surface of whatever is already in the destination.
+ * The falling column of liquid.
+ *
+ * Drawn as a tapering ribbon rather than a rectangle: it narrows as it falls
+ * and drifts slightly toward the centre of the target, which is enough to read
+ * as a stream under gravity instead of a bar connecting two shapes.
  */
 function drawStream(
   ctx: CanvasRenderingContext2D,
   layout: Layout,
   state: DrawState,
-  destContents: number,
+  destUnits: number,
 ): void {
   const { pour } = state;
   if (pour === null) return;
   if (phaseAt(pour.t, pour.units).name !== "pour") return;
 
   const { dst, mouthX, mouthY } = pourGeometry(layout, pour);
-  const potion = PALETTE[pour.color % PALETTE.length];
-
-  // Land on the current liquid surface, not the floor of the bottle.
-  const surfaceY = dst.y + dst.h - destContents * dst.unitH;
+  const m = metricsFor(dst, state.puzzle.capacity);
+  const surfaceY = Math.min(m.liquidBottom, m.liquidBottom - destUnits * m.unitH);
   if (surfaceY <= mouthY) return;
 
-  const width = Math.max(3, dst.w * 0.14);
+  const potion = PALETTE[pour.color % PALETTE.length];
+  const topW = Math.max(3, dst.w * 0.15);
+  const bottomW = topW * 0.62;
+  const landX = dst.x + dst.w * 0.5;
+
+  ctx.save();
   ctx.fillStyle = potion.hex;
-  ctx.fillRect(mouthX - width / 2, mouthY, width, surfaceY - mouthY);
+  ctx.beginPath();
+  ctx.moveTo(mouthX - topW / 2, mouthY);
+  ctx.bezierCurveTo(
+    mouthX - topW / 2,
+    (mouthY + surfaceY) / 2,
+    landX - bottomW / 2,
+    (mouthY + surfaceY) / 2,
+    landX - bottomW / 2,
+    surfaceY,
+  );
+  ctx.lineTo(landX + bottomW / 2, surfaceY);
+  ctx.bezierCurveTo(
+    landX + bottomW / 2,
+    (mouthY + surfaceY) / 2,
+    mouthX + topW / 2,
+    (mouthY + surfaceY) / 2,
+    mouthX + topW / 2,
+    mouthY,
+  );
+  ctx.closePath();
+  ctx.fill();
 
   // A brighter core keeps the stream legible against a dark background.
-  ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
-  ctx.fillRect(mouthX - width / 2, mouthY, Math.max(1, width * 0.3), surfaceY - mouthY);
+  ctx.globalAlpha = 0.35;
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(mouthX - topW * 0.16, mouthY, Math.max(1, topW * 0.22), (surfaceY - mouthY) * 0.55);
+  ctx.restore();
 }
 
 export function drawScene(
@@ -270,6 +365,10 @@ export function drawScene(
 
   const { bottles, partial } = displayState(state);
   const pouringFrom = state.pour?.move.from ?? -1;
+  const pulse = Math.sin(state.clock * 12) > 0;
+
+  const settling = state.pour === null ? null : sincePour(state.pour);
+  const wobbleAmount = settling === null ? 0 : surfaceWobble(settling);
 
   for (const box of layout.bottles) {
     const contents = bottles[box.index] ?? [];
@@ -284,17 +383,13 @@ export function drawScene(
     const hintPulse =
       state.hinted !== null &&
       (state.hinted.from === box.index || state.hinted.to === box.index) &&
-      Math.sin(state.clock * 12) > 0;
-
+      pulse;
     const highlight =
       state.selected === box.index || box.index === pouringFrom || hintPulse;
 
     ctx.save();
     ctx.translate(dx + shakeX, dy);
     if (angle !== 0) {
-      // Pivot about the bottle's own mouth. The translate above has already put
-      // that point over the destination, so the spout stays put while the body
-      // swings.
       const px = box.x + box.w * 0.5;
       const py = box.y;
       ctx.translate(px, py);
@@ -306,15 +401,15 @@ export function drawScene(
       ctx,
       box,
       contents,
+      state.puzzle.capacity,
       partial !== null && partial.bottle === box.index ? partial.fraction : 0,
       partial?.color ?? 0,
-      state,
+      state.pour !== null && state.pour.move.to === box.index ? wobbleAmount : 0,
       highlight,
     );
     ctx.restore();
   }
 
-  const landed =
-    state.pour === null ? 0 : (bottles[state.pour.move.to]?.length ?? 0);
+  const landed = state.pour === null ? 0 : (bottles[state.pour.move.to]?.length ?? 0);
   drawStream(ctx, layout, state, landed);
 }

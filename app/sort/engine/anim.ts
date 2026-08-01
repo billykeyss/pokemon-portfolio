@@ -24,13 +24,24 @@ export type PhaseAt = TimelinePhaseAt<PhaseName>;
  * Tuned so a full four-unit pour lands comfortably under a second. This game is
  * played in fast bursts of taps — an animation the player has to wait out turns
  * a puzzle into a queue.
+ *
+ * Travel and tilt overlap in feel rather than reading as separate beats: travel
+ * is the longest phase and carries an arc, so the bottle is already swinging by
+ * the time it starts to tip.
+ *
+ * Smoothness comes from the arc, the eased phases and the settle — not from
+ * spending longer. Stretching these to sell the motion just makes every tap
+ * cost more, and the whole board is played in bursts of them.
  */
-const LIFT = 0.08;
-const TRAVEL = 0.13;
-const TILT = 0.09;
-const PER_UNIT = 0.075;
-const UNTILT = 0.08;
+const LIFT = 0.06;
+const TRAVEL = 0.15;
+const TILT = 0.08;
+const PER_UNIT = 0.07;
+const UNTILT = 0.07;
 const RETURN = 0.1;
+
+/** How long the destination's surface keeps sloshing after liquid lands. */
+export const WOBBLE_DURATION = 0.36;
 
 /**
  * Tilt magnitudes in radians. Both are past a right angle on purpose: below 90
@@ -99,4 +110,38 @@ export function pouredUnits(pour: Pour): number {
 export function tiltAngle(remaining: number, capacity: number): number {
   const fill = Math.max(0, Math.min(1, remaining / Math.max(1, capacity)));
   return MAX_TILT + (MIN_TILT - MAX_TILT) * fill;
+}
+
+/**
+ * Height of the travel arc, 0..1, peaking mid-flight.
+ *
+ * Without this the bottle slides along a straight line between two points,
+ * which reads as a UI element moving rather than a hand carrying something. The
+ * arc is asymmetric — it rises faster than it falls — so the bottle settles
+ * onto the target instead of dropping onto it.
+ */
+export function travelArc(u: number): number {
+  const c = Math.max(0, Math.min(1, u));
+  return Math.sin(Math.pow(c, 0.85) * Math.PI);
+}
+
+/**
+ * Damped oscillation of a liquid surface after something lands in it, in units
+ * of surface height. Returns 0 once settled, so a caller can add it blindly.
+ */
+export function surfaceWobble(elapsed: number): number {
+  if (elapsed < 0 || elapsed >= WOBBLE_DURATION) return 0;
+  const u = elapsed / WOBBLE_DURATION;
+  return Math.sin(u * Math.PI * 4.2) * (1 - u) * (1 - u) * 0.22;
+}
+
+/**
+ * Seconds since the pour phase ended, or null while liquid is still falling.
+ * The wobble belongs to the phases *after* the pour — during it, the surface is
+ * still rising and a wobble would fight the fill.
+ */
+export function sincePour(pour: Pour): number | null {
+  const phases = phaseDurations(pour.units);
+  const pourEnds = phases.slice(0, 4).reduce((n, p) => n + p.dur, 0);
+  return pour.t < pourEnds ? null : pour.t - pourEnds;
 }

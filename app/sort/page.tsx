@@ -58,9 +58,7 @@ export default function SortPage() {
   // Mirrors so the loop's callbacks read current values without re-subscribing.
   const puzzleRef = useRef(puzzle);
   const selectedRef = useRef(selected);
-  const symbolsRef = useRef(save.symbols);
   puzzleRef.current = puzzle;
-  symbolsRef.current = save.symbols;
 
   /**
    * Write the ref before the state. The pointer handler reads `selectedRef` on
@@ -219,7 +217,6 @@ export default function SortPage() {
         hintRef.current === null
           ? null
           : { from: hintRef.current.move.from, to: hintRef.current.move.to },
-      symbols: symbolsRef.current,
       shake: shakeRef.current,
       clock: clockRef.current,
     };
@@ -316,7 +313,6 @@ export default function SortPage() {
           moves={moves}
           best={save.best}
           speed={save.speed}
-          symbols={save.symbols}
           canUndo={history.length > 0}
           canAddBottle={!addedBottle}
           busy={busy}
@@ -327,7 +323,6 @@ export default function SortPage() {
           onToggleSpeed={() =>
             setSave((s) => ({ ...s, speed: nextSpeed(s.speed) }))
           }
-          onToggleSymbols={() => setSave((s) => ({ ...s, symbols: !s.symbols }))}
           onOpenLevels={() => setShowLevels(true)}
         />
 

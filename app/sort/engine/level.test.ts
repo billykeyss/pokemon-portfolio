@@ -1,33 +1,38 @@
 import { describe, expect, it } from "vitest";
 import { levelFor, paramsForLevel, seedForLevel } from "./level";
+import { PALETTE } from "./palette";
 import { isComplete } from "./rules";
 import { solve } from "./solve";
 
 describe("paramsForLevel", () => {
-  it("starts at three colours with two spares", () => {
-    expect(paramsForLevel(1)).toEqual({ colors: 3, free: 2, capacity: 4 });
+  it("starts at seven bottles", () => {
+    expect(paramsForLevel(1)).toEqual({ colors: 5, free: 2, capacity: 4 });
   });
 
-  it("adds a colour every five levels", () => {
-    expect(paramsForLevel(6).colors).toBe(4);
-    expect(paramsForLevel(11).colors).toBe(5);
+  it("adds a colour every two levels", () => {
+    expect(paramsForLevel(3).colors).toBe(6);
+    expect(paramsForLevel(5).colors).toBe(7);
   });
 
-  it("caps at twelve colours", () => {
-    expect(paramsForLevel(46).colors).toBe(12);
-    expect(paramsForLevel(500).colors).toBe(12);
+  it("caps at sixteen colours, which is eighteen bottles", () => {
+    expect(paramsForLevel(23).colors).toBe(16);
+    expect(paramsForLevel(500).colors).toBe(16);
+    expect(paramsForLevel(500).colors + paramsForLevel(500).free).toBe(18);
   });
 
-  it("never drops below three colours for zero or negative input", () => {
-    expect(paramsForLevel(0).colors).toBe(3);
-    expect(paramsForLevel(-5).colors).toBe(3);
+  it("never drops below five colours for zero or negative input", () => {
+    expect(paramsForLevel(0).colors).toBe(5);
+    expect(paramsForLevel(-5).colors).toBe(5);
   });
 
-  it("squeezes to one spare on every tenth level from thirty", () => {
-    expect(paramsForLevel(30).free).toBe(1);
-    expect(paramsForLevel(40).free).toBe(1);
-    expect(paramsForLevel(31).free).toBe(2);
-    expect(paramsForLevel(20).free).toBe(2);
+  it("always leaves two spare bottles", () => {
+    for (const n of [1, 10, 30, 40, 100]) {
+      expect(paramsForLevel(n).free).toBe(2);
+    }
+  });
+
+  it("never asks for more colours than there is paint", () => {
+    expect(paramsForLevel(999).colors).toBeLessThanOrEqual(PALETTE.length);
   });
 
   it("never loses ground as the level climbs", () => {

@@ -17,7 +17,13 @@ export interface Layout {
   unitH: number;
 }
 
-const MAX_PER_ROW = 7;
+/**
+ * Wrapping sooner than the bottles strictly need keeps them large. A single row
+ * of seven is width-bound, so each bottle ends up narrow and short with most of
+ * the canvas empty above and below it; two rows of four fills the frame with
+ * bottles nearly twice the size.
+ */
+const MAX_PER_ROW = 6;
 /** Gap between bottles, as a fraction of bottle width. */
 const GAP_RATIO = 0.4;
 /** Clearance above each row so a lifted bottle has somewhere to go. */

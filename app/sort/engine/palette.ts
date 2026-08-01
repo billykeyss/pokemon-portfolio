@@ -1,27 +1,39 @@
 export interface Potion {
   name: string;
   hex: string;
-  /** Single character drawn on each unit so colour is never the only cue. */
-  glyph: string;
 }
 
 /**
- * Pokemon type colours. At twelve, several read similarly, and colour alone is
- * not a usable distinction for a colourblind player — hence the glyphs.
+ * Sixteen liquids, spread across hue *and* lightness.
+ *
+ * Order is the important part. A level uses the first N entries, so the list is
+ * sequenced by how far apart the colours are rather than by hue: red, blue,
+ * yellow, green, purple before the list starts filling in between them. Sorted
+ * around the colour wheel instead, an early level would draw its five colours
+ * from one narrow arc — orange beside amber beside gold — which is exactly the
+ * comparison a player cannot make at a glance.
+ *
+ * Lightness carries its share too, now that nothing is printed on the liquid to
+ * tell colours apart: a pale bone and a dark iron stay separable from the
+ * saturated mid-tones even where hues crowd together at the wide end.
  */
 export const PALETTE: readonly Potion[] = [
-  { name: "fire", hex: "#F08030", glyph: "F" },
-  { name: "water", hex: "#6890F0", glyph: "W" },
-  { name: "grass", hex: "#78C850", glyph: "G" },
-  { name: "electric", hex: "#F8D030", glyph: "E" },
-  { name: "psychic", hex: "#F85888", glyph: "P" },
-  { name: "poison", hex: "#A040A0", glyph: "K" },
-  { name: "ice", hex: "#98D8D8", glyph: "I" },
-  { name: "dragon", hex: "#7038F8", glyph: "D" },
-  { name: "fighting", hex: "#C03028", glyph: "H" },
-  { name: "ground", hex: "#E0C068", glyph: "R" },
-  { name: "ghost", hex: "#705898", glyph: "S" },
-  { name: "steel", hex: "#B8B8D0", glyph: "M" },
+  { name: "ember", hex: "#E4463C" },
+  { name: "cobalt", hex: "#3D7FE8" },
+  { name: "gold", hex: "#F7C93E" },
+  { name: "moss", hex: "#3FBF4F" },
+  { name: "orchid", hex: "#9B4FD6" },
+  { name: "amber", hex: "#F2833C" },
+  { name: "aqua", hex: "#45CBE6" },
+  { name: "blush", hex: "#F79CC0" },
+  { name: "jade", hex: "#1F9E86" },
+  { name: "fuchsia", hex: "#DB4FB4" },
+  { name: "bone", hex: "#F0E6D2" },
+  { name: "indigo", hex: "#5A4BD6" },
+  { name: "lime", hex: "#C7E04A" },
+  { name: "cocoa", hex: "#9C6239" },
+  { name: "slate", hex: "#7E8CA0" },
+  { name: "iron", hex: "#5A6472" },
 ];
 
 export const MAX_COLORS = PALETTE.length;

@@ -24,8 +24,8 @@ describe("defaultSortSave", () => {
     expect(s.movesByLevel).toEqual({});
   });
 
-  it("enables glyphs by default", () => {
-    expect(defaultSortSave().symbols).toBe(true);
+  it("starts at normal speed", () => {
+    expect(defaultSortSave().speed).toBe(1);
   });
 });
 
@@ -48,13 +48,11 @@ describe("migrateSortSave", () => {
       level: 12,
       best: 14,
       movesByLevel: { 1: 9 },
-      symbols: false,
       speed: 2,
     });
     expect(s.level).toBe(12);
     expect(s.best).toBe(14);
     expect(s.movesByLevel).toEqual({ 1: 9 });
-    expect(s.symbols).toBe(false);
     expect(s.speed).toBe(2);
   });
 
@@ -76,6 +74,13 @@ describe("migrateSortSave", () => {
 
   it("drops move counts keyed by nonsense", () => {
     expect(migrateSortSave({ movesByLevel: { abc: 5 } }).movesByLevel).toEqual({});
+  });
+
+  it("drops a stale glyph flag from an older save", () => {
+    // The overlay is gone; a save written before that must still load.
+    const s = migrateSortSave({ level: 3, symbols: true, speed: 2 });
+    expect(s).not.toHaveProperty("symbols");
+    expect(s.level).toBe(3);
   });
 
   it("falls back on a bogus speed", () => {

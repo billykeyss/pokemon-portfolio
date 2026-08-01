@@ -12,8 +12,6 @@ export interface SortSave {
   best: number;
   /** Best move count per beaten level. */
   movesByLevel: Record<number, number>;
-  /** Glyph overlay, on by default so colour is never the only cue. */
-  symbols: boolean;
   speed: Speed;
 }
 
@@ -23,7 +21,6 @@ export function defaultSortSave(): SortSave {
     level: 1,
     best: 1,
     movesByLevel: {},
-    symbols: true,
     speed: DEFAULT_SPEED,
   };
 }
@@ -61,7 +58,6 @@ export function migrateSortSave(raw: unknown): SortSave {
     // best can never sit below the level in progress, however the save got here.
     best: Math.max(level, posInt(r.best, base.best)),
     movesByLevel: moveMap(r.movesByLevel),
-    symbols: typeof r.symbols === "boolean" ? r.symbols : base.symbols,
     speed: coerceSpeed(r.speed),
   };
 }
