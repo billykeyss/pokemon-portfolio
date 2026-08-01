@@ -86,11 +86,13 @@ describe("stepWorld", () => {
     expect(run()).toEqual(run());
   });
 
-  it("removes a projectile that falls past the bottom of the arena", () => {
+  it("bounces a projectile off the floor instead of draining it away", () => {
+    // The floor used to be open, so a fast or charged shot was simply lost.
     const w = createWorld({ arena, seed: 1 });
-    spawnProjectile(w, "ember", { x: 200, y: 690 }, { x: 0, y: 900 });
+    const p = spawnProjectile(w, "ember", { x: 200, y: 600 }, { x: 0, y: 900 });
     for (let i = 0; i < 30; i++) stepWorld(w);
-    expect(w.bodies.filter((b) => b.kind === "projectile")).toHaveLength(0);
+    expect(w.bodies).toContain(p);
+    expect(p.pos.y).toBeLessThanOrEqual(arena.height);
   });
 
   it("costs nest HP when an enemy reaches the bottom, and removes it", () => {

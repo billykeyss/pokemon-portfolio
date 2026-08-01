@@ -9,6 +9,7 @@ export function Hud({
   combo,
   queue,
   reload,
+  charge,
   autoMode,
   speed,
   onToggleAuto,
@@ -22,6 +23,8 @@ export function Hud({
   queue: string[];
   /** Reload progress, 0..1. */
   reload: number;
+  /** Charge held on the current shot, 0..1. */
+  charge: number;
   autoMode: boolean;
   speed: number;
   onToggleAuto: () => void;
@@ -53,12 +56,20 @@ export function Hud({
         <span className={combo > 1 ? "text-[#F8D030]" : "opacity-40"}>&times;{combo}</span>
       </div>
 
-      <div className="h-1.5 w-full bg-[#2a2140]">
+      <div className="relative h-1.5 w-full bg-[#2a2140]">
         <div
           className="h-full bg-[#F8D030] transition-none"
           style={{ width: `${Math.min(100, Math.max(0, reload * 100))}%` }}
           aria-label="Launcher reload"
         />
+        {/* Charge rides on top of reload so one strip shows both. */}
+        {charge > 0 && (
+          <div
+            className="absolute inset-y-0 left-0 bg-[#ff5f5f]"
+            style={{ width: `${Math.min(100, charge * 100)}%` }}
+            aria-label="Shot charge"
+          />
+        )}
       </div>
 
       <div className="flex items-center justify-between border-t-4 border-[#f8f0e0] bg-[#1b1428] px-3 py-2 text-[#f8f0e0]">

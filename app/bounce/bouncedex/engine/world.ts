@@ -30,6 +30,20 @@ export const PLINK_INTERVAL_TICKS = 45;
 export const PLINK_RANGE = 95;
 /** How long the evolution flash lasts, in ticks (~0.6s). */
 export const EVOLVE_FLASH_TICKS = 72;
+/** How long a floating number or burst lives, in ticks. */
+export const FX_TICKS = 54;
+/** Hard cap so a huge wave cannot flood the renderer. */
+const MAX_FX = 60;
+/** Damage needed to fill the overdrive meter. */
+export const OVERDRIVE_CHARGE = 4200;
+/** How long overdrive runs once triggered (~4s). */
+export const OVERDRIVE_TICKS = 480;
+/** Bumpers fire this many times faster during overdrive. */
+const OVERDRIVE_RATE = 5;
+/** Extra launch speed at full charge. */
+export const CHARGE_SPEED_BONUS = 0.85;
+/** Damping a fully charged shot decays toward (higher = floatier). */
+const CHARGED_DAMPING = 0.88;
 
 /** Sticky: ticks between damage pulses while riding a host. */
 export const STICKY_INTERVAL_TICKS = 24;
@@ -59,6 +73,13 @@ export interface World {
   over: boolean;
   /** Impacts produced by the most recent step; the renderer drains this. */
   impacts: ImpactEvent[];
+  /** Short-lived visual effects. The sim owns them so they survive the gap
+   *  between simulation steps and render frames. */
+  fx: Fx[];
+  /** Damage banked toward the next overdrive, 0..OVERDRIVE_CHARGE. */
+  overdrive: number;
+  /** Tick overdrive expires, or -1 when idle. */
+  overdriveUntil: number;
   /**
    * Tick of the last damaging impact per body pair, keyed "loId:hiId".
    * Two overlapping bodies collide on *every* step they remain in contact, so
@@ -81,6 +102,33 @@ export interface World {
 /** Minimum ticks between two damaging impacts for the same pair (0.25s). */
 export const HIT_COOLDOWN_TICKS = 30;
 
+export interface Fx {
+  x: number;
+  y: number;
+  tick: number;
+  kind: "hit" | "kill" | "big";
+  value: number;
+}
+
+function pushFx(world: World, fx: Fx): void {
+  // Drop the oldest rather than growing without bound in a heavy wave.
+  if (world.fx.length >= MAX_FX) world.fx.shift();
+  world.fx.push(fx);
+}
+
+/** True while the board is in overdrive. */
+export function isOverdrive(world: World): boolean {
+  return world.overdriveUntil >= 0 && world.tick < world.overdriveUntil;
+}
+
+/** Spend a full meter. Returns false if it was not ready. */
+export function triggerOverdrive(world: World): boolean {
+  if (world.overdrive < OVERDRIVE_CHARGE || isOverdrive(world)) return false;
+  world.overdrive = 0;
+  world.overdriveUntil = world.tick + OVERDRIVE_TICKS;
+  return true;
+}
+
 const pairKey = (a: number, b: number): string =>
   a < b ? `${a}:${b}` : `${b}:${a}`;
 
@@ -98,6 +146,9 @@ export function createWorld(opts: { arena: Arena; seed: number }): World {
     rngSeed: opts.seed,
     over: false,
     impacts: [],
+    fx: [],
+    overdrive: 0,
+    overdriveUntil: -1,
     contacts: new Map(),
     branchChoices: {},
     discovered: [],
@@ -110,6 +161,7 @@ export function spawnProjectile(
   critterId: string,
   pos: Vec2,
   vel: Vec2,
+  charge = 0,
 ): Body {
   const def = getCritter(critterId);
   const body: Body = {
@@ -129,6 +181,7 @@ export function spawnProjectile(
     hasSplit: false,
     attachedTo: null,
     evolvedAtTick: -1,
+    charge,
   };
   world.bodies.push(body);
   return body;
@@ -157,9 +210,26 @@ export function spawnEnemy(
     hasSplit: false,
     attachedTo: null,
     evolvedAtTick: -1,
+    charge: 0,
   };
   world.bodies.push(body);
   return body;
+}
+
+/**
+ * Bank damage toward overdrive and queue a visual. Only kills and meaty hits
+ * get a number — every plink would be unreadable noise.
+ */
+function recordFx(world: World, ev: ImpactEvent, target: Body): void {
+  world.overdrive = Math.min(OVERDRIVE_CHARGE, world.overdrive + ev.damage);
+
+  if (ev.killed) {
+    pushFx(world, { x: target.pos.x, y: target.pos.y, tick: world.tick, kind: "kill", value: ev.damage });
+  } else if (ev.combo >= 3) {
+    pushFx(world, { x: target.pos.x, y: target.pos.y, tick: world.tick, kind: "big", value: ev.damage });
+  } else if (ev.damage >= 20) {
+    pushFx(world, { x: target.pos.x, y: target.pos.y, tick: world.tick, kind: "hit", value: ev.damage });
+  }
 }
 
 /** Nearest enemy to a point within `range`, or null. */
@@ -188,7 +258,10 @@ function detonate(world: World, source: Body, radius: number, mult: number): voi
     if (dx * dx + dy * dy > radius * radius) continue;
 
     const ev = applyImpact(world, source, e, mult);
-    if (ev) world.impacts.push(ev);
+    if (ev) {
+      world.impacts.push(ev);
+      recordFx(world, ev, e);
+    }
   }
 }
 
@@ -235,9 +308,12 @@ export function stepWorld(world: World): void {
     }
 
     // FEATHERWEIGHT pushes damping toward 1 (clamped, or critters never settle).
-    const damping = Math.min(0.95, DAMPING * mods.airTime);
+    // A charged shot pushes it further still, which is what turns one good
+    // release into a long ricochet chain instead of a two-bounce dribble.
+    const base = DAMPING + (CHARGED_DAMPING - DAMPING) * b.charge;
+    const damping = Math.min(0.95, base * mods.airTime);
     integrate(b, FIXED_DT, GRAVITY, damping);
-    collideWalls(b, arena, mods.wallRestitution);
+    collideWalls(b, arena, mods.wallRestitution, true);
   }
 
   // Sticky: ride the host, burn it, and settle in place when it dies.
@@ -301,6 +377,7 @@ export function stepWorld(world: World): void {
       if (!ev) continue;
       world.contacts.set(key, world.tick);
       world.impacts.push(ev);
+      recordFx(world, ev, enemy);
 
       if (phasing) critter.phasesLeft -= 1;
 
@@ -353,8 +430,11 @@ export function stepWorld(world: World): void {
   for (const b of world.bodies) {
     if (!b.settled || b.critterId === null) continue;
     const interval = Math.max(
-      6,
-      Math.round(PLINK_INTERVAL_TICKS * mods.plinkIntervalMult),
+      2,
+      Math.round(
+        (PLINK_INTERVAL_TICKS * mods.plinkIntervalMult) /
+          (isOverdrive(world) ? OVERDRIVE_RATE : 1),
+      ),
     );
     if ((world.tick + b.id) % interval !== 0) continue;
 
@@ -374,7 +454,10 @@ export function stepWorld(world: World): void {
 
     if (target) {
       const ev = applyImpact(world, b, target);
-      if (ev) world.impacts.push(ev);
+      if (ev) {
+        world.impacts.push(ev);
+        recordFx(world, ev, target);
+      }
     }
   }
 
@@ -435,6 +518,10 @@ export function stepWorld(world: World): void {
     if (b.kind === "projectile" && b.chain > best) best = b.chain;
   }
   world.combo = best;
+
+  if (world.fx.length > 0) {
+    world.fx = world.fx.filter((f) => world.tick - f.tick < FX_TICKS);
+  }
 
   world.tick += 1;
 }

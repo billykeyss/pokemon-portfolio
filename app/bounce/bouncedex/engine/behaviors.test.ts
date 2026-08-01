@@ -217,3 +217,44 @@ describe("upgrade: SHARP EDGES (damageMult)", () => {
     expect(damageWith(2)).toBeGreaterThan(damageWith(1));
   });
 });
+
+describe("charged shots", () => {
+  it("stays in play far longer than an uncharged shot", () => {
+    const settleTime = (charge: number) => {
+      const w = fresh();
+      const p = spawnProjectile(w, "pebble", { x: 200, y: 650 }, { x: 160, y: -560 }, charge);
+      let t = 0;
+      while (!p.settled && t < 4000) {
+        stepWorld(w);
+        t += 1;
+      }
+      return t;
+    };
+    expect(settleTime(1)).toBeGreaterThan(settleTime(0) * 1.5);
+  });
+
+  it("racks up a bigger chain across a realistic spread of enemies", () => {
+    const chainFor = (charge: number) => {
+      const w = fresh();
+      // Spread out like an actual wave. A packed lattice would just trap the
+      // projectile, measuring nothing about how far it travels.
+      for (let row = 0; row < 4; row++) {
+        for (let col = 0; col < 5; col++) {
+          spawnEnemy(w, { x: 50 + col * 75, y: 140 + row * 110 }, 1e9, 14);
+        }
+      }
+      const p = spawnProjectile(w, "pebble", { x: 200, y: 660 }, { x: 120, y: -540 }, charge);
+      for (let i = 0; i < 2400 && !p.settled; i++) stepWorld(w);
+      return p.chain;
+    };
+    const hot = chainFor(1);
+    const cold = chainFor(0);
+    expect(hot, `charged ${hot} vs uncharged ${cold}`).toBeGreaterThan(cold);
+  });
+
+  it("leaves uncharged shots exactly as they were", () => {
+    const w = fresh();
+    const p = spawnProjectile(w, "pebble", { x: 200, y: 650 }, { x: 0, y: -400 });
+    expect(p.charge).toBe(0);
+  });
+});

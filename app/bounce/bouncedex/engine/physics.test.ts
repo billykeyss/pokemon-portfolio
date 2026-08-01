@@ -26,6 +26,7 @@ function makeBody(over: Partial<Body> = {}): Body {
     hasSplit: false,
     attachedTo: null,
     evolvedAtTick: -1,
+    charge: 0,
     ...over,
   };
 }
@@ -160,5 +161,20 @@ describe("collidePair", () => {
     expect(Number.isFinite(a.pos.x)).toBe(true);
     expect(Number.isFinite(b.pos.x)).toBe(true);
     expect(Math.hypot(b.pos.x - a.pos.x, b.pos.y - a.pos.y)).toBeCloseTo(20);
+  });
+});
+
+describe("floor reflection", () => {
+  it("bounces a critter off the floor when asked", () => {
+    const b = makeBody({ pos: { x: 200, y: 698 }, vel: { x: 0, y: 400 }, radius: 10, restitution: 0.9 });
+    expect(collideWalls(b, ARENA, 1, true)).toBe(true);
+    expect(b.vel.y).toBeLessThan(0);
+    expect(b.pos.y).toBe(ARENA.height - 10);
+  });
+
+  it("lets enemies through the floor so they can reach the nest", () => {
+    const b = makeBody({ pos: { x: 200, y: 698 }, vel: { x: 0, y: 400 }, radius: 10 });
+    expect(collideWalls(b, ARENA, 1, false)).toBe(false);
+    expect(b.vel.y).toBeGreaterThan(0);
   });
 });

@@ -31,6 +31,12 @@ export interface Body {
   attachedTo: number | null;
   /** Tick this body last evolved, or -1. Drives the evolution flash. */
   evolvedAtTick: number;
+  /**
+   * How hard this shot was charged, 0..1. A charged critter resists settling,
+   * so it ricochets far longer and racks up a real chain — the payoff that
+   * makes aiming worth doing rather than idling.
+   */
+  charge: number;
 }
 
 export interface Arena {

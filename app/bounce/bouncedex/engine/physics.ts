@@ -44,6 +44,12 @@ export function collideWalls(
   body: Body,
   arena: Arena,
   wallRestitution = 1,
+  /**
+   * Whether the floor reflects. Critters bounce off it so a long, fast shot
+   * stays in play instead of draining out the bottom; enemies do not, because
+   * reaching the floor is how they damage the nest.
+   */
+  reflectBottom = false,
 ): boolean {
   if (body.settled) return false;
   let hit = false;
@@ -65,6 +71,10 @@ export function collideWalls(
   if (body.pos.y - body.radius < 0) {
     body.pos.y = body.radius;
     body.vel.y = Math.abs(body.vel.y) * e;
+    hit = true;
+  } else if (reflectBottom && body.pos.y + body.radius > arena.height) {
+    body.pos.y = arena.height - body.radius;
+    body.vel.y = -Math.abs(body.vel.y) * e;
     hit = true;
   }
 

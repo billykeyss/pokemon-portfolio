@@ -15,6 +15,7 @@ import {
   spawnEnemy,
   stepWorld,
   FIXED_DT,
+  CHARGE_SPEED_BONUS,
   type World,
 } from "./engine/world";
 import { autoAim, aimFromDrag, predictPath, LAUNCH_SPEED } from "./engine/aim";
@@ -33,6 +34,8 @@ import { DexScreen } from "./ui/DexScreen";
 const ARENA = { width: 400, height: 700 };
 const LAUNCH_ORIGIN: Vec2 = { x: ARENA.width / 2, y: ARENA.height - 30 };
 const MANUAL_RELEASE_MS = 3000;
+/** Hold this long for a fully charged shot. */
+const CHARGE_MS = 900;
 /** One wave every 6 simulated seconds. */
 const WAVE_INTERVAL_TICKS = 120 * 6;
 
@@ -58,6 +61,8 @@ export default function BouncedexPage() {
   const autoTimerRef = useRef(0);
   const lastTouchRef = useRef(0);
   const dragRef = useRef<Vec2 | null>(null);
+  const chargeStartRef = useRef(0);
+  const chargeRef = useRef(0);
   const waveRngRef = useRef(makeRng(1));
   const queueRef = useRef<string[]>([]);
   const startersRef = useRef<string[]>(DEFAULT_STARTERS);
@@ -83,6 +88,7 @@ export default function BouncedexPage() {
     combo: 0,
     queue: [] as string[],
     reload: 0,
+    charge: 0,
   });
 
   // localStorage is unavailable during the static build, so the save must load
@@ -121,7 +127,7 @@ export default function BouncedexPage() {
   }, []);
 
   /** Fire if the launcher has reloaded. Returns whether a shot went out. */
-  const launch = useCallback((dir: Vec2): boolean => {
+  const launch = useCallback((dir: Vec2, charge = 0): boolean => {
     const world = worldRef.current;
     const mods = world.mods;
 
@@ -139,11 +145,15 @@ export default function BouncedexPage() {
     const critterId = queueRef.current.shift();
     if (!critterId) return false;
 
-    const power = LAUNCH_SPEED * mods.launchPower;
-    spawnProjectile(world, critterId, LAUNCH_ORIGIN, {
-      x: dir.x * power,
-      y: dir.y * power,
-    });
+    const power =
+      LAUNCH_SPEED * mods.launchPower * (1 + CHARGE_SPEED_BONUS * charge);
+    spawnProjectile(
+      world,
+      critterId,
+      LAUNCH_ORIGIN,
+      { x: dir.x * power, y: dir.y * power },
+      charge,
+    );
     return true;
   }, []);
 
@@ -173,6 +183,13 @@ export default function BouncedexPage() {
       world.mods.autoFireInterval,
     );
     reloadRef.current = autoTimerRef.current / world.mods.autoFireInterval;
+
+    if (dragRef.current) {
+      chargeRef.current = Math.min(
+        1,
+        (performance.now() - chargeStartRef.current) / CHARGE_MS,
+      );
+    }
 
     const manualRecently = performance.now() - lastTouchRef.current < MANUAL_RELEASE_MS;
     if (autoMode && !manualRecently && !world.over) {
@@ -212,8 +229,9 @@ export default function BouncedexPage() {
           world,
           LAUNCH_ORIGIN,
           aimFromDrag(LAUNCH_ORIGIN, dragRef.current),
-          world.mods.launchPower,
-          26,
+          world.mods.launchPower * (1 + CHARGE_SPEED_BONUS * chargeRef.current),
+          // A charged shot travels further, so show more of where it goes.
+          26 + Math.round(chargeRef.current * 30),
         )
       : null;
 
@@ -230,6 +248,7 @@ export default function BouncedexPage() {
       prev.combo === world.combo &&
       prev.queue.length === queue.length &&
       Math.round(prev.reload * 8) === Math.round(reloadRef.current * 8) &&
+      Math.round(prev.charge * 8) === Math.round(chargeRef.current * 8) &&
       prev.queue.every((id, i) => id === queue[i])
         ? prev
         : {
@@ -239,6 +258,7 @@ export default function BouncedexPage() {
             combo: world.combo,
             queue: [...queue],
             reload: reloadRef.current,
+            charge: chargeRef.current,
           },
     );
   }, [reducedMotion]);
@@ -340,6 +360,7 @@ export default function BouncedexPage() {
         combo={hud.combo}
         queue={hud.queue}
         reload={hud.reload}
+        charge={hud.charge}
         autoMode={autoMode}
         speed={speed}
         onToggleAuto={() => setAutoMode((v) => !v)}
@@ -364,6 +385,8 @@ export default function BouncedexPage() {
             e.preventDefault();
             e.currentTarget.setPointerCapture(e.pointerId);
             dragRef.current = toCanvasSpace(e);
+            chargeStartRef.current = performance.now();
+            chargeRef.current = 0;
             lastTouchRef.current = performance.now();
           }}
           onPointerMove={(e) => {
@@ -375,13 +398,15 @@ export default function BouncedexPage() {
           onPointerUp={(e) => {
             e.preventDefault();
             if (dragRef.current) {
-              launch(aimFromDrag(LAUNCH_ORIGIN, dragRef.current));
+              launch(aimFromDrag(LAUNCH_ORIGIN, dragRef.current), chargeRef.current);
             }
             dragRef.current = null;
+            chargeRef.current = 0;
             lastTouchRef.current = performance.now();
           }}
           onPointerCancel={() => {
             dragRef.current = null;
+            chargeRef.current = 0;
           }}
         />
 

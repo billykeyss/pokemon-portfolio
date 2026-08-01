@@ -25,17 +25,13 @@ services:
       - key: NODE_VERSION
         value: 22.13.1
 
-    # Next.js static export emits e.g. /mockups/hobby-cards.html for the route
-    # /mockups/hobby-cards. Without these rewrites Render would 404 on the
-    # extensionless URL. The catch-all maps any not-found path to its .html
-    # counterpart; the root rewrite serves index.html for "/".
-    routes:
-      - type: rewrite
-        source: /
-        destination: /index.html
-      - type: rewrite
-        source: /*
-        destination: /:splat.html
+    # No rewrites. `trailingSlash: true` in next.config.js makes the export
+    # emit out/<route>/index.html, which Render serves for /<route> natively.
+    #
+    # There used to be a catch-all rewriting /* to /:splat.html. It never
+    # worked: every extensionless path came back as an empty 200, including
+    # paths that do not exist, so the site was only reachable at / and at
+    # explicit .html URLs. Directory indexes need no rule at all.
 
     # Security + caching headers
     headers:
