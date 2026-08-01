@@ -21,8 +21,8 @@ That is too much for one spec, so the work is decomposed:
 | P3 | Traffic Jam | `/traffic` | P0, P2 |
 | P4 | Shelf Organizer | `/shelf` | P0, P2 |
 
-**This document covers P0 and P1 only.** P2–P4 get their own spec → plan →
-implementation cycles.
+**This document covers P0 and P1 only.** P2–P4 were built afterwards; what they
+turned into is recorded in `2026-08-01-arcade-p2-p4-outcome.md`.
 
 ### Why P1 needs no art
 

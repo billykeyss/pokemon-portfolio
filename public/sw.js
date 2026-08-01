@@ -3,12 +3,14 @@
 // Next.js emits hashed asset filenames that are unknown when this file is
 // written, so this caches at runtime (cache-first for same-origin GETs) rather
 // than precaching a hardcoded list.
-const CACHE_NAME = "arcade-v3";
+const CACHE_NAME = "arcade-v4";
 const CORE = [
   "/game",
   "/bounce",
   "/bounce/bouncedex",
   "/sort",
+  "/traffic",
+  "/shelf",
   "/manifest.webmanifest",
   "/icon.svg",
 ];
