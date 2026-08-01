@@ -24,15 +24,26 @@ export interface Layout {
  * bottles nearly twice the size.
  */
 const MAX_PER_ROW = 6;
-/** Gap between bottles, as a fraction of bottle width. */
-const GAP_RATIO = 0.4;
-/** Clearance above each row so a lifted bottle has somewhere to go. */
-const LIFT_HEADROOM = 0.25;
 /** Outward padding on hit rectangles, as a fraction of bottle width. */
 const TOUCH_PAD = 0.15;
 /** Bottle height as a multiple of its width, at its squattest and tallest. */
 const MIN_ASPECT = 2.2;
 const MAX_ASPECT = 4;
+
+/**
+ * Spacing scales with how crowded the board is.
+ *
+ * A bottle's width comes out of the gap between bottles, so a single fixed gap
+ * has to be sized for the worst case — and then an early level of nine sits
+ * shoulder to shoulder for no reason, while a late one of twenty is still
+ * cramped. Sparse boards get room to breathe; dense ones close up only as far
+ * as they must.
+ */
+function spacingFor(perRow: number, rows: number): { gap: number; headroom: number } {
+  const gap = perRow <= 4 ? 0.75 : perRow <= 5 ? 0.62 : 0.44;
+  const headroom = rows <= 2 ? 0.42 : rows === 3 ? 0.32 : 0.24;
+  return { gap, headroom };
+}
 
 /**
  * Arrange bottles in as many rows as they need, then centre the block.
@@ -54,10 +65,11 @@ export function layoutBottles(
   const n = Math.max(1, count);
   const rows = Math.ceil(n / MAX_PER_ROW);
   const perRow = Math.ceil(n / rows);
+  const { gap: gapRatio, headroom } = spacingFor(perRow, rows);
 
   // perRow bottles plus (perRow - 1) gaps must fit across the canvas.
-  const widthLimit = canvasW / (perRow + (perRow - 1) * GAP_RATIO);
-  const heightLimit = (canvasH / rows) * (1 - LIFT_HEADROOM);
+  const widthLimit = canvasW / (perRow + (perRow - 1) * gapRatio);
+  const heightLimit = (canvasH / rows) * (1 - headroom);
 
   let bottleW = Math.max(1, widthLimit);
   let bottleH = Math.min(bottleW * MAX_ASPECT, heightLimit);
@@ -68,10 +80,10 @@ export function layoutBottles(
     bottleH = bottleW * MIN_ASPECT;
   }
 
-  const gap = bottleW * GAP_RATIO;
+  const gap = bottleW * gapRatio;
   const unitH = bottleH / Math.max(1, capacity);
 
-  const lift = bottleH * LIFT_HEADROOM;
+  const lift = bottleH * headroom;
   const rowStride = bottleH + lift;
   const startY = Math.max(0, (canvasH - rowStride * rows) / 2);
 
