@@ -2,6 +2,8 @@ import type { Arena, Entity, Vec2 } from "./types";
 import { steerHero } from "./move";
 import type { SwingHit } from "./combat";
 import { updateAttack } from "./combat";
+import { steerEnemy, applyTouchDamage } from "./ai";
+import { GRUNT } from "../data/enemies";
 
 /** Simulation runs at a fixed 120Hz regardless of render frame rate. */
 export const FIXED_DT = 1 / 120;
@@ -87,6 +89,11 @@ export function stepWorld(world: World): void {
   if (steering && steering.deadAtTick < 0) {
     steerHero(steering, world.moveTarget, FIXED_DT);
   }
+
+  for (const e of world.entities) {
+    if (e.kind === "enemy") steerEnemy(world, e, GRUNT, FIXED_DT);
+  }
+  applyTouchDamage(world, GRUNT);
 
   world.hits.length = 0;
   for (const e of world.entities) {
