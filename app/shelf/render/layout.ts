@@ -1,3 +1,5 @@
+import { SHELF_WIDTH } from "../engine/types";
+
 export interface Rect {
   x: number;
   y: number;
@@ -6,127 +8,117 @@ export interface Rect {
 }
 
 export interface ShelfLayout {
-  /** Box of each column of goods. */
-  columns: Rect[];
-  /** Box of each tray slot. */
-  tray: Rect[];
-  /** Side length of an item on the shelves. */
+  /** Box of each shelf plank, spanning its three slots. */
+  shelves: Rect[];
+  /** Side length of an item sitting in a slot. */
   item: number;
-  /** Side length of an item in the tray, which holds more across less width. */
-  trayItem: number;
-  /** How many items a column shows before it starts overlapping them. */
-  visibleDepth: number;
+  /** Vertical thickness of the plank drawn under each shelf. */
+  plank: number;
 }
 
-const GAP_RATIO = 0.22;
-/** Share of the canvas height given to the tray, including its margin. */
-const TRAY_BAND = 0.26;
+/** Horizontal gap between slots, as a fraction of item size. */
+const SLOT_GAP = 0.18;
+/** Vertical gap between shelves, as a fraction of item size. */
+const SHELF_GAP = 0.62;
+/** Side margin, as a fraction of canvas width. */
+const MARGIN = 0.04;
 
 /**
- * Shelves fill the upper area, the tray sits along the bottom.
+ * Shelves stack down the canvas, each a row of three slots.
  *
- * Both are sized to whichever of width or height binds, so a crowded late
- * level and a sparse early one both fill the frame. Pure — no canvas — so it
- * can be asserted on.
+ * Item size is whichever of width or height binds: a wide, short canvas runs
+ * out of vertical room first, a narrow phone runs out of width. Sizing to the
+ * tighter of the two keeps every board — four shelves or seven — filling the
+ * frame without ever overflowing it.
+ *
+ * Pure — no canvas — so it can be asserted on.
  */
-export function layoutShelf(
-  columnCount: number,
-  maxDepth: number,
-  traySize: number,
+export function layoutShelves(
+  shelfCount: number,
   canvasW: number,
   canvasH: number,
 ): ShelfLayout {
-  const cols = Math.max(1, columnCount);
-  const slots = Math.max(1, traySize);
-  const depth = Math.max(1, maxDepth);
+  const rows = Math.max(1, shelfCount);
 
-  const shelfH = canvasH * (1 - TRAY_BAND);
-  const trayH = canvasH * TRAY_BAND;
+  const usableW = canvasW * (1 - MARGIN * 2);
+  const byWidth = usableW / (SHELF_WIDTH + (SHELF_WIDTH - 1) * SLOT_GAP);
+  const byHeight = canvasH / (rows + (rows + 1) * SHELF_GAP);
 
-  /**
-   * The shelves and the tray are sized independently.
-   *
-   * The tray always holds more slots across the same width than the shelves
-   * have columns, so a single shared size would let the tray dictate terms and
-   * leave the shelves — the part the player is actually reading — small and
-   * marooned in empty space.
-   */
-  const byColumnWidth = canvasW / (cols + (cols + 1) * GAP_RATIO);
-  const byShelfHeight = shelfH / (depth + (depth + 1) * GAP_RATIO * 0.6);
-  const item = Math.max(1, Math.min(byColumnWidth, byShelfHeight));
+  const item = Math.max(1, Math.min(byWidth, byHeight));
+  const slotGap = item * SLOT_GAP;
+  const shelfGap = item * SHELF_GAP;
 
-  const bySlotWidth = canvasW / (slots + (slots + 1) * GAP_RATIO);
-  const trayItem = Math.max(1, Math.min(bySlotWidth, trayH * 0.72));
+  const shelfW = SHELF_WIDTH * item + (SHELF_WIDTH - 1) * slotGap;
+  const stride = item + shelfGap;
+  const totalH = rows * stride + shelfGap;
+  const startY = Math.max(0, (canvasH - totalH) / 2) + shelfGap;
 
-  const gap = item * GAP_RATIO;
-
-  const columnsWidth = cols * item + (cols - 1) * gap;
-  const columnStartX = (canvasW - columnsWidth) / 2;
-  const columnH = depth * item + (depth - 1) * gap * 0.6;
-  const columnY = Math.max(0, (shelfH - columnH) / 2);
-
-  const columns: Rect[] = [];
-  for (let i = 0; i < cols; i++) {
-    columns.push({
-      x: columnStartX + i * (item + gap),
-      y: columnY,
-      w: item,
-      h: columnH,
+  const shelves: Rect[] = [];
+  for (let i = 0; i < rows; i++) {
+    shelves.push({
+      x: (canvasW - shelfW) / 2,
+      y: startY + i * stride,
+      w: shelfW,
+      h: item,
     });
   }
 
-  const trayGap = trayItem * GAP_RATIO;
-  const trayWidth = slots * trayItem + (slots - 1) * trayGap;
-  const trayY = shelfH + (trayH - trayItem) / 2;
-
-  const tray: Rect[] = [];
-  for (let i = 0; i < slots; i++) {
-    tray.push({
-      x: (canvasW - trayWidth) / 2 + i * (trayItem + trayGap),
-      y: trayY,
-      w: trayItem,
-      h: trayItem,
-    });
-  }
-
-  return { columns, tray, item, trayItem, visibleDepth: depth };
+  return { shelves, item, plank: Math.max(3, item * 0.1) };
 }
 
-/**
- * Box of one item in a column. `fromFront` counts back from the reachable item,
- * which sits at the bottom of the column — nearest the tray, and nearest the
- * player's thumb.
- */
-export function itemSlot(
-  layout: ShelfLayout,
-  column: number,
-  fromFront: number,
-): Rect {
-  const box = layout.columns[column];
-  const gap = layout.item * GAP_RATIO * 0.6;
-  const step = layout.item + gap;
+/** Box of one slot on a shelf. */
+export function slotRect(layout: ShelfLayout, shelf: number, slot: number): Rect {
+  const box = layout.shelves[shelf];
+  const gap = layout.item * SLOT_GAP;
 
   return {
-    x: box.x,
-    y: box.y + box.h - layout.item - fromFront * step,
+    x: box.x + slot * (layout.item + gap),
+    y: box.y,
     w: layout.item,
     h: layout.item,
   };
 }
 
-/** Column under a point, or null. The whole column is the touch target. */
-export function columnAt(layout: ShelfLayout, x: number, y: number): number | null {
-  const pad = layout.item * 0.12;
+/**
+ * Slot under a point, or null.
+ *
+ * Also reports the shelf on its own, because tapping the empty part of a shelf
+ * is how a player chooses where to put the item they picked up.
+ */
+export function slotAt(
+  layout: ShelfLayout,
+  x: number,
+  y: number,
+): { shelf: number; slot: number } | null {
+  for (let shelf = 0; shelf < layout.shelves.length; shelf++) {
+    for (let slot = 0; slot < SHELF_WIDTH; slot++) {
+      const rect = slotRect(layout, shelf, slot);
+      const pad = layout.item * 0.08;
+      if (
+        x >= rect.x - pad &&
+        x <= rect.x + rect.w + pad &&
+        y >= rect.y - pad &&
+        y <= rect.y + rect.h + pad
+      ) {
+        return { shelf, slot };
+      }
+    }
+  }
+  return null;
+}
 
-  for (let i = 0; i < layout.columns.length; i++) {
-    const box = layout.columns[i];
+/** Shelf under a point, counting the whole plank width as the target. */
+export function shelfAt(layout: ShelfLayout, x: number, y: number): number | null {
+  for (let shelf = 0; shelf < layout.shelves.length; shelf++) {
+    const box = layout.shelves[shelf];
+    const padY = layout.item * 0.3;
     if (
-      x >= box.x - pad &&
-      x <= box.x + box.w + pad &&
-      y >= box.y - pad &&
-      y <= box.y + box.h + pad
+      x >= box.x - layout.item * 0.5 &&
+      x <= box.x + box.w + layout.item * 0.5 &&
+      y >= box.y - padY &&
+      y <= box.y + box.h + padY
     ) {
-      return i;
+      return shelf;
     }
   }
   return null;

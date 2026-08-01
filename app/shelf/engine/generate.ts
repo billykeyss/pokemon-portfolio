@@ -1,10 +1,11 @@
 import { makeRng, type Rng } from "@/app/game/_shared/rng";
 import { MAX_TYPES } from "./items";
+import { cloneBoard, resolveMatches } from "./rules";
 import { isSolvable } from "./solve";
-import { MATCH, type LevelParams, type Shelf } from "./types";
+import { SHELF_WIDTH, type Board, type LevelParams, type Slot } from "./types";
 
-const MAX_ATTEMPTS = 60;
-const GEN_NODE_CAP = 30_000;
+const MAX_ATTEMPTS = 80;
+const GEN_NODE_CAP = 40_000;
 
 /** Fisher-Yates on a copy. */
 export function shuffled<T>(items: readonly T[], rng: Rng): T[] {
@@ -17,52 +18,59 @@ export function shuffled<T>(items: readonly T[], rng: Rng): T[] {
 }
 
 /**
- * Deal every item into columns. Each type contributes exactly MATCH copies, so
- * a cleared board is always reachable in principle — whether it is reachable
- * through a tray of finite size is what the solver decides.
- */
-export function deal(params: LevelParams, rng: Rng): Shelf {
-  const items: number[] = [];
-  const types = Math.min(params.types, MAX_TYPES);
-  for (let type = 0; type < types; type++) {
-    for (let i = 0; i < MATCH; i++) items.push(type);
-  }
-
-  const mixed = shuffled(items, rng);
-  const columns: number[][] = Array.from({ length: params.columns }, () => []);
-
-  // Round-robin rather than filling one column at a time, so no column ends up
-  // empty and the depths stay even.
-  for (let i = 0; i < mixed.length; i++) {
-    columns[i % params.columns].push(mixed[i]);
-  }
-
-  return { columns, tray: [], traySize: params.traySize, types };
-}
-
-/**
- * A deal where every column already shows the same item is a giveaway, and one
- * where the first three takes clear a set immediately is barely a puzzle.
- */
-function isTrivial(shelf: Shelf): boolean {
-  const fronts = shelf.columns
-    .map((c) => c[c.length - 1])
-    .filter((v): v is number => v !== undefined);
-
-  const counts = new Map<number, number>();
-  for (const type of fronts) counts.set(type, (counts.get(type) ?? 0) + 1);
-  return [...counts.values()].some((n) => n >= MATCH);
-}
-
-/**
- * Deal until a board is clearable within the tray.
+ * Stock the shelves.
  *
- * Unlike the other games, most random deals here *are* solvable — a generous
- * tray forgives a lot — so this usually returns on the first attempt. The
- * fallback deals into a single column, which is always clearable because items
- * come off in an order the tray can absorb three at a time.
+ * Every type contributes exactly SHELF_WIDTH copies, so a cleared board is
+ * always reachable in principle. Some slots are left empty on purpose — they
+ * are the only reason anything can move at all, and a board dealt full is
+ * dead on arrival.
+ *
+ * Items are dealt round-robin across the slots that are in play, which spreads
+ * the depth evenly rather than burying one slot under a tall pile.
  */
-export function generate(params: LevelParams, seed: number): Shelf {
+export function deal(params: LevelParams, rng: Rng): Board {
+  const types = Math.min(params.types, MAX_TYPES);
+
+  const items: number[] = [];
+  for (let type = 0; type < types; type++) {
+    for (let i = 0; i < SHELF_WIDTH; i++) items.push(type);
+  }
+
+  const slotCount = params.shelves * SHELF_WIDTH;
+  const order = shuffled(
+    Array.from({ length: slotCount }, (_, i) => i),
+    rng,
+  );
+  const inPlay = order.slice(0, Math.max(1, slotCount - params.freeSlots));
+
+  const stacks: Slot[] = Array.from({ length: slotCount }, () => []);
+  const mixed = shuffled(items, rng);
+  for (let i = 0; i < mixed.length; i++) {
+    stacks[inPlay[i % inPlay.length]].push(mixed[i]);
+  }
+
+  const shelves: Slot[][] = [];
+  for (let s = 0; s < params.shelves; s++) {
+    shelves.push(stacks.slice(s * SHELF_WIDTH, (s + 1) * SHELF_WIDTH));
+  }
+
+  return { shelves, types };
+}
+
+/** A deal that clears itself the moment it is dealt is not a puzzle. */
+function isTrivial(board: Board): boolean {
+  const probe = cloneBoard(board);
+  return resolveMatches(probe) > 0;
+}
+
+/**
+ * Deal until a board is clearable.
+ *
+ * The fallback stacks each type into one slot per shelf. That board is solvable
+ * by inspection — every shelf already holds one type — so the function is total
+ * even if the search budget is never enough.
+ */
+export function generate(params: LevelParams, seed: number): Board {
   const rng = makeRng(seed);
 
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
@@ -72,12 +80,15 @@ export function generate(params: LevelParams, seed: number): Shelf {
   }
 
   const types = Math.min(params.types, MAX_TYPES);
-  const sorted: number[] = [];
+  const shelves: Slot[][] = [];
+  for (let s = 0; s < params.shelves; s++) {
+    shelves.push([[], [], []]);
+  }
   for (let type = 0; type < types; type++) {
-    for (let i = 0; i < MATCH; i++) sorted.push(type);
+    const shelf = type % params.shelves;
+    const slot = Math.floor(type / params.shelves) % SHELF_WIDTH;
+    for (let i = 0; i < SHELF_WIDTH; i++) shelves[shelf][slot].push(type);
   }
 
-  const columns: number[][] = Array.from({ length: params.columns }, () => []);
-  columns[0] = sorted.reverse();
-  return { columns, tray: [], traySize: params.traySize, types };
+  return { shelves, types };
 }

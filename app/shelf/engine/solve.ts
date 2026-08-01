@@ -5,26 +5,30 @@ import {
   type SearchResult,
   type SearchSpec,
 } from "@/app/game/_shared/search";
-import { applyMove, canonicalKey, isSolved, legalMoves } from "./rules";
-import type { Move, Shelf } from "./types";
+import { applyMove, canonicalKey, frontOf, isSolved, legalMoves } from "./rules";
+import type { Board, Move } from "./types";
 
 export type SolveResult = SearchResult<Move>;
 export { DEFAULT_NODE_CAP };
 
-/** Prefer takes that complete a set now, then ones that pair with the tray. */
-function scoreMove(shelf: Shelf, move: Move): number {
-  const column = shelf.columns[move.column];
-  const front = column[column.length - 1];
-  const held = shelf.tray.filter((t) => t === front).length;
+/**
+ * Prefer moves that complete a shelf now, then ones that build toward a match.
+ * Emptying a slot is worth a little on its own, since it uncovers what is
+ * buried and opens the board up.
+ */
+function scoreMove(board: Board, move: Move): number {
+  const item = frontOf(board.shelves[move.fromShelf][move.fromSlot]);
+  if (item === null) return 0;
 
-  // Completing a set frees two slots; pairing sets one up. Emptying a column
-  // is worth a little on its own, since it opens what was behind it.
-  if (held === 2) return 100;
-  if (held === 1) return 50;
-  return column.length === 1 ? 10 : 1;
+  const already = board.shelves[move.toShelf].filter((s) => frontOf(s) === item).length;
+  const emptiesSlot = board.shelves[move.fromShelf][move.fromSlot].length === 1;
+
+  if (already === 2) return 100;
+  if (already === 1) return 50;
+  return emptiesSlot ? 10 : 1;
 }
 
-const SPEC: SearchSpec<Shelf, Move> = {
+const SPEC: SearchSpec<Board, Move> = {
   key: canonicalKey,
   moves: legalMoves,
   apply: applyMove,
@@ -33,19 +37,19 @@ const SPEC: SearchSpec<Shelf, Move> = {
 };
 
 /**
- * Depth-first: generation only needs to know a board can be cleared, and the
- * move count is fixed by the item count anyway, so a shortest path would be
- * paid for and thrown away.
+ * Depth-first: generation only needs to know a board can be cleared at all, and
+ * the move count is never shown as a par, so a shortest path would be paid for
+ * and thrown away.
  */
-export function solve(shelf: Shelf, nodeCap: number = DEFAULT_NODE_CAP): SolveResult {
-  return search(shelf, SPEC, { nodeCap, strategy: "dfs" });
+export function solve(board: Board, nodeCap: number = DEFAULT_NODE_CAP): SolveResult {
+  return search(board, SPEC, { nodeCap, strategy: "dfs" });
 }
 
-export function isSolvable(shelf: Shelf, nodeCap: number = DEFAULT_NODE_CAP): boolean {
-  return solve(shelf, nodeCap).status === "solved";
+export function isSolvable(board: Board, nodeCap: number = DEFAULT_NODE_CAP): boolean {
+  return solve(board, nodeCap).status === "solved";
 }
 
-/** The next take on a winning line, or null if there is none. */
-export function hint(shelf: Shelf): Move | null {
-  return firstMove(shelf, SPEC);
+/** The next move on a winning line, or null if there is none. */
+export function hint(board: Board): Move | null {
+  return firstMove(board, SPEC);
 }

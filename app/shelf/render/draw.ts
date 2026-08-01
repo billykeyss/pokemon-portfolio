@@ -1,38 +1,45 @@
-import {
-  flyArc,
-  flyProgress,
-  liftAmount,
-  popScale,
-  type Fly,
-} from "../engine/anim";
 import { drawPixelGrid } from "@/app/game/_shared/pixelGrid";
+import { flyArc, flyProgress, liftAmount, popScale, type Fly } from "../engine/anim";
 import { itemAt } from "../engine/items";
-import type { Shelf } from "../engine/types";
-import { itemSlot, type Rect, type ShelfLayout } from "./layout";
+import { frontOf } from "../engine/rules";
+import { SHELF_WIDTH, type Board } from "../engine/types";
+import { slotRect, type Rect, type ShelfLayout } from "./layout";
 
 export interface Pop {
+  shelf: number;
   type: number;
-  slots: number[];
   t: number;
 }
 
 export interface DrawState {
-  shelf: Shelf;
+  board: Board;
   /** Pre-move snapshot; non-null only while an item is in flight. */
-  before: Shelf | null;
+  before: Board | null;
   fly: Fly | null;
   pop: Pop | null;
-  hinted: number | null;
+  selected: { shelf: number; slot: number } | null;
+  hintedShelf: number | null;
   clock: number;
 }
 
-const BG = "#0d0a15";
-const SHELF_BOARD = "#2a2038";
-const SHELF_EDGE = "#4a3a5e";
-const SLOT_EMPTY = "rgba(248, 240, 224, 0.07)";
-const SLOT_EDGE = "rgba(248, 240, 224, 0.28)";
+const BG_TOP = "#241a2e";
+const BG_BOTTOM = "#150f1d";
+const WOOD = "#6B4A2F";
+const WOOD_LIP = "#8A6340";
+const WOOD_SHADE = "#4A3220";
+const BACKBOARD = "rgba(255, 255, 255, 0.035)";
+const SLOT_EDGE = "rgba(255, 255, 255, 0.09)";
+const SELECT = "#F7D96B";
 
-/** Draw one item's pixel grid into a box, optionally shrunk about its centre. */
+/**
+ * How far a buried item peeks out from behind the one in front of it.
+ *
+ * Sized so the shape behind is identifiable, not merely present. Knowing that
+ * *something* is buried is not a decision the player can act on; knowing it is
+ * the third apple is the whole point of being able to see it at all.
+ */
+const DEPTH_OFFSET = 0.34;
+
 function drawItem(
   ctx: CanvasRenderingContext2D,
   type: number,
@@ -52,58 +59,76 @@ function drawItem(
   );
 }
 
-/** Where an item in flight sits this frame. */
-function flyRect(layout: ShelfLayout, fly: Fly, columnLength: number): Rect {
-  const from = itemSlot(layout, fly.fromColumn, 0);
-  const to = layout.tray[fly.toSlot] ?? from;
-  const p = flyProgress(fly);
-
-  // Lift clear of the shelf first, then arc across to the tray.
-  const lift = liftAmount(fly) * layout.item * 0.3;
-  const arc = flyArc(fly) * layout.item * 0.85;
-
-  void columnLength;
-  // Shrink into the tray as it travels, since tray slots are smaller than shelf
-  // ones — arriving at full shelf size would visibly overflow the slot.
-  const size = layout.item + (layout.trayItem - layout.item) * p;
-  return {
-    x: from.x + (to.x - from.x) * p + (layout.item - size) / 2,
-    y: from.y - lift + (to.y - (from.y - lift)) * p - arc + (layout.item - size) / 2,
-    w: size,
-    h: size,
-  };
-}
-
-function drawShelfBoards(ctx: CanvasRenderingContext2D, layout: ShelfLayout): void {
-  for (const box of layout.columns) {
-    const lip = Math.max(3, layout.item * 0.12);
-
-    ctx.fillStyle = SHELF_BOARD;
-    ctx.fillRect(box.x - lip * 0.5, box.y - lip, box.w + lip, box.h + lip * 1.6);
-
-    // A brighter lip along the bottom reads as the shelf's front edge.
-    ctx.fillStyle = SHELF_EDGE;
-    ctx.fillRect(box.x - lip * 0.5, box.y + box.h + lip * 0.2, box.w + lip, lip * 0.5);
-  }
-}
-
-function drawTray(
+/**
+ * One slot's stack, back to front.
+ *
+ * Buried items are drawn smaller, dimmer and offset up so they read as sitting
+ * further back on the shelf — the player can see what is coming without being
+ * able to reach it, which is the whole tension of the board.
+ */
+function drawSlot(
   ctx: CanvasRenderingContext2D,
   layout: ShelfLayout,
-  tray: number[],
+  rect: Rect,
+  stack: number[],
+  skipFront: boolean,
 ): void {
-  for (let i = 0; i < layout.tray.length; i++) {
-    const slot = layout.tray[i];
+  ctx.fillStyle = BACKBOARD;
+  ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+  ctx.strokeStyle = SLOT_EDGE;
+  ctx.lineWidth = 1;
+  ctx.strokeRect(rect.x + 0.5, rect.y + 0.5, rect.w - 1, rect.h - 1);
 
-    ctx.fillStyle = SLOT_EMPTY;
-    ctx.fillRect(slot.x, slot.y, slot.w, slot.h);
-    ctx.strokeStyle = SLOT_EDGE;
-    ctx.lineWidth = 2;
-    ctx.strokeRect(slot.x + 1, slot.y + 1, slot.w - 2, slot.h - 2);
+  const top = stack.length - 1;
+  for (let i = 0; i < stack.length; i++) {
+    const depth = top - i;
+    if (depth === 0 && skipFront) continue;
 
-    const type = tray[i];
-    if (type !== undefined) drawItem(ctx, type, slot);
+    const back = depth > 0;
+    const shrink = back ? Math.max(0.68, 1 - depth * 0.14) : 1;
+    const lift = back ? layout.item * DEPTH_OFFSET * Math.min(depth, 2) : 0;
+
+    drawItem(
+      ctx,
+      stack[i],
+      { x: rect.x, y: rect.y - lift, w: rect.w, h: rect.h },
+      back ? Math.max(0.3, 0.62 - (depth - 1) * 0.14) : 1,
+      shrink,
+    );
   }
+}
+
+/** The wooden plank a shelf's goods stand on. */
+function drawPlank(ctx: CanvasRenderingContext2D, layout: ShelfLayout, shelf: number): void {
+  const box = layout.shelves[shelf];
+  const overhang = layout.item * 0.35;
+  const x = box.x - overhang;
+  const w = box.w + overhang * 2;
+  const y = box.y + box.h;
+
+  ctx.fillStyle = WOOD;
+  ctx.fillRect(x, y, w, layout.plank);
+  ctx.fillStyle = WOOD_LIP;
+  ctx.fillRect(x, y, w, Math.max(1, layout.plank * 0.3));
+  ctx.fillStyle = WOOD_SHADE;
+  ctx.fillRect(x, y + layout.plank, w, Math.max(1, layout.plank * 0.35));
+}
+
+/** Where an item in flight sits this frame. */
+function flyRect(layout: ShelfLayout, fly: Fly): Rect {
+  const from = slotRect(layout, fly.from.shelf, fly.from.slot);
+  const to = slotRect(layout, fly.to.shelf, fly.to.slot);
+  const p = flyProgress(fly);
+
+  const lift = liftAmount(fly) * layout.item * 0.35;
+  const arc = flyArc(fly) * layout.item * 0.75;
+
+  return {
+    x: from.x + (to.x - from.x) * p,
+    y: from.y - lift + (to.y - (from.y - lift)) * p - arc,
+    w: layout.item,
+    h: layout.item,
+  };
 }
 
 export function drawScene(
@@ -113,61 +138,73 @@ export function drawScene(
   canvasW: number,
   canvasH: number,
 ): void {
-  ctx.fillStyle = BG;
+  const sky = ctx.createLinearGradient(0, 0, 0, canvasH);
+  sky.addColorStop(0, BG_TOP);
+  sky.addColorStop(1, BG_BOTTOM);
+  ctx.fillStyle = sky;
   ctx.fillRect(0, 0, canvasW, canvasH);
 
-  drawShelfBoards(ctx, layout);
-
-  // While an item flies, the shelves and tray show the position it left, so the
-  // item is never drawn in two places at once.
-  const shown = state.fly !== null && state.before !== null ? state.before : state.shelf;
+  // While an item flies, the shelves show the arrangement it left, so it is
+  // never drawn in two places at once.
+  const shown = state.fly !== null && state.before !== null ? state.before : state.board;
   const pulse = Math.sin(state.clock * 9) > 0;
 
-  for (let col = 0; col < shown.columns.length; col++) {
-    const column = shown.columns[col];
+  for (let shelf = 0; shelf < layout.shelves.length; shelf++) {
+    drawPlank(ctx, layout, shelf);
 
-    for (let depth = 0; depth < column.length; depth++) {
-      const type = column[column.length - 1 - depth];
-      // The item in flight has already left its column.
-      if (
-        depth === 0 &&
+    const highlight = state.hintedShelf === shelf && pulse;
+    if (highlight) {
+      const box = layout.shelves[shelf];
+      ctx.strokeStyle = SELECT;
+      ctx.lineWidth = Math.max(2, layout.item * 0.05);
+      ctx.strokeRect(
+        box.x - layout.item * 0.12,
+        box.y - layout.item * 0.12,
+        box.w + layout.item * 0.24,
+        box.h + layout.item * 0.24,
+      );
+    }
+
+    for (let slot = 0; slot < SHELF_WIDTH; slot++) {
+      const stack = shown.shelves[shelf]?.[slot] ?? [];
+      const rect = slotRect(layout, shelf, slot);
+
+      const inFlight =
         state.fly !== null &&
-        state.fly.fromColumn === col
-      ) {
-        continue;
-      }
+        state.fly.from.shelf === shelf &&
+        state.fly.from.slot === slot;
 
-      const rect = itemSlot(layout, col, depth);
-      if (rect.y + rect.h < layout.columns[col].y - layout.item) continue;
+      drawSlot(ctx, layout, rect, stack, inFlight);
 
-      // Everything behind the front item is dimmed: it is visible, but locked.
-      const reachable = depth === 0;
-      const alpha = reachable ? 1 : Math.max(0.22, 0.55 - depth * 0.1);
-      drawItem(ctx, type, rect, alpha, reachable ? 1 : 0.86);
+      const chosen =
+        state.selected !== null &&
+        state.selected.shelf === shelf &&
+        state.selected.slot === slot;
 
-      if (reachable && state.hinted === col && pulse) {
-        ctx.strokeStyle = "#f8f0e0";
-        ctx.lineWidth = 3;
+      if (chosen && frontOf(stack) !== null) {
+        ctx.strokeStyle = SELECT;
+        ctx.lineWidth = Math.max(2, layout.item * 0.06);
         ctx.strokeRect(rect.x - 2, rect.y - 2, rect.w + 4, rect.h + 4);
       }
     }
   }
 
-  drawTray(ctx, layout, shown.tray);
-
   if (state.fly !== null) {
-    const column = shown.columns[state.fly.fromColumn] ?? [];
-    drawItem(ctx, state.fly.type, flyRect(layout, state.fly, column.length));
+    drawItem(ctx, state.fly.type, flyRect(layout, state.fly));
   }
 
-  // A cleared set swells and vanishes off the tray.
+  // A cleared shelf swells and vanishes.
   if (state.pop !== null) {
     const scale = popScale(state.pop.t);
     if (scale > 0) {
-      for (const slot of state.pop.slots) {
-        const rect = layout.tray[slot];
-        if (rect === undefined) continue;
-        drawItem(ctx, state.pop.type, rect, Math.min(1, scale), scale);
+      for (let slot = 0; slot < SHELF_WIDTH; slot++) {
+        drawItem(
+          ctx,
+          state.pop.type,
+          slotRect(layout, state.pop.shelf, slot),
+          Math.min(1, scale),
+          scale,
+        );
       }
     }
   }

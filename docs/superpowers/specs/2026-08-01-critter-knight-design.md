@@ -61,8 +61,11 @@ delay so movement feels weighty rather than teleporting.
 
 That single rule is the whole skill: spacing. When to close, when to retreat,
 and — critically — when to stand still long enough to actually land a swing
-while something is winding up to hit you. There is no attack button, no
-joystick, and nothing to learn.
+while something is winding up to hit you. There is no attack button and no
+joystick.
+
+The one exception is the **power button**, bottom-right, active only when your
+critter's power has charged. One button, one decision: when to spend it.
 
 ## Combat
 
@@ -82,6 +85,20 @@ combat styles, so 42 critters carry real variety with no new content authoring:
 | `magnet` | Pulls enemies toward you before striking |
 | `bomb` | Kills detonate for area damage |
 
+### Four layers, four different questions
+
+Stacking systems become soup when two of them answer the same question. Each
+layer here owns exactly one:
+
+| Layer | Question it answers | Source |
+| --- | --- | --- |
+| **Critter** | *Who am I?* — fighting style and power | Chosen at run start, changes on evolution |
+| **Weapon** | *How do I attack?* | Dropped by rooms, swapped on pickup |
+| **Armor** | *How do I survive?* | Dropped by rooms, swapped on pickup |
+| **Upgrades** | *What has this run become?* | 1-of-3 between rooms, permanent for the run |
+
+Nothing may be added to this game that does not fall cleanly into one of them.
+
 ### Weapons
 
 ~12 hand-tuned weapons, dropped by rooms and swapped on pickup, kept for the
@@ -92,11 +109,52 @@ fast dagger, heavy hammer, spear thrust, boomerang.
 Weapon and behavior compose. A `heavy` critter with a dagger is a different
 animal from a `light` critter with a hammer.
 
+### Armor
+
+~8 armors, dropped and swapped the same way. Armor governs survival, and like
+weapons it must change *how* you survive rather than only how much: maximum
+hearts, movement speed, the length of the invulnerability window after a hit,
+and a regenerating shield that absorbs one hit if you avoid damage long enough.
+
+Each armor carries one defensive perk — thorns that damage what touches you, a
+shield that recharges faster, a dodge that briefly outruns everything. Trade-offs
+are explicit: heavier armor means more hearts and slower movement, which matters
+a great deal in a game whose entire skill is spacing.
+
+### Critter powers
+
+**Every critter has an active power**, on top of its weapon and armor. The power
+is the critter's identity — the reason to care which one you are playing.
+
+A power charges as you deal and take damage. When it is ready, a single button
+sits at the bottom-right of the screen; tapping it fires the power. That is the
+only button in the game, and it is deliberately the same shape as BOUNCEDEX's
+overdrive control, which already works well one-handed.
+
+The power is keyed to the critter's `BehaviorTag`, so the existing roster
+supplies them with no new per-critter authoring — and, importantly, **evolving
+into a form with a different tag changes your power mid-run**. That turns the
+evolution branch into a real decision rather than a cosmetic fork.
+
+| Tag | Power |
+| --- | --- |
+| `standard` | **Rally** — heal, and briefly speed up attacks |
+| `heavy` | **Quake** — slam the ground, damaging and stunning everything nearby |
+| `light` | **Blink** — dash a long distance, damaging everything passed through |
+| `sticky` | **Tar** — pool that slows and burns enemies standing in it |
+| `splitter` | **Echo** — a phantom copy mirrors your attacks for a few seconds |
+| `ghost` | **Phase** — become untouchable and pass through enemies briefly |
+| `magnet` | **Vortex** — drag every enemy in the room toward you |
+| `bomb` | **Detonate** — a large blast centred on you |
+
+Stage-2 forms use the same power, strengthened, so evolving within a tag is
+still a power spike.
+
 ### Health and damage
 
-The hero has hearts. Enemy contact and enemy projectiles cost one. Brief
-invulnerability follows a hit so a crowd cannot chain-delete you. Death ends the
-run.
+The hero has hearts, with the maximum set by armor. Enemy contact and enemy
+projectiles cost one. Brief invulnerability follows a hit — its length is an
+armor stat — so a crowd cannot chain-delete you. Death ends the run.
 
 ## Rooms
 
@@ -162,11 +220,14 @@ app/knight/
 │  ├─ types.ts             Entity, Room, Weapon
 │  ├─ world.ts             world state + fixed-step advance
 │  ├─ combat.ts            swings, damage, knockback, evolution triggers
+│  ├─ powers.ts            power charge, activation, and active effects
 │  ├─ ai.ts                enemy steering and attack decisions
 │  ├─ rooms.ts             procedural room generation
 │  └─ balance.test.ts      headless harness: plays full runs
 ├─ data/
 │  ├─ weapons.ts           the ~12 weapons
+│  ├─ armor.ts             the ~8 armors
+│  ├─ powers.ts            one power per behavior tag
 │  ├─ enemies.ts           enemy archetypes
 │  └─ upgrades.ts          the upgrade pool
 ├─ render/
@@ -214,8 +275,12 @@ Vitest, as in the rest of the arcade. Priority targets, all pure by design:
 - `ai.ts` — enemies approach, keep spacing, and never leave the room.
 - `rooms.ts` — generated rooms are always completable: reachable exits, no enemy
   spawned inside an obstacle, deterministic per seed.
-- `weapons.ts` / `upgrades.ts` — every field is read by the simulation, enforced
-  by a source scan as in BOUNCEDEX.
+- `weapons.ts` / `armor.ts` / `upgrades.ts` — every field is read by the
+  simulation, enforced by a source scan as in BOUNCEDEX, where three upgrades
+  once shipped reading fields nothing consumed.
+- `powers.ts` — every behavior tag has a power; charge accrues, activation is
+  refused when not ready, and each power's effect actually changes world state.
+  Evolving across tags swaps the power.
 - `anim.ts` — poses are continuous and bounded at every phase of every state.
 - `balance.test.ts` — full auto-played runs land in the target length, rooms stay
   clearable, and the hero neither dies instantly nor becomes untouchable.
@@ -225,8 +290,9 @@ decides nothing.
 
 ## Open implementation-time decisions
 
-Tuning values, deliberately deferred: the exact weapon stats, enemy archetype
-stats, the upgrade pool contents, and the difficulty curve. These are knobs to be
+Tuning values, deliberately deferred: the exact weapon and armor stats, power
+charge rates and durations, enemy archetype stats, the upgrade pool contents,
+and the difficulty curve. These are knobs to be
 played and retuned against the harness, not unknowns.
 
 ## Out of scope for v1

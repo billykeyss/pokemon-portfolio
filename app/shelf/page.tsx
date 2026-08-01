@@ -15,11 +15,13 @@ import {
 import { levelFor, paramsForLevel } from "./engine/level";
 import {
   applyMove,
-  canTake,
-  cloneShelf,
+  canMove,
+  cloneBoard,
+  freeSlotIndex,
   frontOf,
   isSolved,
   isStuck,
+  remaining,
 } from "./engine/rules";
 import {
   defaultShelfSave,
@@ -28,9 +30,9 @@ import {
   type ShelfSave,
 } from "./engine/save";
 import { hint as solveHint } from "./engine/solve";
-import { MATCH, type Shelf } from "./engine/types";
+import type { Board, Move } from "./engine/types";
 import { drawScene, type DrawState, type Pop } from "./render/draw";
-import { columnAt, layoutShelf } from "./render/layout";
+import { layoutShelves, shelfAt, slotAt } from "./render/layout";
 
 const FIXED_DT = 1 / 60;
 const HINT_DURATION = 2.2;
@@ -40,8 +42,9 @@ export default function ShelfPage() {
 
   const [save, setSave] = useState<ShelfSave>(defaultShelfSave);
   const [loaded, setLoaded] = useState(false);
-  const [shelf, setShelf] = useState<Shelf>(() => cloneShelf(levelFor(1)));
-  const [history, setHistory] = useState<Shelf[]>([]);
+  const [board, setBoard] = useState<Board>(() => cloneBoard(levelFor(1)));
+  const [history, setHistory] = useState<Board[]>([]);
+  const [selected, setSelected] = useState<{ shelf: number; slot: number } | null>(null);
   const [moves, setMoves] = useState(0);
   const [won, setWon] = useState(false);
   const [stuck, setStuck] = useState(false);
@@ -49,18 +52,29 @@ export default function ShelfPage() {
   const [showLevels, setShowLevels] = useState(false);
 
   const flyRef = useRef<Fly | null>(null);
-  const beforeRef = useRef<Shelf | null>(null);
+  const beforeRef = useRef<Board | null>(null);
   const popRef = useRef<Pop | null>(null);
-  const hintRef = useRef<{ column: number; t: number } | null>(null);
+  const hintRef = useRef<{ shelf: number; t: number } | null>(null);
   const clockRef = useRef(0);
 
-  const shelfRef = useRef(shelf);
-  shelfRef.current = shelf;
+  const boardRef = useRef(board);
+  const selectedRef = useRef(selected);
+  boardRef.current = board;
+
+  /**
+   * Write the ref before the state. The pointer handler reads `selectedRef` on
+   * the very next tap, and a ref only synced during render is still stale then
+   * — so two quick taps would lose the selection and the move with it.
+   */
+  const select = useCallback((next: { shelf: number; slot: number } | null) => {
+    selectedRef.current = next;
+    setSelected(next);
+  }, []);
 
   useEffect(() => {
     const restored = loadShelfSave(window.localStorage);
     setSave(restored);
-    setShelf(cloneShelf(levelFor(restored.level)));
+    setBoard(cloneBoard(levelFor(restored.level)));
     setLoaded(true);
   }, []);
 
@@ -69,53 +83,58 @@ export default function ShelfPage() {
     writeShelfSave(window.localStorage, save);
   }, [save, loaded]);
 
-  const loadLevel = useCallback((level: number) => {
-    flyRef.current = null;
-    beforeRef.current = null;
-    popRef.current = null;
-    hintRef.current = null;
+  const loadLevel = useCallback(
+    (level: number) => {
+      flyRef.current = null;
+      beforeRef.current = null;
+      popRef.current = null;
+      hintRef.current = null;
 
-    setBusy(false);
-    setShelf(cloneShelf(levelFor(level)));
-    setHistory([]);
-    setMoves(0);
-    setWon(false);
-    setStuck(false);
-    setSave((s) => ({ ...s, level, best: Math.max(s.best, level) }));
-  }, []);
+      setBusy(false);
+      setBoard(cloneBoard(levelFor(level)));
+      setHistory([]);
+      select(null);
+      setMoves(0);
+      setWon(false);
+      setStuck(false);
+      setSave((s) => ({ ...s, level, best: Math.max(s.best, level) }));
+    },
+    [select],
+  );
 
-  const take = useCallback((column: number) => {
-    const current = shelfRef.current;
-    if (!canTake(current, column)) return;
+  const commitMove = useCallback(
+    (move: Move) => {
+      const current = boardRef.current;
+      if (!canMove(current, move)) return;
 
-    const type = frontOf(current.columns[column]);
-    if (type === null) return;
+      const type = frontOf(current.shelves[move.fromShelf][move.fromSlot]);
+      if (type === null) return;
 
-    const before = cloneShelf(current);
-    const after = applyMove(current, { column });
+      const before = cloneBoard(current);
+      const landingSlot = freeSlotIndex(current, move.toShelf);
+      const after = applyMove(current, move);
 
-    // The item lands in the first free slot of the tray it left behind.
-    const slot = before.tray.length;
-
-    // A set clearing is visible in the tray shrinking rather than growing.
-    if (after.tray.length < before.tray.length + 1) {
-      const slots: number[] = [];
-      for (let i = 0; i < before.tray.length; i++) {
-        if (before.tray[i] === type) slots.push(i);
+      // A clear shows up as the board losing more than the one item that moved.
+      if (remaining(after) < remaining(before)) {
+        popRef.current = { shelf: move.toShelf, type, t: 0 };
       }
-      slots.push(slot);
-      popRef.current = { type, slots: slots.slice(0, MATCH), t: -0 };
-    }
 
-    beforeRef.current = before;
-    flyRef.current = startFly(type, column, slot);
-    hintRef.current = null;
+      beforeRef.current = before;
+      flyRef.current = startFly(
+        type,
+        { shelf: move.fromShelf, slot: move.fromSlot },
+        { shelf: move.toShelf, slot: landingSlot },
+      );
+      hintRef.current = null;
 
-    setBusy(true);
-    setHistory((h) => [...h, before]);
-    setShelf(after);
-    setMoves((m) => m + 1);
-  }, []);
+      setBusy(true);
+      setHistory((h) => [...h, before]);
+      setBoard(after);
+      setMoves((m) => m + 1);
+      select(null);
+    },
+    [select],
+  );
 
   const onPointerDown = useCallback(
     (event: React.PointerEvent<HTMLCanvasElement>) => {
@@ -128,19 +147,43 @@ export default function ShelfPage() {
       const x = ((event.clientX - rect.left) / rect.width) * canvas.width;
       const y = ((event.clientY - rect.top) / rect.height) * canvas.height;
 
-      const current = shelfRef.current;
-      const layout = layoutShelf(
-        current.columns.length,
-        Math.max(1, ...current.columns.map((c) => c.length)),
-        current.traySize,
-        canvas.width,
-        canvas.height,
-      );
+      const current = boardRef.current;
+      const layout = layoutShelves(current.shelves.length, canvas.width, canvas.height);
+      const chosen = selectedRef.current;
 
-      const column = columnAt(layout, x, y);
-      if (column !== null) take(column);
+      // Nothing picked up yet: tapping a slot with goods in it picks one up.
+      if (chosen === null) {
+        const hit = slotAt(layout, x, y);
+        if (hit === null) return;
+        if (frontOf(current.shelves[hit.shelf][hit.slot]) === null) return;
+        select(hit);
+        return;
+      }
+
+      // Holding something: a tap anywhere on a shelf sets it down there. The
+      // whole plank is the target, not one slot — the player chooses a shelf,
+      // and which slot it lands in is not a decision the game asks them for.
+      const shelf = shelfAt(layout, x, y);
+      if (shelf === null) {
+        select(null);
+        return;
+      }
+
+      if (shelf === chosen.shelf) {
+        const hit = slotAt(layout, x, y);
+        // Tapping the held item puts it back; another slot on the same shelf
+        // picks that one up instead.
+        if (hit !== null && (hit.slot !== chosen.slot)) {
+          if (frontOf(current.shelves[hit.shelf][hit.slot]) !== null) select(hit);
+          return;
+        }
+        select(null);
+        return;
+      }
+
+      commitMove({ fromShelf: chosen.shelf, fromSlot: chosen.slot, toShelf: shelf });
     },
-    [showLevels, stuck, take, won],
+    [commitMove, select, showLevels, stuck, won],
   );
 
   const step = useCallback(() => {
@@ -154,7 +197,7 @@ export default function ShelfPage() {
         beforeRef.current = null;
         setBusy(false);
 
-        const current = shelfRef.current;
+        const current = boardRef.current;
         if (isSolved(current)) setWon(true);
         else if (isStuck(current)) setStuck(true);
       } else {
@@ -181,28 +224,16 @@ export default function ShelfPage() {
     const ctx = canvas.getContext("2d");
     if (ctx === null) return;
 
-    const current = shelfRef.current;
-    const before = beforeRef.current;
-    const depth = Math.max(
-      1,
-      ...current.columns.map((c) => c.length),
-      ...(before?.columns.map((c) => c.length) ?? [1]),
-    );
-
-    const layout = layoutShelf(
-      current.columns.length,
-      depth,
-      current.traySize,
-      canvas.width,
-      canvas.height,
-    );
+    const current = boardRef.current;
+    const layout = layoutShelves(current.shelves.length, canvas.width, canvas.height);
 
     const state: DrawState = {
-      shelf: current,
-      before,
+      board: current,
+      before: beforeRef.current,
       fly: flyRef.current,
       pop: popRef.current,
-      hinted: hintRef.current?.column ?? null,
+      selected: selectedRef.current,
+      hintedShelf: hintRef.current?.shelf ?? null,
       clock: clockRef.current,
     };
 
@@ -240,18 +271,21 @@ export default function ShelfPage() {
     setHistory((h) => {
       if (h.length === 0) return h;
       popRef.current = null;
-      setShelf(cloneShelf(h[h.length - 1]));
+      setBoard(cloneBoard(h[h.length - 1]));
       setMoves((m) => Math.max(0, m - 1));
+      select(null);
       setWon(false);
       setStuck(false);
       return h.slice(0, -1);
     });
-  }, []);
+  }, [select]);
 
   const showHint = useCallback(() => {
-    const move = solveHint(shelfRef.current);
-    hintRef.current = move === null ? null : { column: move.column, t: 0 };
-  }, []);
+    const move = solveHint(boardRef.current);
+    if (move === null) return;
+    hintRef.current = { shelf: move.toShelf, t: 0 };
+    select({ shelf: move.fromShelf, slot: move.fromSlot });
+  }, [select]);
 
   const params = paramsForLevel(save.level);
 
@@ -267,7 +301,7 @@ export default function ShelfPage() {
           </Link>
           <h1 className="text-sm font-bold uppercase tracking-[0.3em]">Shelf Sort</h1>
           <span className="w-14 text-right text-[10px] uppercase tracking-widest opacity-40">
-            {params.traySize} slots
+            {params.types} goods
           </span>
         </div>
 
@@ -288,7 +322,7 @@ export default function ShelfPage() {
             >
               Level {save.level}
             </button>
-            <span className="opacity-60">Takes {moves}</span>
+            <span className="opacity-60">Moves {moves}</span>
             <span className="opacity-60">Best {save.best}</span>
           </div>
 
@@ -317,7 +351,7 @@ export default function ShelfPage() {
           </div>
 
           <p className="text-center text-[10px] uppercase tracking-widest opacity-40">
-            Tap a shelf to bag its front item &middot; three match to clear
+            Tap goods, then a shelf &middot; three alike on one shelf clears
           </p>
         </div>
 
@@ -326,7 +360,7 @@ export default function ShelfPage() {
             best={save.best}
             current={save.level}
             scoreByLevel={save.movesByLevel}
-            scoreLabel="takes"
+            scoreLabel="moves"
             onPick={(level) => {
               setShowLevels(false);
               loadLevel(level);
@@ -339,10 +373,10 @@ export default function ShelfPage() {
           <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/70 p-4">
             <PixelPanel className="w-full max-w-xs text-center">
               <h2 className="mb-1 text-lg font-bold uppercase tracking-widest">
-                {won ? `Level ${save.level} clear` : "Bag is full"}
+                {won ? `Level ${save.level} clear` : "Shelves jammed"}
               </h2>
               <p className="mb-4 text-xs uppercase tracking-widest opacity-70">
-                {won ? `${moves} takes` : "Nothing left to match"}
+                {won ? `${moves} moves` : "Every shelf is full"}
               </p>
               <div className="grid grid-cols-2 gap-2">
                 <PixelButton

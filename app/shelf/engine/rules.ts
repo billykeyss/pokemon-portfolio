@@ -1,126 +1,152 @@
-import { MATCH, type Move, type Shelf } from "./types";
+import { SHELF_WIDTH, type Board, type Move, type Slot } from "./types";
 
-/** The only reachable item in a column, or null when it is empty. */
-export function frontOf(column: number[]): number | null {
-  return column.length === 0 ? null : column[column.length - 1];
+/** The reachable item in a slot, or null when the slot is empty. */
+export function frontOf(slot: Slot): number | null {
+  return slot.length === 0 ? null : slot[slot.length - 1];
 }
 
-export function cloneShelf(shelf: Shelf): Shelf {
-  return {
-    ...shelf,
-    columns: shelf.columns.map((c) => [...c]),
-    tray: [...shelf.tray],
-  };
+export function cloneBoard(board: Board): Board {
+  return { ...board, shelves: board.shelves.map((shelf) => shelf.map((s) => [...s])) };
+}
+
+/** Index of a free slot on this shelf, or -1 if it is full. */
+export function freeSlotIndex(board: Board, shelf: number): number {
+  const slots = board.shelves[shelf];
+  if (slots === undefined) return -1;
+  return slots.findIndex((s) => s.length === 0);
+}
+
+/** The three front items of a shelf, with nulls where slots are empty. */
+export function frontsOf(board: Board, shelf: number): (number | null)[] {
+  return (board.shelves[shelf] ?? []).map(frontOf);
+}
+
+/** A shelf clears when every slot shows the same item. */
+export function shelfMatches(board: Board, shelf: number): boolean {
+  const fronts = frontsOf(board, shelf);
+  if (fronts.length !== SHELF_WIDTH) return false;
+  if (fronts.some((f) => f === null)) return false;
+  return fronts.every((f) => f === fronts[0]);
 }
 
 /**
- * Remove every complete set from a tray.
+ * Clear every matching shelf, repeatedly.
  *
- * Loops until nothing more clears: taking one set out can leave the remaining
- * items forming another, which a single pass would miss.
+ * Looping matters: taking three items off a shelf uncovers whatever was buried
+ * behind them, and that can complete another match immediately. A single pass
+ * would leave the board in a state the player can see is finished but the game
+ * does not.
+ *
+ * Mutates in place — callers here always own a fresh clone.
  */
-export function resolveTray(tray: number[]): number[] {
-  let current = [...tray];
+export function resolveMatches(board: Board): number {
+  let cleared = 0;
 
   for (;;) {
-    const counts = new Map<number, number>();
-    for (const type of current) counts.set(type, (counts.get(type) ?? 0) + 1);
+    const shelf = board.shelves.findIndex((_, i) => shelfMatches(board, i));
+    if (shelf === -1) return cleared;
 
-    const full = [...counts.entries()].find(([, n]) => n >= MATCH);
-    if (full === undefined) return current;
-
-    let removed = 0;
-    current = current.filter((type) => {
-      if (type === full[0] && removed < MATCH) {
-        removed++;
-        return false;
-      }
-      return true;
-    });
+    for (const slot of board.shelves[shelf]) slot.pop();
+    cleared++;
   }
 }
 
-/** Room on the tray right now. A move is only legal while at least one slot is free. */
-export function trayFree(shelf: Shelf): number {
-  return shelf.traySize - shelf.tray.length;
+export function canMove(board: Board, move: Move): boolean {
+  if (move.fromShelf === move.toShelf) return false;
+
+  const slot = board.shelves[move.fromShelf]?.[move.fromSlot];
+  if (slot === undefined || slot.length === 0) return false;
+
+  return freeSlotIndex(board, move.toShelf) !== -1;
 }
 
-export function canTake(shelf: Shelf, column: number): boolean {
-  const stack = shelf.columns[column];
-  if (stack === undefined || stack.length === 0) return false;
-  return trayFree(shelf) > 0;
-}
-
-/** Returns a NEW shelf. Undo and the solver both depend on cheap snapshots. */
-export function applyMove(shelf: Shelf, move: Move): Shelf {
-  if (!canTake(shelf, move.column)) {
-    throw new Error(`illegal take from column ${move.column}`);
+/** Returns a NEW board. Undo and the solver both depend on cheap snapshots. */
+export function applyMove(board: Board, move: Move): Board {
+  if (!canMove(board, move)) {
+    throw new Error(`illegal move: ${move.fromShelf}.${move.fromSlot} -> ${move.toShelf}`);
   }
 
-  const next = cloneShelf(shelf);
-  const item = next.columns[move.column].pop();
-  if (item === undefined) throw new Error("empty column passed canTake");
+  const next = cloneBoard(board);
+  const item = next.shelves[move.fromShelf][move.fromSlot].pop();
+  if (item === undefined) throw new Error("empty slot passed canMove");
 
-  next.tray.push(item);
-  next.tray = resolveTray(next.tray);
+  next.shelves[move.toShelf][freeSlotIndex(next, move.toShelf)].push(item);
+  resolveMatches(next);
   return next;
 }
 
-export function isSolved(shelf: Shelf): boolean {
-  return shelf.columns.every((c) => c.length === 0) && shelf.tray.length === 0;
+export function isSolved(board: Board): boolean {
+  return board.shelves.every((shelf) => shelf.every((slot) => slot.length === 0));
 }
 
-export function legalMoves(shelf: Shelf): Move[] {
-  if (trayFree(shelf) <= 0) return [];
-
+/**
+ * Every legal move, with the duplicates that the board's own symmetries create
+ * stripped out.
+ *
+ * Two slots on one shelf showing the same item offer the same move, and so does
+ * every free slot on a destination shelf — the destination is chosen for the
+ * player. Without both prunes the branching factor roughly triples and the
+ * solver spends its budget re-examining boards it has already seen.
+ */
+export function legalMoves(board: Board): Move[] {
   const moves: Move[] = [];
-  const seen = new Set<number>();
+  const targets: number[] = [];
 
-  for (let column = 0; column < shelf.columns.length; column++) {
-    const front = frontOf(shelf.columns[column]);
-    if (front === null) continue;
+  for (let shelf = 0; shelf < board.shelves.length; shelf++) {
+    if (freeSlotIndex(board, shelf) !== -1) targets.push(shelf);
+  }
+  if (targets.length === 0) return moves;
 
-    // Two columns showing the same item offer the same move this turn, but they
-    // are not interchangeable — what sits behind them differs. Dedupe only when
-    // the whole remaining column matches.
-    const key = shelf.columns[column].join(",");
-    if (seen.has(hash(key))) continue;
-    seen.add(hash(key));
+  for (let shelf = 0; shelf < board.shelves.length; shelf++) {
+    const seen = new Set<string>();
 
-    moves.push({ column });
+    for (let slot = 0; slot < board.shelves[shelf].length; slot++) {
+      const stack = board.shelves[shelf][slot];
+      if (stack.length === 0) continue;
+
+      // Identical stacks on the same shelf are the same choice.
+      const key = stack.join(",");
+      if (seen.has(key)) continue;
+      seen.add(key);
+
+      for (const toShelf of targets) {
+        if (toShelf === shelf) continue;
+        moves.push({ fromShelf: shelf, fromSlot: slot, toShelf });
+      }
+    }
   }
 
   return moves;
 }
 
-/** Cheap string hash, so the dedupe set holds numbers rather than strings. */
-function hash(text: string): number {
-  let h = 2166136261;
-  for (let i = 0; i < text.length; i++) {
-    h ^= text.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return h >>> 0;
+/** Nothing left to do and not finished: every shelf is full and none matches. */
+export function isStuck(board: Board): boolean {
+  return !isSolved(board) && legalMoves(board).length === 0;
 }
 
 /**
- * No moves left and not finished — the tray has filled with items that cannot
- * pair up. The player must undo or restart.
+ * Identity of a position.
+ *
+ * Shelves are interchangeable with each other and slots are interchangeable
+ * within a shelf, so both are sorted before encoding. Two boards a player could
+ * not tell apart must produce the same key, or the visited set barely prunes.
  */
-export function isStuck(shelf: Shelf): boolean {
-  return !isSolved(shelf) && legalMoves(shelf).length === 0;
-}
-
-/**
- * Identity of a position. Column *order* on screen is fixed, but for solving,
- * two arrangements holding the same columns are the same problem — so the
- * encodings are sorted. The tray is a multiset, so it is sorted too.
- */
-export function canonicalKey(shelf: Shelf): string {
-  const columns = shelf.columns
-    .map((c) => c.join(","))
+export function canonicalKey(board: Board): string {
+  return board.shelves
+    .map((shelf) =>
+      shelf
+        .map((slot) => slot.join(","))
+        .sort()
+        .join("/"),
+    )
     .sort()
     .join("|");
-  const tray = [...shelf.tray].sort((a, b) => a - b).join(",");
-  return `${columns}#${tray}`;
+}
+
+/** Items still on the board. */
+export function remaining(board: Board): number {
+  return board.shelves.reduce(
+    (total, shelf) => total + shelf.reduce((n, slot) => n + slot.length, 0),
+    0,
+  );
 }

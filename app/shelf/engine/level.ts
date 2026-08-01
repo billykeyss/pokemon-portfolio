@@ -1,27 +1,37 @@
-import { generate } from "./generate";
 import { MAX_TYPES } from "./items";
-import type { LevelParams, Shelf } from "./types";
+import { generate } from "./generate";
+import { SHELF_WIDTH, type Board, type LevelParams } from "./types";
 
-const MIN_TYPES = 3;
-const MIN_COLUMNS = 3;
-const MAX_COLUMNS = 6;
+const MIN_TYPES = 4;
+const FREE_SLOTS = 3;
 
 /**
- * Three goods across three shelves at level one, widening to eight across six.
+ * Four kinds of goods across five shelves at level one, widening to eight
+ * across seven.
  *
- * The tray tightens as well, and that is the real difficulty dial: with seven
- * slots almost any order of takes works out, while at five the player has to
- * think about what a take strands behind it. It never drops below five, because
- * four leaves too little room to recover from a single wrong pick.
+ * The real dial is how the shelf count compares to the type count, because that
+ * is what decides how much gets buried. With one more shelf than types, every
+ * item fits in its own slot and the whole board is visible — a clean
+ * introduction. As shelves fall behind, items stack front-to-back and the
+ * player has to work out what is hidden from what has not turned up yet.
+ *
+ * Free slots stay at three throughout. They are the only reason anything can
+ * move, and taking them below three makes boards deadlock faster than they get
+ * interesting.
+ *
+ * The curve flattens once both dials max out, around level 30. Raising it
+ * further means more kinds of goods, which means more item art — the type count
+ * is capped by how many are drawn, not by anything in the puzzle.
  */
 export function paramsForLevel(level: number): LevelParams {
   const n = Math.max(1, Math.floor(level));
-  return {
-    types: Math.min(MAX_TYPES, MIN_TYPES + Math.floor((n - 1) / 3)),
-    columns: Math.min(MAX_COLUMNS, MIN_COLUMNS + Math.floor((n - 1) / 4)),
-    depth: 0,
-    traySize: n < 6 ? 7 : n < 14 ? 6 : 5,
-  };
+  const types = Math.min(MAX_TYPES, MIN_TYPES + Math.floor((n - 1) / 4));
+
+  // Shelves start ahead of the type count and gradually fall behind it.
+  const slack = Math.max(-2, 1 - Math.floor((n - 1) / 5));
+  const shelves = Math.max(Math.ceil((types * SHELF_WIDTH + FREE_SLOTS) / SHELF_WIDTH / 2), types + slack);
+
+  return { types, shelves, freeSlots: FREE_SLOTS };
 }
 
 /** Spread consecutive levels across the seed space so 8 and 9 share nothing. */
@@ -33,14 +43,14 @@ export function seedForLevel(level: number): number {
 }
 
 /** Generation runs a search, so each level is built at most once. */
-const cache = new Map<number, Shelf>();
+const cache = new Map<number, Board>();
 
-export function levelFor(level: number): Shelf {
+export function levelFor(level: number): Board {
   const n = Math.max(1, Math.floor(level));
   const cached = cache.get(n);
   if (cached !== undefined) return cached;
 
-  const shelf = generate(paramsForLevel(n), seedForLevel(n));
-  cache.set(n, shelf);
-  return shelf;
+  const board = generate(paramsForLevel(n), seedForLevel(n));
+  cache.set(n, board);
+  return board;
 }

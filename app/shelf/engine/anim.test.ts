@@ -12,7 +12,7 @@ import {
   startFly,
 } from "./anim";
 
-const fly = () => startFly(2, 1, 0);
+const fly = () => startFly(2, { shelf: 1, slot: 0 }, { shelf: 0, slot: 2 });
 const at = (t: number) => advanceFly(fly(), t);
 
 describe("FLY_PHASES", () => {
@@ -90,9 +90,16 @@ describe("isFlyDone", () => {
     expect(f.t).toBe(0);
   });
 
-  it("keeps the item and its destination", () => {
-    const f = advanceFly(startFly(5, 2, 3), 0.1);
-    expect(f).toMatchObject({ type: 5, fromColumn: 2, toSlot: 3 });
+  it("keeps the item and both endpoints", () => {
+    const f = advanceFly(
+      startFly(5, { shelf: 2, slot: 1 }, { shelf: 3, slot: 0 }),
+      0.1,
+    );
+    expect(f).toMatchObject({
+      type: 5,
+      from: { shelf: 2, slot: 1 },
+      to: { shelf: 3, slot: 0 },
+    });
   });
 });
 
