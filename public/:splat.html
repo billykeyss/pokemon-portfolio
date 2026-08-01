@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Redirecting…</title>
+<!--
+  Shim for a broken rewrite on the Render service.
+
+  The service still carries a catch-all rewrite of `/*` to `/:splat.html`,
+  written in Netlify's placeholder syntax. Render does not substitute `:splat`,
+  so it resolves to this literal path — and because nothing was here, every
+  unresolved URL came back as an empty 200 instead of a page or a 404. That is
+  why https://billhuang.me/game rendered blank while /game/ worked.
+
+  Sitting a real file at that path turns the broken rule into a useful one: a
+  bare /game lands here and is sent on to /game/, which the static export
+  serves. Paths that genuinely do not exist arrive here with a trailing slash
+  already and get a 404 instead of bouncing forever.
+
+  This is a workaround, not the fix. The fix is to drop the rewrite from the
+  service — render.yaml already has it removed, so re-syncing the Blueprint (or
+  deleting the two rules under Redirects/Rewrites in the dashboard) does it.
+  Once that is done, delete this file.
+-->
+<style>
+  body {
+    margin: 0; min-height: 100dvh; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 1rem;
+    background: #0d0a15; color: #f8f0e0;
+    font: 14px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+    text-align: center; padding: 1.5rem;
+  }
+  a { color: #f8f0e0; }
+  #missing { display: none; }
+</style>
+</head>
+<body>
+  <p id="going">Redirecting…</p>
+  <div id="missing">
+    <p>That page doesn’t exist.</p>
+    <p><a href="/">Back to the homepage</a> · <a href="/game/">Arcade</a></p>
+  </div>
+
+<script>
+(function () {
+  var path = location.pathname;
+
+  // Arriving with a trailing slash means the slashed form did not resolve
+  // either, so this really is a 404. Redirecting again would loop forever.
+  if (path.charAt(path.length - 1) === "/") {
+    document.getElementById("going").style.display = "none";
+    document.getElementById("missing").style.display = "block";
+    return;
+  }
+
+  location.replace(path + "/" + location.search + location.hash);
+})();
+</script>
+
+<noscript>
+  <p>Add a trailing slash to the address, or <a href="/">go to the homepage</a>.</p>
+</noscript>
+</body>
+</html>
