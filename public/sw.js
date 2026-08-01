@@ -3,7 +3,7 @@
 // Next.js emits hashed asset filenames that are unknown when this file is
 // written, so this caches at runtime (cache-first for same-origin GETs) rather
 // than precaching a hardcoded list.
-const CACHE_NAME = "arcade-v5";
+const CACHE_NAME = "arcade-v6";
 const CORE = [
   "/game/",
   "/bounce/",
@@ -11,6 +11,8 @@ const CORE = [
   "/sort/",
   "/traffic/",
   "/shelf/",
+  "/arrows/",
+  "/knight/",
   "/manifest.webmanifest",
   "/icon.svg",
 ];
@@ -45,14 +47,24 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
 
-  // Must cover every asset the arcade needs offline. The manifest and icon are
-  // precached above, so omitting them here would cache them and never serve
-  // them — they'd still 404 with the network down.
+  // Every arcade route, plus the shared assets. A path that is precached but
+  // not intercepted still 404s offline, which is exactly what happened to
+  // /game, /sort, /traffic and /shelf.
+  const ROUTE_PREFIXES = [
+    "/game",
+    "/bounce",
+    "/sort",
+    "/traffic",
+    "/shelf",
+    "/arrows",
+    "/knight",
+  ];
+
   const handled =
-    url.pathname.startsWith("/bounce") ||
     url.pathname.startsWith("/_next") ||
     url.pathname === "/manifest.webmanifest" ||
-    url.pathname === "/icon.svg";
+    url.pathname === "/icon.svg" ||
+    ROUTE_PREFIXES.some((p) => url.pathname.startsWith(p));
   if (!handled) return;
 
   event.respondWith(
