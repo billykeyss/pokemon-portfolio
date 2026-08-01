@@ -11,6 +11,7 @@ import {
 import { PALETTE } from "../engine/palette";
 import { isComplete } from "../engine/rules";
 import type { Puzzle } from "../engine/types";
+import { bubbleAt, bubbleField, sparkleAlpha, sparkleField } from "./background";
 import type { BottleLayout, Layout } from "./layout";
 
 export interface DrawState {
@@ -26,13 +27,25 @@ export interface DrawState {
   clock: number;
 }
 
-const BG = "#0d0a15";
+const BG_TOP = "#221a4d";
+const BG_BOTTOM = "#110c26";
+const SHELF = "#33254a";
+const SHELF_LIP = "#4a3768";
 const GLASS_RIM = "rgba(248, 240, 224, 0.55)";
 const GLASS_RIM_DIM = "rgba(248, 240, 224, 0.38)";
 const GLASS_RIM_DONE = "#8BE06A";
-const CAVITY = "rgba(12, 9, 20, 0.72)";
+/**
+ * Empty glass is a faint tint, not a dark fill. Filling it opaquely turned
+ * every neck into a black blob sitting above the liquid and made empty bottles
+ * read as holes; letting the backdrop through is what makes them look like
+ * glass at all.
+ */
+const CAVITY = "rgba(198, 208, 255, 0.10)";
 const LIFT_PX = 0.2;
 const SHAKE_DURATION = 0.35;
+
+const BUBBLES = bubbleField(26);
+const SPARKLES = sparkleField(34);
 
 /** Proportions of the bottle silhouette, as fractions of its box. */
 const NECK_W = 0.5;
@@ -259,12 +272,38 @@ function drawContents(
   // Glass: a soft highlight down one flank and a shadow down the other, drawn
   // over the liquid so the bottle reads as in front of its contents.
   const gradient = ctx.createLinearGradient(box.x, 0, box.x + box.w, 0);
-  gradient.addColorStop(0, "rgba(255, 255, 255, 0.16)");
-  gradient.addColorStop(0.22, "rgba(255, 255, 255, 0.05)");
+  gradient.addColorStop(0, "rgba(255, 255, 255, 0.18)");
+  gradient.addColorStop(0.24, "rgba(255, 255, 255, 0.06)");
   gradient.addColorStop(0.62, "rgba(0, 0, 0, 0.0)");
-  gradient.addColorStop(1, "rgba(0, 0, 0, 0.24)");
+  gradient.addColorStop(1, "rgba(0, 0, 0, 0.26)");
   ctx.fillStyle = gradient;
   ctx.fillRect(box.x, box.y, box.w, box.h);
+
+  // A single bright streak down the left shoulder. One hard specular does more
+  // to sell curved glass than the broad gradient does — the gradient shades the
+  // form, this says the surface is glossy.
+  const streakW = Math.max(1.5, box.w * 0.075);
+  const streakX = box.x + box.w * 0.2;
+  ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
+  ctx.beginPath();
+  ctx.roundRect(
+    streakX,
+    m.bodyTop + box.h * 0.04,
+    streakW,
+    box.h * 0.34,
+    streakW,
+  );
+  ctx.fill();
+
+  // Contact shadow inside the base, so the liquid looks like it is resting in
+  // the bottle rather than floating at the bottom of a tube.
+  if (contents.length > 0 || partialFraction > 0) {
+    const floor = ctx.createLinearGradient(0, m.liquidBottom - box.h * 0.1, 0, m.liquidBottom);
+    floor.addColorStop(0, "rgba(0, 0, 0, 0)");
+    floor.addColorStop(1, "rgba(0, 0, 0, 0.22)");
+    ctx.fillStyle = floor;
+    ctx.fillRect(box.x, m.liquidBottom - box.h * 0.1, box.w, box.h * 0.1);
+  }
 
   ctx.restore();
 }
@@ -279,6 +318,22 @@ function drawBottle(
   wobble: number,
   highlight: boolean,
 ): void {
+  // Soft shadow pooled under the bottle, tying it to the shelf.
+  ctx.save();
+  ctx.fillStyle = "rgba(0, 0, 0, 0.32)";
+  ctx.beginPath();
+  ctx.ellipse(
+    box.x + box.w / 2,
+    box.y + box.h + box.w * 0.04,
+    box.w * 0.44,
+    box.w * 0.1,
+    0,
+    0,
+    Math.PI * 2,
+  );
+  ctx.fill();
+  ctx.restore();
+
   drawContents(ctx, box, contents, capacity, partialFraction, partialColor, wobble);
 
   const done = isComplete(contents, capacity);
@@ -287,12 +342,19 @@ function drawBottle(
   bottlePath(ctx, box);
   ctx.stroke();
 
-  // A thicker band across the mouth reads as the rolled lip of the glass.
+  // The rolled lip of the glass: an ellipse rather than a straight bar, which
+  // is what gives the mouth an opening instead of a flat cap.
+  const lipRx = (box.w * NECK_W) / 2;
+  const lipRy = Math.max(2, box.w * 0.07);
+  ctx.lineWidth = Math.max(2, box.w * 0.06);
   ctx.beginPath();
-  ctx.lineWidth = Math.max(2, box.w * 0.075);
-  ctx.moveTo(box.x + box.w * (0.5 - NECK_W / 2), box.y + 1);
-  ctx.lineTo(box.x + box.w * (0.5 + NECK_W / 2), box.y + 1);
+  ctx.ellipse(box.x + box.w / 2, box.y + lipRy * 0.6, lipRx, lipRy, 0, 0, Math.PI * 2);
   ctx.stroke();
+
+  ctx.fillStyle = "rgba(10, 8, 18, 0.35)";
+  ctx.beginPath();
+  ctx.ellipse(box.x + box.w / 2, box.y + lipRy * 0.6, lipRx * 0.72, lipRy * 0.6, 0, 0, Math.PI * 2);
+  ctx.fill();
 }
 
 /**
@@ -353,6 +415,68 @@ function drawStream(
   ctx.restore();
 }
 
+/** Gradient sky, drifting bubbles and a few twinkles behind the shelves. */
+function drawBackdrop(
+  ctx: CanvasRenderingContext2D,
+  clock: number,
+  canvasW: number,
+  canvasH: number,
+): void {
+  const sky = ctx.createLinearGradient(0, 0, 0, canvasH);
+  sky.addColorStop(0, BG_TOP);
+  sky.addColorStop(1, BG_BOTTOM);
+  ctx.fillStyle = sky;
+  ctx.fillRect(0, 0, canvasW, canvasH);
+
+  ctx.save();
+  for (const sparkle of SPARKLES) {
+    const alpha = sparkleAlpha(sparkle, clock);
+    if (alpha <= 0.01) continue;
+    ctx.globalAlpha = alpha * 0.5;
+    ctx.fillStyle = "#fff6d8";
+    ctx.beginPath();
+    ctx.arc(sparkle.x * canvasW, sparkle.y * canvasH, sparkle.r * canvasW, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  for (const bubble of BUBBLES) {
+    const { x, y, r } = bubbleAt(bubble, clock, canvasW, canvasH);
+    ctx.globalAlpha = bubble.alpha;
+    ctx.fillStyle = "#cbb8ff";
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+
+    // A brighter arc on the upper left reads as a highlight on the bubble.
+    ctx.globalAlpha = bubble.alpha * 1.6;
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = Math.max(1, r * 0.12);
+    ctx.beginPath();
+    ctx.arc(x, y, r * 0.82, Math.PI * 0.9, Math.PI * 1.5);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+/** A shelf under each row, so the bottles stand on something. */
+function drawShelves(ctx: CanvasRenderingContext2D, layout: Layout, canvasW: number): void {
+  const rows = new Map<number, number>();
+  for (const box of layout.bottles) {
+    const base = Math.round(box.y + box.h);
+    rows.set(base, Math.max(rows.get(base) ?? 0, box.w));
+  }
+
+  for (const [base, width] of rows) {
+    const thickness = Math.max(3, width * 0.09);
+    const inset = canvasW * 0.02;
+
+    ctx.fillStyle = SHELF;
+    ctx.fillRect(inset, base, canvasW - inset * 2, thickness);
+    ctx.fillStyle = SHELF_LIP;
+    ctx.fillRect(inset, base, canvasW - inset * 2, Math.max(1, thickness * 0.32));
+  }
+}
+
 export function drawScene(
   ctx: CanvasRenderingContext2D,
   layout: Layout,
@@ -360,8 +484,8 @@ export function drawScene(
   canvasW: number,
   canvasH: number,
 ): void {
-  ctx.fillStyle = BG;
-  ctx.fillRect(0, 0, canvasW, canvasH);
+  drawBackdrop(ctx, state.clock, canvasW, canvasH);
+  drawShelves(ctx, layout, canvasW);
 
   const { bottles, partial } = displayState(state);
   const pouringFrom = state.pour?.move.from ?? -1;

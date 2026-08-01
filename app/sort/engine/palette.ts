@@ -4,36 +4,38 @@ export interface Potion {
 }
 
 /**
- * Sixteen liquids, spread across hue *and* lightness.
+ * Sixteen pastel liquids.
  *
  * Order is the important part. A level uses the first N entries, so the list is
- * sequenced by how far apart the colours are rather than by hue: red, blue,
- * yellow, green, purple before the list starts filling in between them. Sorted
- * around the colour wheel instead, an early level would draw its five colours
- * from one narrow arc — orange beside amber beside gold — which is exactly the
+ * sequenced by how far apart the colours are rather than by hue: rose, blue,
+ * yellow, green, purple before it starts filling in between them. Sorted around
+ * the colour wheel instead, an early level would draw its five colours from one
+ * narrow arc — peach beside butter beside clay — which is exactly the
  * comparison a player cannot make at a glance.
  *
- * Lightness carries its share too, now that nothing is printed on the liquid to
- * tell colours apart: a pale bone and a dark iron stay separable from the
- * saturated mid-tones even where hues crowd together at the wide end.
+ * Pastels are the harder case for that, because washing colour out costs
+ * saturation, which is one of the two things that separate them. So lightness
+ * does more work here than it did with the saturated set: cream sits near
+ * white, slate and denim sit deliberately darker, and the greens are split
+ * across mint, teal and sage rather than being three versions of one tint.
  */
 export const PALETTE: readonly Potion[] = [
-  { name: "ember", hex: "#E4463C" },
-  { name: "cobalt", hex: "#3D7FE8" },
-  { name: "gold", hex: "#F7C93E" },
-  { name: "moss", hex: "#3FBF4F" },
-  { name: "orchid", hex: "#9B4FD6" },
-  { name: "amber", hex: "#F2833C" },
-  { name: "aqua", hex: "#45CBE6" },
-  { name: "blush", hex: "#F79CC0" },
-  { name: "jade", hex: "#1F9E86" },
-  { name: "fuchsia", hex: "#DB4FB4" },
-  { name: "bone", hex: "#F0E6D2" },
-  { name: "indigo", hex: "#5A4BD6" },
-  { name: "lime", hex: "#C7E04A" },
-  { name: "cocoa", hex: "#9C6239" },
-  { name: "slate", hex: "#7E8CA0" },
-  { name: "iron", hex: "#5A6472" },
+  { name: "rose", hex: "#F08A8A" },
+  { name: "periwinkle", hex: "#8FA8F0" },
+  { name: "butter", hex: "#F3DC8C" },
+  { name: "mint", hex: "#86D6A2" },
+  { name: "lilac", hex: "#C3A0EB" },
+  { name: "peach", hex: "#F0A96B" },
+  { name: "sky", hex: "#92D6EA" },
+  { name: "bubblegum", hex: "#EFA2CE" },
+  { name: "teal", hex: "#6FBBAE" },
+  { name: "cream", hex: "#F2E7D2" },
+  { name: "sage", hex: "#B3C892" },
+  { name: "denim", hex: "#6E86BA" },
+  { name: "clay", hex: "#C79A7E" },
+  { name: "fog", hex: "#B9C2CE" },
+  { name: "plum", hex: "#A177A8" },
+  { name: "slate", hex: "#7C8697" },
 ];
 
 export const MAX_COLORS = PALETTE.length;
