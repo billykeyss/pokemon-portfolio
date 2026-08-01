@@ -1,5 +1,7 @@
 import type { Arena, Entity, Vec2 } from "./types";
 import { steerHero } from "./move";
+import type { SwingHit } from "./combat";
+import { updateAttack } from "./combat";
 
 /** Simulation runs at a fixed 120Hz regardless of render frame rate. */
 export const FIXED_DT = 1 / 120;
@@ -20,6 +22,8 @@ export interface World {
   over: boolean;
   /** Where the thumb is dragging the hero, in arena space, or null. */
   moveTarget: Vec2 | null;
+  /** Swing hits produced by the most recent step; the renderer drains this. */
+  hits: SwingHit[];
 }
 
 export function createWorld(opts: { arena: Arena; seed: number }): World {
@@ -31,6 +35,7 @@ export function createWorld(opts: { arena: Arena; seed: number }): World {
     rngSeed: opts.seed,
     over: false,
     moveTarget: null,
+    hits: [],
   };
 }
 
@@ -81,6 +86,11 @@ export function stepWorld(world: World): void {
   const steering = heroOf(world);
   if (steering && steering.deadAtTick < 0) {
     steerHero(steering, world.moveTarget, FIXED_DT);
+  }
+
+  world.hits.length = 0;
+  for (const e of world.entities) {
+    world.hits.push(...updateAttack(world, e));
   }
 
   for (const e of world.entities) {
