@@ -60,7 +60,7 @@ export default function HobbyCardVariants() {
       <header className="mb-8">
         <h1 className="text-2xl font-bold mb-1">Hobby Card · description layouts</h1>
         <p className="text-sm opacity-70">
-          Four options for surfacing the per-hobby <code>description</code> field that's currently in the data but not shown on the live site.
+          Four options for surfacing the per-hobby <code>description</code> field that&apos;s currently in the data but not shown on the live site.
         </p>
       </header>
 

@@ -29,7 +29,7 @@ import {
   type TrafficSave,
 } from "./engine/save";
 import { hint as solveHint } from "./engine/solve";
-import { PLAYER_ID, type Board, type Move } from "./engine/types";
+import { type Board, type Move } from "./engine/types";
 import { drawScene, spriteSources, type DrawState } from "./render/draw";
 import { cellAt, layoutBoard } from "./render/layout";
 

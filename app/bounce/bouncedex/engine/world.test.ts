@@ -227,7 +227,7 @@ describe("hit cooldown", () => {
     const p = spawnProjectile(w, "boulder", { x: 200, y: 300 }, { x: 0, y: 0 });
     p.settled = true;
     p.kind = "settled";
-    const e = spawnEnemy(w, { x: 200, y: 305 }, 100000, 16);
+    spawnEnemy(w, { x: 200, y: 305 }, 100000, 16);
 
     for (let i = 0; i < 300; i++) stepWorld(w);
     // 300 steps at 1 hit/step would be ~300 hits; the cooldown caps it near 10.

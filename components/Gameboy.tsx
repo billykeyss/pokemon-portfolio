@@ -6,7 +6,8 @@ export const Gameboy = () => {
   const [mounted, setMounted] = useState(false);
   const { theme } = useTheme();
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [videoDuration, setVideoDuration] = useState(0);
+  // Written on load and on seek; nothing reads it back.
+  const [, setVideoDuration] = useState(0);
 
   // Avoid hydration mismatch
   useEffect(() => setMounted(true), []);

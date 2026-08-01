@@ -21,7 +21,7 @@ function simulateAutoRun(seed: number) {
   const rng = makeRng(seed);
   let autoTimer = 0;
   let lastUpgradeWave = 0;
-  let queue: string[] = [];
+  const queue: string[] = [];
 
   const MAX_TICKS = 120 * 60 * 20; // 20 minutes of simulated time
   let enemiesSpawned = 0;
