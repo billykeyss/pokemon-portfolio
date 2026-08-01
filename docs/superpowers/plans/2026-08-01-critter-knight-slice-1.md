@@ -2153,43 +2153,79 @@ git commit -m "feat(knight): add playable slice-1 route and register the cabinet
 
 ---
 
-### Task 9: Offline caching for the new route
+### Task 9: Offline caching — and a live bug in it
 
-The arcade's service worker precaches routes by path. A new route that is not
-listed loads online and fails in airplane mode — which is exactly the bug the
-manifest hit in BOUNCEDEX, where it was cached but never served.
+Adding `/knight` to the service worker turned up a defect that already affects
+shipped routes. `public/sw.js` precaches `/game/`, `/sort/`, `/traffic/` and
+`/shelf/` in `CORE`, but its `fetch` handler only intercepts `/bounce`,
+`/_next`, the manifest and the icon:
+
+```js
+const handled =
+  url.pathname.startsWith("/bounce") ||
+  url.pathname.startsWith("/_next") ||
+  url.pathname === "/manifest.webmanifest" ||
+  url.pathname === "/icon.svg";
+```
+
+**Four routes are cached and never served.** With the network down they 404
+despite sitting in the cache — the identical failure the manifest had before it
+was added to this condition. Fix it for every route, not just the new one.
 
 **Files:**
 - Modify: `public/sw.js`
 
 - [ ] **Step 1: Add the route to the precache list and bump the cache name**
 
-In `public/sw.js`, add `"/knight"` to the `CORE` array, and increment
-`CACHE_NAME` (for example `arcade-v2` becomes `arcade-v3`) so existing clients
-discard the old cache.
+In `public/sw.js`, add `"/knight/"` to `CORE` (trailing slash, matching the
+other entries — the static export serves these as directory indexes), and change
+`CACHE_NAME` from `"arcade-v5"` to `"arcade-v6"` so existing clients discard the
+stale cache on activate.
 
-- [ ] **Step 2: Confirm the fetch handler already covers it**
+- [ ] **Step 2: Make the fetch handler cover every arcade route**
 
-Read the `handled` condition in the `fetch` listener. If it tests specific path
-prefixes, add `url.pathname.startsWith("/knight")`. A path that is precached but
-not intercepted still 404s offline.
+Replace the `handled` expression with a prefix list, so adding a game means
+adding one string in one place rather than remembering two:
 
-- [ ] **Step 3: Verify offline**
+```js
+// Every arcade route, plus the shared assets. A path that is precached but not
+// intercepted still 404s offline, which is exactly what happened to /game,
+// /sort, /traffic and /shelf.
+const ROUTE_PREFIXES = ["/game", "/bounce", "/sort", "/traffic", "/shelf", "/knight"];
+
+const handled =
+  url.pathname.startsWith("/_next") ||
+  url.pathname === "/manifest.webmanifest" ||
+  url.pathname === "/icon.svg" ||
+  ROUTE_PREFIXES.some((p) => url.pathname.startsWith(p));
+if (!handled) return;
+```
+
+- [ ] **Step 3: Verify offline, against the static export**
+
+`next dev` does not serve the export the way production does, so this must run
+against `out/`:
 
 ```bash
 pnpm build && pnpm dlx serve out -l 3210
 ```
 
-In the browser at `http://localhost:3210/knight`: load the page, then stop the
-server, then reload.
+In the browser at `http://localhost:3210/game`: visit `/game`, `/knight` and
+`/sort` so the worker caches them, confirm the worker is activated under
+DevTools → Application → Service Workers, then stop the server and reload each.
 
-Expected: the page still loads and is playable with the server down.
+Expected: all three still load with the origin down. Before this fix, `/game`
+and `/sort` would fail.
 
 - [ ] **Step 4: Commit**
 
 ```bash
 git add public/sw.js
-git commit -m "feat(knight): precache the knight route for offline play"
+git commit -m "fix(arcade): serve every game route offline, not just /bounce
+
+CORE precached /game, /sort, /traffic and /shelf, but the fetch handler
+only intercepted /bounce — so four routes sat in the cache and still
+404'd with the network down. Routes now come from one prefix list."
 ```
 
 ---
