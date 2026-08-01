@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { getCritter } from "../data/critters";
+import { getCritter } from "@/app/game/_shared/critters";
 import { bakeCritterIcon } from "../render/draw";
 
 /**

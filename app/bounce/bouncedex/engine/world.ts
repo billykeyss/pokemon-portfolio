@@ -2,7 +2,7 @@ import type { Vec2 } from "./vec";
 import type { Arena, Body } from "./types";
 import { integrate, collideWalls, collidePair, isSettled, overlaps } from "./physics";
 import { applyImpact, type ImpactEvent } from "./combat";
-import { getCritter, type BehaviorTag } from "../data/critters";
+import { getCritter, type BehaviorTag } from "@/app/game/_shared/critters";
 import { defaultMods, type RunMods } from "../data/upgrades";
 
 /** Simulation runs at a fixed 120Hz regardless of render frame rate. */

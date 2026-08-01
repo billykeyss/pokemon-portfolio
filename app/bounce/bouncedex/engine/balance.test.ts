@@ -3,7 +3,7 @@ import { createWorld, spawnProjectile, spawnEnemy, stepWorld, FIXED_DT } from ".
 import { autoAim, LAUNCH_SPEED } from "./aim";
 import { buildWave, laneX } from "./waves";
 import { makeRng } from "@/app/game/_shared/rng";
-import { BASE_CRITTERS } from "../data/critters";
+import { BASE_CRITTERS } from "@/app/game/_shared/critters";
 import { UPGRADE_EVERY_WAVES, rollUpgrades } from "../data/upgrades";
 
 const ARENA = { width: 400, height: 700 };

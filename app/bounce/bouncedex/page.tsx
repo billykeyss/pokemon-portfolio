@@ -28,7 +28,7 @@ import { buildWave, laneX } from "./engine/waves";
 import { makeRng, type Rng } from "@/app/game/_shared/rng";
 import { pendingEvolution, applyEvolution, autoEvolveDecided } from "./engine/combat";
 import { drawWorld } from "./render/draw";
-import { BASE_CRITTERS, getCritter } from "./data/critters";
+import { BASE_CRITTERS, getCritter } from "@/app/game/_shared/critters";
 import { rollUpgrades, UPGRADE_EVERY_WAVES, type Upgrade } from "./data/upgrades";
 import type { Vec2 } from "./engine/vec";
 import { Hud } from "./ui/Hud";

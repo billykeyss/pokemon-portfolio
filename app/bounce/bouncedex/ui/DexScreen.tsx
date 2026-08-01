@@ -1,7 +1,7 @@
 "use client";
 
 import { PixelPanel, PixelButton } from "@/app/game/_shared/pixel-ui";
-import { BASE_CRITTERS, CRITTERS, getCritter } from "../data/critters";
+import { BASE_CRITTERS, CRITTERS, getCritter } from "@/app/game/_shared/critters";
 import { CritterIcon } from "./CritterIcon";
 
 export function DexScreen({

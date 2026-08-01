@@ -8,7 +8,7 @@ import {
   COMBO_DAMAGE_CAP,
   autoEvolveDecided,
 } from "./combat";
-import { EVOLVE_HIT_THRESHOLD } from "../data/critters";
+import { EVOLVE_HIT_THRESHOLD } from "@/app/game/_shared/critters";
 
 const arena = { width: 400, height: 700 };
 

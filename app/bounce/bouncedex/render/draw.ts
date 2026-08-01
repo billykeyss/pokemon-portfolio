@@ -1,7 +1,7 @@
 import { EVOLVE_FLASH_TICKS, FX_TICKS, isOverdrive, type World } from "../engine/world";
 import type { Body } from "../engine/types";
 import type { Vec2 } from "../engine/vec";
-import { getCritter } from "../data/critters";
+import { getCritter } from "@/app/game/_shared/critters";
 import {
   SPRITES,
   ENEMY_SPRITE,

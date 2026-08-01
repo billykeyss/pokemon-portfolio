@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { PixelPanel, PixelButton } from "@/app/game/_shared/pixel-ui";
-import { getCritter } from "../data/critters";
+import { getCritter } from "@/app/game/_shared/critters";
 
 export function RunSummary({
   wave,

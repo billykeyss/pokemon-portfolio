@@ -1,6 +1,6 @@
 import type { Body } from "./types";
 import type { World } from "./world";
-import { getCritter, EVOLVE_HIT_THRESHOLD } from "../data/critters";
+import { getCritter, EVOLVE_HIT_THRESHOLD } from "@/app/game/_shared/critters";
 
 export interface ImpactEvent {
   attackerId: number;

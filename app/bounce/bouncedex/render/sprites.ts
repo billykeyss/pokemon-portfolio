@@ -1,4 +1,4 @@
-import type { BehaviorTag } from "../data/critters";
+import type { BehaviorTag } from "@/app/game/_shared/critters";
 
 /**
  * Chunky 8x8 pixel sprites, one silhouette per behavior, so a critter reads as

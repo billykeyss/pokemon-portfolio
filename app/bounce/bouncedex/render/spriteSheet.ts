@@ -1,4 +1,4 @@
-import type { BehaviorTag } from "../data/critters";
+import type { BehaviorTag } from "@/app/game/_shared/critters";
 
 /**
  * AI-generated pixel sprites, sliced and background-keyed by
