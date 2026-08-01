@@ -106,6 +106,45 @@ describe("search (breadth-first)", () => {
   });
 });
 
+describe("depth bound", () => {
+  it("finds a solution that sits inside the bound", () => {
+    const result = search<Jugs, JugMove>([0, 0], jugs, {
+      strategy: "bfs",
+      maxDepth: 6,
+    });
+    expect(result.status).toBe("solved");
+  });
+
+  it("reports depthCap when the solution is deeper than the bound", () => {
+    // The shortest solution is six moves, so five is provably not enough.
+    const result = search<Jugs, JugMove>([0, 0], jugs, {
+      strategy: "bfs",
+      maxDepth: 5,
+    });
+    expect(result).toEqual({ status: "unknown", reason: "depthCap" });
+  });
+
+  it("still proves unsolvable when the frontier drains inside the bound", () => {
+    // Nothing was pruned, so exhausting the space is a real proof, not a
+    // truncation — this is the distinction depthCap exists to preserve.
+    const result = search(0, evensOnly, { strategy: "bfs", maxDepth: 500 });
+    expect(result.status).toBe("unsolvable");
+  });
+
+  it("labels a node-cap give-up differently from a depth-cap one", () => {
+    const result = search(0, evensOnly, { nodeCap: 3 });
+    expect(result).toEqual({ status: "unknown", reason: "nodeCap" });
+  });
+
+  it("treats a zero bound as proving nothing beyond the start", () => {
+    const result = search<Jugs, JugMove>([0, 0], jugs, {
+      strategy: "bfs",
+      maxDepth: 0,
+    });
+    expect(result).toEqual({ status: "unknown", reason: "depthCap" });
+  });
+});
+
 describe("score ordering", () => {
   /**
    * Records the order states are *expanded* in. That is the thing score

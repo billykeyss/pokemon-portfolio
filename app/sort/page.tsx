@@ -60,8 +60,17 @@ export default function SortPage() {
   const selectedRef = useRef(selected);
   const symbolsRef = useRef(save.symbols);
   puzzleRef.current = puzzle;
-  selectedRef.current = selected;
   symbolsRef.current = save.symbols;
+
+  /**
+   * Write the ref before the state. The pointer handler reads `selectedRef` on
+   * the very next tap, and a ref only synced during render is still stale then
+   * — so two quick taps would lose the selection and the pour with it.
+   */
+  const select = useCallback((index: number | null) => {
+    selectedRef.current = index;
+    setSelected(index);
+  }, []);
 
   // localStorage does not exist during static export, so the save loads on mount.
   useEffect(() => {
@@ -85,12 +94,12 @@ export default function SortPage() {
     setBusy(false);
     setPuzzle(clonePuzzle(levelFor(level)));
     setHistory([]);
-    setSelected(null);
+    select(null);
     setMoves(0);
     setAddedBottle(false);
     setWon(false);
     setSave((s) => ({ ...s, level, best: Math.max(s.best, level) }));
-  }, []);
+  }, [select]);
 
   const commitMove = useCallback((move: Move) => {
     const current = puzzleRef.current;
@@ -110,8 +119,8 @@ export default function SortPage() {
     setHistory((h) => [...h, before]);
     setPuzzle(applyMove(current, move));
     setMoves((m) => m + 1);
-    setSelected(null);
-  }, []);
+    select(null);
+  }, [select]);
 
   const onPointerDown = useCallback(
     (event: React.PointerEvent<HTMLCanvasElement>) => {
@@ -134,17 +143,17 @@ export default function SortPage() {
 
       const index = hitTest(layout, x, y);
       if (index === null) {
-        setSelected(null);
+        select(null);
         return;
       }
 
       const chosen = selectedRef.current;
       if (chosen === null) {
-        if (current.bottles[index].length > 0) setSelected(index);
+        if (current.bottles[index].length > 0) select(index);
         return;
       }
       if (chosen === index) {
-        setSelected(null);
+        select(null);
         return;
       }
       if (canPour(current, chosen, index)) {
@@ -153,9 +162,9 @@ export default function SortPage() {
       }
 
       shakeRef.current = { index, t: 0 };
-      setSelected(current.bottles[index].length > 0 ? index : null);
+      select(current.bottles[index].length > 0 ? index : null);
     },
-    [commitMove, showLevels, won],
+    [commitMove, select, showLevels, won],
   );
 
   const step = useCallback(() => {
@@ -252,11 +261,11 @@ export default function SortPage() {
       if (h.length === 0) return h;
       setPuzzle(clonePuzzle(h[h.length - 1]));
       setMoves((m) => Math.max(0, m - 1));
-      setSelected(null);
+      select(null);
       setWon(false);
       return h.slice(0, -1);
     });
-  }, []);
+  }, [select]);
 
   const showHint = useCallback(() => {
     const move = solveHint(puzzleRef.current);
@@ -266,8 +275,8 @@ export default function SortPage() {
   const addBottle = useCallback(() => {
     setPuzzle((p) => ({ ...p, bottles: [...p.bottles.map((b) => [...b]), []] }));
     setAddedBottle(true);
-    setSelected(null);
-  }, []);
+    select(null);
+  }, [select]);
 
   const bestMoves = useMemo(
     () => save.movesByLevel[save.level] ?? null,

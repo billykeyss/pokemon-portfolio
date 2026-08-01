@@ -22,7 +22,13 @@ export interface SearchSpec<S, M> {
 export type SearchResult<M> =
   | { status: "solved"; moves: M[] }
   | { status: "unsolvable" }
-  | { status: "unknown" };
+  /**
+   * The search gave up. `reason` says which limit stopped it, and the two mean
+   * very different things: "nodeCap" is ignorance, while "depthCap" is a proof
+   * that no solution exists within `maxDepth` — which is a useful positive
+   * result when you are asking whether a puzzle is *hard enough*.
+   */
+  | { status: "unknown"; reason: "nodeCap" | "depthCap" };
 
 export interface SearchOptions {
   /**
@@ -37,6 +43,12 @@ export interface SearchOptions {
    * whether a candidate is solvable at all.
    */
   strategy?: "bfs" | "dfs";
+  /**
+   * Breadth-first only: stop after exploring this many moves deep. Finishing
+   * with a non-empty frontier yields `unknown`/`depthCap`, which proves the
+   * shortest solution is longer than this bound without paying to find it.
+   */
+  maxDepth?: number;
 }
 
 export const DEFAULT_NODE_CAP = 200_000;
@@ -46,6 +58,7 @@ interface Node<S, M> {
   /** The move that produced this state, or null at the root. */
   move: M | null;
   parent: number;
+  depth: number;
 }
 
 /** Walk parent pointers back to the root; cheaper than copying a path per node. */
@@ -63,21 +76,30 @@ export function search<S, M>(
   spec: SearchSpec<S, M>,
   options: SearchOptions = {},
 ): SearchResult<M> {
-  const { nodeCap = DEFAULT_NODE_CAP, strategy = "dfs" } = options;
+  const { nodeCap = DEFAULT_NODE_CAP, strategy = "dfs", maxDepth = Infinity } = options;
 
   if (spec.solved(start)) return { status: "solved", moves: [] };
 
-  const nodes: Node<S, M>[] = [{ state: start, move: null, parent: -1 }];
+  const nodes: Node<S, M>[] = [{ state: start, move: null, parent: -1, depth: 0 }];
   const visited = new Set<string>([spec.key(start)]);
   const frontier: number[] = [0];
   let head = 0;
   let expansions = 0;
+  let truncatedByDepth = false;
 
   while (strategy === "bfs" ? head < frontier.length : frontier.length > 0) {
-    if (expansions >= nodeCap) return { status: "unknown" };
+    if (expansions >= nodeCap) return { status: "unknown", reason: "nodeCap" };
 
     const index = strategy === "bfs" ? frontier[head++] : (frontier.pop() as number);
     const node = nodes[index];
+
+    // Everything at this depth is a leaf as far as this search is concerned;
+    // note that solutions may exist below and keep draining the frontier.
+    if (node.depth >= maxDepth) {
+      truncatedByDepth = true;
+      continue;
+    }
+
     expansions++;
 
     const moves = spec.moves(node.state);
@@ -92,7 +114,8 @@ export function search<S, M>(
       const key = spec.key(next);
       if (visited.has(key)) continue;
 
-      const child = nodes.push({ state: next, move, parent: index }) - 1;
+      const child =
+        nodes.push({ state: next, move, parent: index, depth: node.depth + 1 }) - 1;
       if (spec.solved(next)) return { status: "solved", moves: pathTo(nodes, child) };
 
       visited.add(key);
@@ -100,7 +123,12 @@ export function search<S, M>(
     }
   }
 
-  return { status: "unsolvable" };
+  // Draining the frontier proves there is no solution — but only if nothing was
+  // pruned on the way. A depth-truncated search has proved something weaker:
+  // no solution within maxDepth.
+  return truncatedByDepth
+    ? { status: "unknown", reason: "depthCap" }
+    : { status: "unsolvable" };
 }
 
 /** The next move a solver would make from here, or null if there is none. */

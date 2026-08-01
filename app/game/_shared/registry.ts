@@ -34,7 +34,7 @@ export const GAMES: readonly ArcadeGame[] = [
     tagline: "Clear the lot. Nobody parks forever.",
     href: "/traffic",
     accent: "#F08030",
-    available: false,
+    available: true,
   },
   {
     slug: "shelf",
