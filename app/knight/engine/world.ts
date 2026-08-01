@@ -4,6 +4,8 @@ import type { SwingHit } from "./combat";
 import { updateAttack } from "./combat";
 import { steerEnemy, applyTouchDamage } from "./ai";
 import { GRUNT } from "../data/enemies";
+import type { Fx } from "./fx";
+import { pushFx, expireFx } from "./fx";
 
 /** Simulation runs at a fixed 120Hz regardless of render frame rate. */
 export const FIXED_DT = 1 / 120;
@@ -26,6 +28,11 @@ export interface World {
   moveTarget: Vec2 | null;
   /** Swing hits produced by the most recent step; the renderer drains this. */
   hits: SwingHit[];
+  /** Short-lived visual effects. Owned by the sim so they survive the gap
+   *  between simulation steps and render frames. */
+  fx: Fx[];
+  /** Tick of the most recent damaging hit, for screen shake. */
+  lastHitTick: number;
 }
 
 export function createWorld(opts: { arena: Arena; seed: number }): World {
@@ -38,6 +45,8 @@ export function createWorld(opts: { arena: Arena; seed: number }): World {
     over: false,
     moveTarget: null,
     hits: [],
+    fx: [],
+    lastHitTick: -1,
   };
 }
 
@@ -97,7 +106,29 @@ export function stepWorld(world: World): void {
 
   world.hits.length = 0;
   for (const e of world.entities) {
-    world.hits.push(...updateAttack(world, e));
+    const swings = updateAttack(world, e);
+    if (e.attack.phase === "active" && world.tick === e.attack.startedAtTick) {
+      pushFx(world, {
+        kind: "slash",
+        x: e.pos.x + e.facing.x * 18,
+        y: e.pos.y + e.facing.y * 18,
+        angle: Math.atan2(e.facing.y, e.facing.x),
+        tick: world.tick,
+      });
+    }
+    for (const hit of swings) {
+      const target = world.entities.find((t) => t.id === hit.targetId);
+      if (!target) continue;
+      pushFx(world, {
+        kind: hit.killed ? "death" : "impact",
+        x: target.pos.x,
+        y: target.pos.y,
+        angle: 0,
+        tick: world.tick,
+      });
+      world.lastHitTick = world.tick;
+    }
+    world.hits.push(...swings);
   }
 
   for (const e of world.entities) {
@@ -118,5 +149,6 @@ export function stepWorld(world: World): void {
   }
   if (!hero || hero.hp <= 0) world.over = true;
 
+  expireFx(world);
   world.tick += 1;
 }
