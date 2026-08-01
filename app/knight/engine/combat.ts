@@ -68,10 +68,18 @@ export function damageEntity(
   return true;
 }
 
-/** True when any living enemy sits inside the hero's swing wedge. */
-function enemyInReach(world: World, hero: Entity): boolean {
+/**
+ * True when a living entity of the *opposite* kind sits inside the attacker's
+ * swing wedge.
+ *
+ * It must be the opposite kind, not literally "enemy": stepWorld runs
+ * updateAttack over every entity, and inSwingArc returns true at zero
+ * distance, so a hardcoded kind check makes every stationary enemy match
+ * itself and wind up forever regardless of where the hero is.
+ */
+function foeInReach(world: World, attacker: Entity): boolean {
   return world.entities.some(
-    (e) => e.kind === "enemy" && e.deadAtTick < 0 && inSwingArc(hero, e),
+    (t) => t.kind !== attacker.kind && t.deadAtTick < 0 && inSwingArc(attacker, t),
   );
 }
 
@@ -94,7 +102,7 @@ export function updateAttack(world: World, e: Entity): SwingHit[] {
   switch (e.attack.phase) {
     case "idle":
       // Stopping next to something is the whole input for attacking.
-      if (isStandingStill(e) && enemyInReach(world, e)) {
+      if (isStandingStill(e) && foeInReach(world, e)) {
         e.attack.phase = "windup";
         e.attack.startedAtTick = world.tick;
       }

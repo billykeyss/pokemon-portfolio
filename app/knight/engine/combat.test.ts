@@ -5,6 +5,7 @@ import {
   damageEntity,
   IFRAME_TICKS,
   SWING_REACH,
+  SWING_DAMAGE,
   KNOCKBACK,
 } from "./combat";
 
@@ -136,11 +137,27 @@ describe("swing lifecycle", () => {
     const w = fresh();
     const h = spawnHero(w, { x: 180, y: 300 });
     h.facing = { x: 0, y: -1 };
+    // The hero must survive the whole window, or its death truncates the loop
+    // before a per-tick bug could multiply — which is exactly how an earlier
+    // version of this test passed under the very regression it names.
+    h.hp = 100000;
+    h.maxHp = 100000;
     const e = spawnEnemy(w, { x: 180, y: 300 - 30 }, 100000);
     for (let i = 0; i < 60; i++) stepWorld(w);
     const dealt = 100000 - e.hp;
-    // A per-tick bug would deal many multiples of a single swing.
+    // ACTIVE_TICKS is 7, so a per-tick bug deals ~7x a single swing.
     expect(dealt).toBeGreaterThan(0);
-    expect(dealt).toBeLessThanOrEqual(30);
+    expect(dealt).toBeLessThanOrEqual(SWING_DAMAGE * 2);
+  });
+
+  it("lets a stationary enemy alone when the hero is far away", () => {
+    // Regression guard: a kind-based reach check made every enemy match
+    // itself at zero distance and wind up forever.
+    const w = fresh();
+    spawnHero(w, { x: 180, y: 540 });
+    const e = spawnEnemy(w, { x: 180, y: 60 }, 300);
+    e.vel = { x: 0, y: 0 };
+    stepWorld(w);
+    expect(e.attack.phase).toBe("idle");
   });
 });
