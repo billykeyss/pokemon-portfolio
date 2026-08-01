@@ -2,7 +2,7 @@
 import { generate } from "./generate";
 import { SHELF_WIDTH, type Board, type LevelParams } from "./types";
 
-const MIN_TYPES = 4;
+const MIN_TYPES = 6;
 /**
  * Goods on the board at once.
  *
@@ -16,8 +16,7 @@ const MAX_TYPES_PER_LEVEL = 8;
 const FREE_SLOTS = 3;
 
 /**
- * Four kinds of goods across five shelves at level one, widening to eight
- * across seven.
+ * Six kinds of goods across seven shelves at level one, widening to eight.
  *
  * The real dial is how the shelf count compares to the type count, because that
  * is what decides how much gets buried. With one more shelf than types, every
