@@ -42,6 +42,6 @@ export const GAMES: readonly ArcadeGame[] = [
     tagline: "Stock the shelves. Match the goods.",
     href: "/shelf",
     accent: "#78C850",
-    available: false,
+    available: true,
   },
 ];
