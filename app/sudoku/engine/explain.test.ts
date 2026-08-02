@@ -84,4 +84,195 @@ describe("explain", () => {
   it("mentions the digit it is about", () => {
     expect(explain(SAMPLES[1]).body).toContain("7");
   });
+
+  describe("naked-single", () => {
+    const d = SAMPLES[0];
+
+    it("has correct units and digits in highlight", () => {
+      const e = explain(d);
+      expect(e.highlight.units).toEqual([]);
+      expect(e.highlight.digits).toEqual([9]);
+    });
+
+    it("has no eliminations", () => {
+      const e = explain(d);
+      expect(e.highlight.eliminated).toEqual([]);
+    });
+
+    it("includes the cell in highlight", () => {
+      const e = explain(d);
+      expect(e.highlight.cells).toEqual([8]);
+    });
+
+    it("mentions the cell and digit in body", () => {
+      const e = explain(d);
+      expect(e.body).toContain("r1c9");
+      expect(e.body).toContain("9");
+    });
+  });
+
+  describe("hidden-single", () => {
+    const d = SAMPLES[1];
+
+    it("has correct units and digits in highlight", () => {
+      const e = explain(d);
+      expect(e.highlight.units).toEqual([{ kind: "box", index: 0 }]);
+      expect(e.highlight.digits).toEqual([7]);
+    });
+
+    it("has no eliminations", () => {
+      const e = explain(d);
+      expect(e.highlight.eliminated).toEqual([]);
+    });
+
+    it("includes cell and because-cells in highlight", () => {
+      const e = explain(d);
+      expect(e.highlight.cells).toContain(20);
+      expect(e.highlight.cells).toContain(18);
+      expect(e.highlight.cells).toContain(28);
+    });
+
+    it("mentions the digit can only go in the cell", () => {
+      const e = explain(d);
+      expect(e.body).toContain("can only go in");
+      expect(e.body).toContain("7");
+    });
+  });
+
+  describe("locked-candidates", () => {
+    const d = SAMPLES[2];
+
+    it("has box and line in units (in that order)", () => {
+      const e = explain(d);
+      expect(e.highlight.units).toEqual([
+        { kind: "box", index: 0 },
+        { kind: "row", index: 0 },
+      ]);
+    });
+
+    it("has correct digit in highlight", () => {
+      const e = explain(d);
+      expect(e.highlight.digits).toEqual([4]);
+    });
+
+    it("includes deduction cells in highlight", () => {
+      const e = explain(d);
+      expect(e.highlight.cells).toContain(0);
+      expect(e.highlight.cells).toContain(1);
+    });
+
+    it("carries removes to eliminated", () => {
+      const e = explain(d);
+      expect(e.highlight.eliminated).toEqual([{ cell: 4, digit: 4 }]);
+    });
+
+    it("mentions the box and line in body", () => {
+      const e = explain(d);
+      expect(e.body).toContain("Inside box");
+      expect(e.body).toContain("outside");
+    });
+  });
+
+  describe("naked-subset", () => {
+    const pair = SAMPLES[3];
+
+    it("uses correct headline for pair", () => {
+      const e = explain(pair);
+      expect(e.headline).toBe("Naked pair");
+    });
+
+    it("has correct units and digits for pair", () => {
+      const e = explain(pair);
+      expect(e.highlight.units).toEqual([{ kind: "row", index: 0 }]);
+      expect(e.highlight.digits).toEqual([3, 8]);
+    });
+
+    it("includes cells in highlight for pair", () => {
+      const e = explain(pair);
+      expect(e.highlight.cells).toContain(0);
+      expect(e.highlight.cells).toContain(1);
+    });
+
+    it("carries removes to eliminated for pair", () => {
+      const e = explain(pair);
+      expect(e.highlight.eliminated).toEqual([{ cell: 4, digit: 3 }]);
+    });
+
+    it("mentions the digits in the body for pair", () => {
+      const e = explain(pair);
+      expect(e.body).toContain("3");
+      expect(e.body).toContain("8");
+    });
+  });
+
+  describe("hidden-subset", () => {
+    const pair = SAMPLES[4];
+
+    it("uses correct headline for pair", () => {
+      const e = explain(pair);
+      expect(e.headline).toBe("Hidden pair");
+    });
+
+    it("has correct units and digits for pair", () => {
+      const e = explain(pair);
+      expect(e.highlight.units).toEqual([{ kind: "row", index: 0 }]);
+      expect(e.highlight.digits).toEqual([1, 2]);
+    });
+
+    it("includes cells in highlight for pair", () => {
+      const e = explain(pair);
+      expect(e.highlight.cells).toContain(0);
+      expect(e.highlight.cells).toContain(1);
+    });
+
+    it("carries removes to eliminated for pair", () => {
+      const e = explain(pair);
+      expect(e.highlight.eliminated).toEqual([{ cell: 0, digit: 5 }]);
+    });
+
+    it("mentions the digits in the body for pair", () => {
+      const e = explain(pair);
+      expect(e.body).toContain("1");
+      expect(e.body).toContain("2");
+    });
+  });
+
+  describe("x-wing", () => {
+    const d = SAMPLES[5];
+
+    it("has lines then covers in units (in that order)", () => {
+      const e = explain(d);
+      expect(e.highlight.units).toEqual([
+        { kind: "row", index: 0 },
+        { kind: "row", index: 7 },
+        { kind: "col", index: 0 },
+        { kind: "col", index: 3 },
+      ]);
+    });
+
+    it("has correct digit in highlight", () => {
+      const e = explain(d);
+      expect(e.highlight.digits).toEqual([4]);
+    });
+
+    it("includes all four corner cells in highlight", () => {
+      const e = explain(d);
+      expect(e.highlight.cells).toContain(0);
+      expect(e.highlight.cells).toContain(3);
+      expect(e.highlight.cells).toContain(63);
+      expect(e.highlight.cells).toContain(66);
+    });
+
+    it("carries removes to eliminated", () => {
+      const e = explain(d);
+      expect(e.highlight.eliminated).toEqual([{ cell: 27, digit: 4 }]);
+    });
+
+    it("names both cover units in the closing clause", () => {
+      const e = explain(d);
+      expect(e.body).toContain("column 1");
+      expect(e.body).toContain("column 4");
+      expect(e.body).toContain("either of those");
+    });
+  });
 });

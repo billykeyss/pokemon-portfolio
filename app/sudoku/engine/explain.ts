@@ -107,9 +107,11 @@ export function explain(d: Deduction): Explanation {
         headline: "X-wing",
         body:
           `${d.digit} sits in exactly two places in both ${unitName(d.lines[0])} and ` +
-          `${unitName(d.lines[1])}, and they line up on ${unitName(d.covers[0])} and ` +
-          `${unitName(d.covers[1])}. Whichever pair of corners is right, both of those ` +
-          `lines are spoken for — so no other cell in them can be a ${d.digit}.`,
+          `${unitName(d.lines[1])}, and both pairs land on ${unitName(d.covers[0])} and ` +
+          `${unitName(d.covers[1])}. However those four corners resolve, one of them takes ` +
+          `the ${d.digit} in ${unitName(d.covers[0])} and another takes it in ` +
+          `${unitName(d.covers[1])} — so no other cell in either of those can be a ` +
+          `${d.digit}.`,
         highlight: {
           cells: d.cells,
           units: [...d.lines, ...d.covers],
