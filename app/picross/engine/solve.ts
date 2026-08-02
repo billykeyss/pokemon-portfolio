@@ -10,19 +10,26 @@ export interface SolveResult {
   passes: number;
 }
 
+/**
+ * Bounded by the cell count, not by a round number.
+ *
+ * A pass that changes nothing ends the loop, so every pass that continues has
+ * determined at least one cell — which bounds the useful passes by how many
+ * cells exist. One more slot lets the solver observe the no-change pass and
+ * stop. A fixed 200 was below the 225 cells of the 15x15 tier this game ships,
+ * so a puzzle still making progress could be cut short and reported stalled: a
+ * fair picture wrongly failing the fairness gate.
+ *
+ * Exported so that property can be asserted directly, rather than only through
+ * a puzzle that happens to converge quickly.
+ */
+export function maxPassesFor(size: number): number {
+  return size * size + 1;
+}
+
 export function solve(puzzle: Puzzle): SolveResult {
   const { size } = puzzle;
-
-  /**
-   * Bounded by the cell count, not by a round number.
-   *
-   * A pass that changes nothing ends the loop, so every pass that continues has
-   * determined at least one cell — which bounds the useful passes by how many
-   * cells exist. A fixed 200 was below the 225 cells of the 15x15 tier this
-   * game ships, so a puzzle still making progress could be cut short and
-   * reported stalled: a fair picture wrongly failing the fairness gate.
-   */
-  const maxPasses = size * size + 1;
+  const maxPasses = maxPassesFor(size);
 
   const board: Board = new Uint8Array(size * size);
   const buffer = new Uint8Array(size);

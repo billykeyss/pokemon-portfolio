@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { puzzleFrom } from "./clues";
-import { isLineSolvable, solve } from "./solve";
-import { UNKNOWN, type Picture, type Puzzle } from "./types";
+import { isLineSolvable, maxPassesFor, solve } from "./solve";
+import { UNKNOWN, type Picture } from "./types";
 
 const HEART: Picture = {
   id: "heart",
@@ -77,5 +77,16 @@ describe("isLineSolvable", () => {
   it("separates the fair puzzle from the guessy one", () => {
     expect(isLineSolvable(puzzleFrom(HEART))).toBe(true);
     expect(isLineSolvable(puzzleFrom(AMBIGUOUS))).toBe(false);
+  });
+});
+
+describe("maxPassesFor", () => {
+  it("always allows at least one pass per cell", () => {
+    // Every pass that continues determines at least one cell, so a cap below
+    // the cell count can truncate a puzzle mid-progress and report it stalled.
+    // A fixed 200 broke exactly this way at 15x15, which has 225 cells.
+    for (const size of [5, 8, 10, 12, 15]) {
+      expect(maxPassesFor(size)).toBeGreaterThan(size * size);
+    }
   });
 });
