@@ -20,12 +20,13 @@ export function levelCount(): number {
 }
 
 export function puzzleForLevel(level: number): Puzzle {
-  // NaN survives every clamp — Math.floor(NaN), Math.max(1, NaN) and
-  // Math.min(n, NaN) are all NaN — and would then index the array out of
-  // bounds and throw. Every other extreme (+/-Infinity, 0, negatives, huge
-  // values) clamps correctly, so NaN is the one case worth rejecting up front.
-  const requested = Number.isFinite(level) ? Math.floor(level) : 1;
-  const n = Math.min(levelCount(), Math.max(1, requested));
+  // NaN, and only NaN, has to be rejected before the clamp: it survives
+  // Math.floor, Math.max and Math.min alike, so it would reach the array as an
+  // index and throw. Both infinities are safe to clamp normally — Infinity
+  // lands on the last level and -Infinity on the first — so testing
+  // Number.isFinite here instead would quietly send Infinity to level one.
+  const requested = Number.isNaN(level) ? 1 : level;
+  const n = Math.min(levelCount(), Math.max(1, Math.floor(requested)));
 
   const cached = cache.get(n);
   if (cached !== undefined) return cached;

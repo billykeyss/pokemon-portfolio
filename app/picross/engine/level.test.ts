@@ -35,4 +35,13 @@ describe("puzzleForLevel", () => {
   it("falls back to level one for a level that is not a number", () => {
     expect(puzzleForLevel(Number.NaN).id).toBe(puzzleForLevel(1).id);
   });
+
+  it("clamps the infinities to the ends of the curve, not both to the start", () => {
+    // Rejecting every non-finite value is the tempting guard and the wrong one:
+    // it sends Infinity to level one, silently breaking "jump to the end".
+    expect(puzzleForLevel(Number.POSITIVE_INFINITY).id).toBe(
+      puzzleForLevel(levelCount()).id,
+    );
+    expect(puzzleForLevel(Number.NEGATIVE_INFINITY).id).toBe(puzzleForLevel(1).id);
+  });
 });
