@@ -178,7 +178,13 @@ function combinations<T>(items: readonly T[], size: number): T[][] {
 
 function findNakedSubset(s: SolveState): Deduction | null {
   for (const unit of UNITS) {
-    const open = cellsOf(unit).filter((i) => s.grid[i] === 0);
+    // Empty is not the same as live. A cell can be unsolved yet hold zero
+    // candidates — an entry wrong enough to be peer-eliminated everywhere but
+    // still sitting on the board. Such a cell contributes nothing to the union
+    // mask, so it would ride along in any group that already accounts for the
+    // full subset and get named as a member of a pair it cannot actually
+    // hold a digit for. Filtering it out here keeps the argument honest.
+    const open = cellsOf(unit).filter((i) => s.grid[i] === 0 && s.cands[i] !== 0);
     for (const size of [2, 3]) {
       for (const group of combinations(open, size)) {
         let union = 0;

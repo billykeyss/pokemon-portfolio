@@ -139,6 +139,32 @@ describe("naked subset", () => {
       for (const e of d.removes) expect([3, 8]).toContain(e.digit);
     }
   });
+
+  it("does not sweep a zero-candidate cell into a bogus pair", () => {
+    // r1c1 (index 0) is empty but dead — every candidate has been peer-
+    // eliminated, as happens when a wrong entry sits elsewhere on the board.
+    // A dead cell contributes nothing to a union mask, so pairing it with r1c2
+    // (index 1, candidates {3, 8}) would satisfy the size-2 union test without
+    // r1c1 being able to hold either digit. r1c3 (index 2) also holds exactly
+    // {3, 8}, so the real pair is (1, 2) — the dead cell must be excluded, not
+    // merely a different pair returned by luck.
+    const d = nextDeductionIn(stateWith([], { 0: [], 1: [3, 8], 2: [3, 8] }));
+
+    expect(d?.kind).toBe("naked-subset");
+    if (d?.kind === "naked-subset") {
+      expect(d.cells.sort((a, b) => a - b)).toEqual([1, 2]);
+      expect(d.digits.sort((a, b) => a - b)).toEqual([3, 8]);
+      expect(d.unit).toEqual({ kind: "row", index: 0 });
+      expect(d.removes.length).toBe(12);
+      expect([...new Set(d.removes.map((e) => e.cell))].sort((a, b) => a - b)).toEqual([
+        3, 4, 5, 6, 7, 8,
+      ]);
+      for (const e of d.removes) expect([3, 8]).toContain(e.digit);
+      // The dead cell is not a member of the pair and nothing is removed from it.
+      expect(d.cells).not.toContain(0);
+      expect(d.removes.map((e) => e.cell)).not.toContain(0);
+    }
+  });
 });
 
 describe("hidden subset", () => {
