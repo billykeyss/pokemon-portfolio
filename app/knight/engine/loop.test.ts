@@ -212,3 +212,54 @@ describe("taking a hit is visible", () => {
     expect(impacts).toBe(1);
   });
 });
+
+describe("attacking while the thumb stays down (real play)", () => {
+  // The other loop tests release the drag (moveTarget = null) to stop. A real
+  // player holds their thumb on the enemy, so the hero keeps steering — and
+  // contact knockback keeps slamming its speed far above STOP_SPEED.
+  it("swings at an enemy while the player holds the thumb on it", () => {
+    const w = createWorld({ arena, seed: 1 });
+    const h = spawnHero(w, { x: 180, y: 320 });
+    const e = spawnEnemy(w, { x: 180, y: 250 }, GRUNT.hp);
+
+    // Thumb parked on the enemy and never lifted.
+    let swung = false;
+    for (let i = 0; i < 600 && !swung; i++) {
+      w.moveTarget = { x: e.pos.x, y: e.pos.y };
+      stepWorld(w);
+      if (h.attack.phase !== "idle") swung = true;
+    }
+
+    expect(swung, "hero never entered a swing while holding the thumb down").toBe(true);
+  });
+
+  it("kills the enemy it is held against", () => {
+    const w = createWorld({ arena, seed: 1 });
+    spawnHero(w, { x: 180, y: 320 });
+    const e = spawnEnemy(w, { x: 180, y: 250 }, GRUNT.hp);
+
+    for (let i = 0; i < 1800 && e.deadAtTick < 0; i++) {
+      w.moveTarget = { x: e.pos.x, y: e.pos.y };
+      stepWorld(w);
+    }
+    expect(e.deadAtTick).toBeGreaterThanOrEqual(0);
+  });
+
+  it("keeps swinging even while being knocked about by contact", () => {
+    const w = createWorld({ arena, seed: 1 });
+    const h = spawnHero(w, { x: 180, y: 300 });
+    // Sat right on top of the hero, so knockback fires every i-frame window.
+    const e = spawnEnemy(w, { x: 180, y: 300 }, 100000);
+
+    let swings = 0;
+    let phase = h.attack.phase;
+    for (let i = 0; i < 900; i++) {
+      w.moveTarget = { x: e.pos.x, y: e.pos.y };
+      stepWorld(w);
+      if (phase === "idle" && h.attack.phase === "windup") swings += 1;
+      phase = h.attack.phase;
+      if (h.deadAtTick >= 0) break;
+    }
+    expect(swings, "knockback locked the hero out of attacking").toBeGreaterThan(1);
+  });
+});

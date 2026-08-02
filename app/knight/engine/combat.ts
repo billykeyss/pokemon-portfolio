@@ -9,12 +9,34 @@ export const RECOVER_TICKS = 20;
 
 /** Invulnerability after taking a hit, so a crowd cannot chain-delete you. */
 export const IFRAME_TICKS = 42;
+/**
+ * An enemy's window. Short by design: the swing cycle is WINDUP + ACTIVE +
+ * RECOVER, so anything close to that length silently makes the hero unable to
+ * hit the same target twice.
+ */
+export const ENEMY_IFRAME_TICKS = 6;
 
 export const SWING_REACH = 46;
 /** Total arc width in radians — generous, because aiming is automatic. */
 export const SWING_ARC = Math.PI * 0.7;
 export const SWING_DAMAGE = 10;
 export const KNOCKBACK = 210;
+/**
+ * Knockback applied when the hero is hurt by contact.
+ *
+ * Much gentler than a swing's. Being flung at full KNOCKBACK every time an
+ * enemy brushed you separated the pair faster than a 14-tick wind-up could
+ * land, so the hero swung constantly and hit nothing — the attack looked
+ * broken from the player's side even though the state machine was working.
+ */
+export const CONTACT_KNOCKBACK = 70;
+
+/** Distance-only reach test, ignoring facing. */
+export function inSwingRange(attacker: Entity, target: Entity): boolean {
+  const dx = target.pos.x - attacker.pos.x;
+  const dy = target.pos.y - attacker.pos.y;
+  return Math.hypot(dx, dy) <= SWING_REACH + target.radius;
+}
 
 export interface SwingHit {
   targetId: number;
@@ -28,6 +50,7 @@ export function inSwingArc(attacker: Entity, target: Entity): boolean {
   const dy = target.pos.y - attacker.pos.y;
   const dist = Math.hypot(dx, dy);
   if (dist > SWING_REACH + target.radius) return false;
+
   if (dist === 0) return true;
 
   const dot = (dx / dist) * attacker.facing.x + (dy / dist) * attacker.facing.y;
@@ -49,9 +72,10 @@ export function damageEntity(
   amount: number,
   fromX: number,
   fromY: number,
+  knockback = KNOCKBACK,
 ): boolean {
   if (target.deadAtTick >= 0) return false;
-  if (target.hitAtTick >= 0 && world.tick - target.hitAtTick < IFRAME_TICKS) {
+  if (target.hitAtTick >= 0 && world.tick - target.hitAtTick < target.iframeTicks) {
     return false;
   }
 
@@ -61,8 +85,8 @@ export function damageEntity(
   const dx = target.pos.x - fromX;
   const dy = target.pos.y - fromY;
   const dist = Math.hypot(dx, dy) || 1;
-  target.vel.x = (dx / dist) * KNOCKBACK;
-  target.vel.y = (dy / dist) * KNOCKBACK;
+  target.vel.x = (dx / dist) * knockback;
+  target.vel.y = (dy / dist) * knockback;
 
   if (target.hp <= 0) target.deadAtTick = world.tick;
   return true;
@@ -121,6 +145,7 @@ export function updateAttack(world: World, e: Entity): SwingHit[] {
       if (!foe) break;
       e.attack.phase = "windup";
       e.attack.startedAtTick = world.tick;
+      e.attack.targetId = foe.id;
 
       // Auto-aim: face the foe we are about to swing at, right now, as the
       // swing begins. Facing must not be left to whatever `vel` last pointed
@@ -144,7 +169,15 @@ export function updateAttack(world: World, e: Entity): SwingHit[] {
 
         for (const target of world.entities) {
           if (target.kind === e.kind || target.deadAtTick >= 0) continue;
-          if (!inSwingArc(e, target)) continue;
+
+          // The target you locked onto at wind-up lands on distance alone.
+          // Facing is fixed when the swing starts, and over 14 wind-up ticks a
+          // point-blank pair drift around each other — so an arc-only check
+          // rejected the very enemy the swing was aimed at. Everything else
+          // still has to be in front of you, so being surrounded stays
+          // dangerous.
+          const locked = e.attack.targetId === target.id && inSwingRange(e, target);
+          if (!locked && !inSwingArc(e, target)) continue;
           if (!damageEntity(world, target, SWING_DAMAGE, e.pos.x, e.pos.y)) continue;
           hits.push({
             targetId: target.id,
@@ -166,6 +199,7 @@ export function updateAttack(world: World, e: Entity): SwingHit[] {
       if (elapsed >= RECOVER_TICKS) {
         e.attack.phase = "idle";
         e.attack.startedAtTick = world.tick;
+        e.attack.targetId = -1;
       }
       break;
   }

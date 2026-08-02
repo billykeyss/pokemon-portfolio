@@ -13,8 +13,9 @@ function entity(over: Partial<Entity> = {}): Entity {
     maxHp: 5,
     facing: { x: 0, y: 1 },
     hitAtTick: -1,
+    iframeTicks: 42,
     deadAtTick: -1,
-    attack: { phase: "idle", startedAtTick: 0 },
+    attack: { phase: "idle", startedAtTick: 0, targetId: -1 },
     ...over,
   };
 }
@@ -50,11 +51,11 @@ describe("poseFor", () => {
 
   it("pulls back during wind-up and lunges when active", () => {
     const windup = poseFor(
-      entity({ facing: { x: 1, y: 0 }, attack: { phase: "windup", startedAtTick: 0 } }),
+      entity({ facing: { x: 1, y: 0 }, attack: { phase: "windup", startedAtTick: 0, targetId: -1 } }),
       7,
     );
     const active = poseFor(
-      entity({ facing: { x: 1, y: 0 }, attack: { phase: "active", startedAtTick: 0 } }),
+      entity({ facing: { x: 1, y: 0 }, attack: { phase: "active", startedAtTick: 0, targetId: -1 } }),
       1,
     );
     expect(windup.offsetX).toBeLessThan(0);
@@ -80,9 +81,9 @@ describe("poseFor", () => {
     const states: Entity[] = [
       entity(),
       entity({ vel: { x: 400, y: 400 } }),
-      entity({ attack: { phase: "windup", startedAtTick: 0 } }),
-      entity({ attack: { phase: "active", startedAtTick: 0 } }),
-      entity({ attack: { phase: "recover", startedAtTick: 0 } }),
+      entity({ attack: { phase: "windup", startedAtTick: 0, targetId: -1 } }),
+      entity({ attack: { phase: "active", startedAtTick: 0, targetId: -1 } }),
+      entity({ attack: { phase: "recover", startedAtTick: 0, targetId: -1 } }),
       entity({ hitAtTick: 0 }),
       entity({ deadAtTick: 0 }),
     ];

@@ -1,7 +1,7 @@
 import type { Entity } from "./types";
 import type { World } from "./world";
 import { heroOf } from "./world";
-import { damageEntity } from "./combat";
+import { damageEntity, CONTACT_KNOCKBACK } from "./combat";
 import { pushFx } from "./fx";
 import type { EnemyDef } from "../data/enemies";
 
@@ -50,7 +50,11 @@ export function applyTouchDamage(world: World, def: EnemyDef): void {
     const dist = Math.hypot(hero.pos.x - e.pos.x, hero.pos.y - e.pos.y);
     if (dist > hero.radius + e.radius) continue;
     // damageEntity enforces i-frames, so a pile-up costs one heart, not four.
-    if (!damageEntity(world, hero, def.touchDamage, e.pos.x, e.pos.y)) continue;
+    if (
+      !damageEntity(world, hero, def.touchDamage, e.pos.x, e.pos.y, CONTACT_KNOCKBACK)
+    ) {
+      continue;
+    }
 
     // Taking a hit has to be *felt*. Without this, contact damage produced no
     // burst and no screen kick — only a white flash — so losing a heart in a

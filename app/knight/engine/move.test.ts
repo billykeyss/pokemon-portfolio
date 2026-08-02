@@ -13,8 +13,9 @@ function hero(over: Partial<Entity> = {}): Entity {
     maxHp: 5,
     facing: { x: 0, y: 1 },
     hitAtTick: -1,
+    iframeTicks: 42,
     deadAtTick: -1,
-    attack: { phase: "idle", startedAtTick: 0 },
+    attack: { phase: "idle", startedAtTick: 0, targetId: -1 },
     ...over,
   };
 }

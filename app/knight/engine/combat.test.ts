@@ -6,6 +6,9 @@ import {
   IFRAME_TICKS,
   SWING_REACH,
   SWING_DAMAGE,
+  WINDUP_TICKS,
+  ACTIVE_TICKS,
+  RECOVER_TICKS,
   KNOCKBACK,
 } from "./combat";
 
@@ -69,9 +72,20 @@ describe("damageEntity", () => {
     const e = spawnEnemy(w, { x: 100, y: 100 }, 30);
     w.tick = 10;
     damageEntity(w, e, 10, 100, 120);
-    w.tick = 10 + IFRAME_TICKS - 1;
+    // Each entity carries its own window; an enemy's is deliberately short.
+    w.tick = 10 + e.iframeTicks - 1;
     expect(damageEntity(w, e, 10, 100, 120)).toBe(false);
     expect(e.hp).toBe(20);
+  });
+
+  it("gives the hero a long window and enemies a short one", () => {
+    const w = fresh();
+    const h = spawnHero(w, { x: 100, y: 100 });
+    const e = spawnEnemy(w, { x: 200, y: 200 }, 30);
+    // A hero window as long as the swing cycle would be fine; an enemy window
+    // that long makes every follow-up swing whiff.
+    expect(h.iframeTicks).toBe(IFRAME_TICKS);
+    expect(e.iframeTicks).toBeLessThan(WINDUP_TICKS + ACTIVE_TICKS + RECOVER_TICKS);
   });
 
   it("allows damage again once invulnerability lapses", () => {

@@ -1,7 +1,7 @@
 import type { Arena, Entity, Vec2 } from "./types";
 import { steerHero } from "./move";
 import type { SwingHit } from "./combat";
-import { updateAttack } from "./combat";
+import { updateAttack, IFRAME_TICKS, ENEMY_IFRAME_TICKS } from "./combat";
 import { steerEnemy, applyTouchDamage } from "./ai";
 import { GRUNT } from "../data/enemies";
 import type { Fx } from "./fx";
@@ -51,6 +51,7 @@ export function createWorld(opts: { arena: Arena; seed: number }): World {
 }
 
 function baseEntity(world: World, kind: Entity["kind"], pos: Vec2, radius: number, hp: number): Entity {
+  const iframeTicks = kind === "hero" ? IFRAME_TICKS : ENEMY_IFRAME_TICKS;
   const e: Entity = {
     id: world.nextId++,
     kind,
@@ -61,8 +62,9 @@ function baseEntity(world: World, kind: Entity["kind"], pos: Vec2, radius: numbe
     maxHp: hp,
     facing: { x: 0, y: 1 },
     hitAtTick: -1,
+    iframeTicks,
     deadAtTick: -1,
-    attack: { phase: "idle", startedAtTick: 0 },
+    attack: { phase: "idle", startedAtTick: 0, targetId: -1 },
   };
   world.entities.push(e);
   return e;

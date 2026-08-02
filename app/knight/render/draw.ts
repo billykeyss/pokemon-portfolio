@@ -51,12 +51,42 @@ export function drawWorld(
 
   drawFloor(ctx, arena.width, arena.height);
 
+  drawReach(ctx, world);
+
   // Corpses first, so living things are never hidden behind them.
   for (const e of world.entities) if (e.deadAtTick >= 0) drawEntity(ctx, e, world, opts);
   for (const e of world.entities) if (e.deadAtTick < 0) drawEntity(ctx, e, world, opts);
 
   for (const f of world.fx) drawFx(ctx, f, world.tick);
 
+  ctx.restore();
+}
+
+/**
+ * The hero's swing reach, drawn as a faint ring.
+ *
+ * Melee range is invisible otherwise, so "why did that miss?" has no answer on
+ * screen. The ring brightens once something is actually inside it, which turns
+ * it from decoration into the answer to "am I close enough yet?".
+ */
+function drawReach(ctx: CanvasRenderingContext2D, world: World): void {
+  const hero = world.entities.find((e) => e.kind === "hero" && e.deadAtTick < 0);
+  if (!hero) return;
+
+  const armed = world.entities.some(
+    (e) =>
+      e.kind === "enemy" &&
+      e.deadAtTick < 0 &&
+      Math.hypot(e.pos.x - hero.pos.x, e.pos.y - hero.pos.y) <= SWING_REACH + e.radius,
+  );
+
+  ctx.save();
+  ctx.setLineDash([3, 5]);
+  ctx.lineWidth = armed ? 2 : 1;
+  ctx.strokeStyle = armed ? "rgba(248,240,224,0.5)" : "rgba(160,148,196,0.22)";
+  ctx.beginPath();
+  ctx.arc(px(hero.pos.x), px(hero.pos.y), SWING_REACH, 0, Math.PI * 2);
+  ctx.stroke();
   ctx.restore();
 }
 
