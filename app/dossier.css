@@ -3806,3 +3806,16 @@ footer .footer-ball {
   .dossier-root { padding-left: 132px; }
 }
 */
+
+/* The arcade is the one nav item that leaves the dossier, so it reads as a
+   destination rather than another anchor on this page. */
+.strip-links .strip-arcade {
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  padding: 0.15em 0.7em;
+  white-space: nowrap;
+}
+.strip-links .strip-arcade:hover {
+  background: currentColor;
+  color: var(--background, #fff);
+}

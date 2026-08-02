@@ -2,6 +2,7 @@ import type { Entity } from "./types";
 import type { World } from "./world";
 import { heroOf } from "./world";
 import { damageEntity } from "./combat";
+import { pushFx } from "./fx";
 import type { EnemyDef } from "../data/enemies";
 
 /** How fast an enemy's velocity converges, per second. Lower than the hero's,
@@ -49,6 +50,18 @@ export function applyTouchDamage(world: World, def: EnemyDef): void {
     const dist = Math.hypot(hero.pos.x - e.pos.x, hero.pos.y - e.pos.y);
     if (dist > hero.radius + e.radius) continue;
     // damageEntity enforces i-frames, so a pile-up costs one heart, not four.
-    damageEntity(world, hero, def.touchDamage, e.pos.x, e.pos.y);
+    if (!damageEntity(world, hero, def.touchDamage, e.pos.x, e.pos.y)) continue;
+
+    // Taking a hit has to be *felt*. Without this, contact damage produced no
+    // burst and no screen kick — only a white flash — so losing a heart in a
+    // busy room was easy to miss entirely.
+    pushFx(world, {
+      kind: "impact",
+      x: hero.pos.x,
+      y: hero.pos.y,
+      angle: 0,
+      tick: world.tick,
+    });
+    world.lastHitTick = world.tick;
   }
 }

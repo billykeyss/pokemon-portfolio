@@ -511,6 +511,10 @@ export default function V2DossierPage() {
             <a href="#projects">Projects</a>
             <a href="#academy">Academy</a>
             <a href="#interests">Interests</a>
+            {/* The only link here that leaves the page, so it gets a marker. */}
+            <a href="/game" className="strip-arcade">
+              Arcade <span aria-hidden="true">▸</span>
+            </a>
           </nav>
           <ThemeToggle />
         </div>

@@ -182,3 +182,33 @@ describe("whole-loop: fx wiring", () => {
     expect(w.lastHitTick).toBeGreaterThanOrEqual(0);
   });
 });
+
+describe("taking a hit is visible", () => {
+  it("queues an impact burst and kicks the screen when the hero is touched", () => {
+    const w = createWorld({ arena, seed: 1 });
+    const h = spawnHero(w, { x: 180, y: 300 });
+    spawnEnemy(w, { x: 180, y: 300 }, GRUNT.hp);
+
+    let sawImpact = false;
+    for (let i = 0; i < 30 && !sawImpact; i++) {
+      stepWorld(w);
+      if (w.fx.some((f) => f.kind === "impact")) sawImpact = true;
+    }
+
+    expect(h.hp).toBeLessThan(h.maxHp);
+    expect(sawImpact, "contact damage produced no impact fx").toBe(true);
+    expect(w.lastHitTick).toBeGreaterThanOrEqual(0);
+  });
+
+  it("does not queue an impact for a hit that i-frames refused", () => {
+    const w = createWorld({ arena, seed: 1 });
+    const h = spawnHero(w, { x: 180, y: 300 });
+    for (let i = 0; i < 4; i++) spawnEnemy(w, { x: 180, y: 300 }, GRUNT.hp);
+
+    stepWorld(w);
+    const impacts = w.fx.filter((f) => f.kind === "impact").length;
+    // Four overlapping grunts, one heart, one burst.
+    expect(h.hp).toBe(h.maxHp - GRUNT.touchDamage);
+    expect(impacts).toBe(1);
+  });
+});

@@ -32,6 +32,32 @@ export const PLINK_RANGE = 95;
 export const EVOLVE_FLASH_TICKS = 72;
 /** How long a floating number or burst lives, in ticks. */
 export const FX_TICKS = 54;
+/** How long a screen shake takes to decay away, in ticks (~0.15s). */
+export const SHAKE_TICKS = 18;
+/** Peak shake displacement, in pixels. */
+export const SHAKE_PEAK = 2.4;
+
+/**
+ * Screen shake for this tick, decaying from the most recent kill.
+ *
+ * Shake used to be `min(combo, 6)` applied straight from the HUD combo, which
+ * meant the arena trembled continuously for the whole length of a chain rather
+ * than kicking on impact. A constant tremor is unpleasant to look at and, at
+ * high combo, never stopped at all.
+ */
+export function shakeAt(world: World): number {
+  let newest = -1;
+  for (const f of world.fx) {
+    if (f.kind === "kill" && f.tick > newest) newest = f.tick;
+  }
+  if (newest < 0) return 0;
+
+  const since = world.tick - newest;
+  if (since < 0 || since >= SHAKE_TICKS) return 0;
+  const t = 1 - since / SHAKE_TICKS;
+  return t * t * SHAKE_PEAK;
+}
+
 /** Hard cap so a huge wave cannot flood the renderer. */
 const MAX_FX = 60;
 /** Damage needed to fill the overdrive meter. */

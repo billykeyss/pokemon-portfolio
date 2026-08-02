@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { poseFor } from "./anim";
+import { poseFor, shakeFrom, SHAKE_TICKS, SHAKE_PEAK } from "./anim";
 import type { Entity } from "../engine/types";
 
 function entity(over: Partial<Entity> = {}): Entity {
@@ -100,5 +100,29 @@ describe("poseFor", () => {
         expect(p.flash).toBeLessThanOrEqual(1);
       }
     }
+  });
+});
+
+describe("shakeFrom", () => {
+  it("is silent with no hit on record", () => {
+    expect(shakeFrom(-1, 500)).toBe(0);
+  });
+
+  it("peaks on the hit tick and decays to nothing", () => {
+    const peak = shakeFrom(100, 100);
+    expect(peak).toBeGreaterThan(0);
+    expect(shakeFrom(100, 100 + Math.floor(SHAKE_TICKS / 2))).toBeLessThan(peak);
+    expect(shakeFrom(100, 100 + SHAKE_TICKS)).toBe(0);
+  });
+
+  it("stays gentle — a big shake reads as a tremor, not a knock", () => {
+    for (let t = 0; t <= SHAKE_TICKS; t++) {
+      expect(shakeFrom(0, t)).toBeLessThanOrEqual(SHAKE_PEAK);
+    }
+    expect(SHAKE_PEAK).toBeLessThanOrEqual(3);
+  });
+
+  it("ignores a hit tick in the future", () => {
+    expect(shakeFrom(200, 100)).toBe(0);
   });
 });

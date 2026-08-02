@@ -40,7 +40,13 @@ export function drawWorld(
   const shake = opts.reducedMotion ? 0 : shakeFrom(world.lastHitTick, world.tick);
   if (shake > 0) {
     // Deterministic wobble from the tick, so the renderer stays reproducible.
-    ctx.translate(Math.sin(world.tick * 1.7) * shake, Math.cos(world.tick * 2.3) * shake);
+    // ~6Hz and ~8Hz at 120 ticks/sec. The previous multipliers (1.7 / 2.3)
+    // oscillated over 30 times a second, which reads as a buzz rather than a
+    // knock.
+    ctx.translate(
+      Math.sin(world.tick * 0.32) * shake,
+      Math.cos(world.tick * 0.41) * shake,
+    );
   }
 
   drawFloor(ctx, arena.width, arena.height);
@@ -128,7 +134,18 @@ function drawEntity(
 
   ctx.restore();
 
-  // Enemy health pip, so a swing visibly matters.
+  // Health pip. The hero gets one too: the HUD hearts are at the top of the
+  // screen, but your eyes are on your critter during a fight, so damage needs
+  // to read where the action is.
+  if (e.kind === "hero" && e.deadAtTick < 0) {
+    const w = r * 2;
+    const ratio = e.maxHp === 0 ? 0 : Math.max(0, e.hp / e.maxHp);
+    ctx.fillStyle = "#2a2140";
+    ctx.fillRect(px(e.pos.x - r), px(e.pos.y - r - 9), w, 4);
+    ctx.fillStyle = ratio > 0.34 ? "#6ee06e" : "#e05050";
+    ctx.fillRect(px(e.pos.x - r), px(e.pos.y - r - 9), px(w * ratio), 4);
+  }
+
   if (e.kind === "enemy" && e.deadAtTick < 0 && e.hp < e.maxHp) {
     const w = r * 2;
     ctx.fillStyle = "#2a2140";

@@ -19,6 +19,7 @@ import {
   OVERDRIVE_CHARGE,
   isOverdrive,
   triggerOverdrive,
+  shakeAt,
   bumperAt,
   dropBumper,
   type World,
@@ -245,7 +246,7 @@ export default function BouncedexPage() {
 
     drawWorld(ctx, world, {
       aimPath,
-      shake: Math.min(world.combo, 6),
+      shake: shakeAt(world),
       reducedMotion,
     });
 

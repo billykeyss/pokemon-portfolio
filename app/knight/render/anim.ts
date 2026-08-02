@@ -99,12 +99,23 @@ export function poseFor(e: Entity, tick: number): Pose {
   return pose;
 }
 
-/** Screen shake magnitude, in pixels, decaying from the most recent hit. */
-export const SHAKE_TICKS = 12;
+/** How long a shake takes to decay away, in ticks (~0.15s at 120Hz). */
+export const SHAKE_TICKS = 18;
+/** Peak displacement in pixels. */
+export const SHAKE_PEAK = 2.2;
 
+/**
+ * Screen shake magnitude, decaying from the most recent hit.
+ *
+ * Deliberately small and short. Hits land constantly in a busy room, so this
+ * re-triggers often; a large amplitude turns a punchy kick into a permanent
+ * tremor that makes the game unpleasant to look at. Squaring the falloff drops
+ * it away fast rather than lingering at half strength.
+ */
 export function shakeFrom(lastHitTick: number, tick: number): number {
   if (lastHitTick < 0) return 0;
   const since = tick - lastHitTick;
   if (since < 0 || since >= SHAKE_TICKS) return 0;
-  return (1 - since / SHAKE_TICKS) * 4;
+  const t = 1 - since / SHAKE_TICKS;
+  return t * t * SHAKE_PEAK;
 }

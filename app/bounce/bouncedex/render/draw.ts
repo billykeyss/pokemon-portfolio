@@ -172,7 +172,9 @@ export function drawWorld(
   if (opts.shake > 0 && !opts.reducedMotion) {
     // Deterministic wobble from the tick counter — no Math.random in render.
     const t = world.tick;
-    ctx.translate(Math.sin(t * 0.9) * opts.shake, Math.cos(t * 1.3) * opts.shake);
+    // ~6Hz and ~8Hz at 120 ticks/sec. The previous multipliers (0.9 / 1.3)
+    // oscillated ~17 and ~25 times a second, which reads as a buzz.
+    ctx.translate(Math.sin(t * 0.32) * opts.shake, Math.cos(t * 0.41) * opts.shake);
   }
 
   ctx.fillStyle = BG;
