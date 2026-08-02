@@ -1,11 +1,12 @@
 import {
   candidatesForGrid,
   countBits,
+  digitsOf,
   mergedGrid,
   soleDigit,
   type Mask,
 } from "./candidates";
-import { CELLS, PEERS, UNITS, cellsOf } from "./grid";
+import { CELLS, PEERS, UNITS, cellsOf, colOf, rowOf } from "./grid";
 import type { Board, Cell, Digit, Grid, Idx, Unit } from "./types";
 
 /** One candidate removal a technique justifies. */
@@ -100,6 +101,14 @@ function findHiddenSingle(s: SolveState): Deduction | null {
 
       // The argument: every placed d that rules out one of this unit's other
       // empty cells. Those are the cells the hint lights up.
+      //
+      // This scan only finds placed digits, so it is guaranteed non-empty
+      // exactly when `s.cands` holds pure peer-eliminated candidates — the
+      // state the hint path always builds fresh via initState(mergedGrid(...)).
+      // The finders below this one narrow cands for reasons with no placed
+      // digit behind them; run this on a state they have touched and `because`
+      // can come back empty even though a hidden single is real. Nothing here
+      // enforces that — it's on the caller.
       const because: Idx[] = [];
       for (let i = 0; i < CELLS; i++) {
         if (s.grid[i] !== d) continue;
@@ -116,8 +125,153 @@ function sees(a: Idx, b: Idx): boolean {
   return PEERS[a].includes(b);
 }
 
+/** The candidate removals a finder justifies: digit `d` was a candidate at `i`, now isn't. */
+function elimsFor(s: SolveState, cells: readonly Idx[], skip: Set<Idx>, digits: Digit[]): Elim[] {
+  const out: Elim[] = [];
+  for (const i of cells) {
+    if (skip.has(i) || s.grid[i] !== 0) continue;
+    for (const d of digits) {
+      if ((s.cands[i] & (1 << (d - 1))) !== 0) out.push({ cell: i, digit: d });
+    }
+  }
+  return out;
+}
+
+function findLockedCandidates(s: SolveState): Deduction | null {
+  for (const box of UNITS.filter((u) => u.kind === "box")) {
+    const boxCells = cellsOf(box);
+    for (let d = 1 as Digit; d <= 9; d = (d + 1) as Digit) {
+      const homes = boxCells.filter(
+        (i) => s.grid[i] === 0 && (s.cands[i] & (1 << (d - 1))) !== 0,
+      );
+      if (homes.length < 2) continue;
+
+      for (const kind of ["row", "col"] as const) {
+        const lineIndex = kind === "row" ? rowOf(homes[0]) : colOf(homes[0]);
+        const sameLine = homes.every(
+          (i) => (kind === "row" ? rowOf(i) : colOf(i)) === lineIndex,
+        );
+        if (!sameLine) continue;
+
+        const line: Unit = { kind, index: lineIndex };
+        const removes = elimsFor(s, cellsOf(line), new Set(boxCells), [d]);
+        if (removes.length === 0) continue;
+
+        return { kind: "locked-candidates", digit: d, box, line, cells: homes, removes };
+      }
+    }
+  }
+  return null;
+}
+
+/** Every `size`-length subset of `items`, order preserved within each subset. */
+function combinations<T>(items: readonly T[], size: number): T[][] {
+  if (size === 0) return [[]];
+  const out: T[][] = [];
+  for (let i = 0; i <= items.length - size; i++) {
+    for (const rest of combinations(items.slice(i + 1), size - 1)) {
+      out.push([items[i], ...rest]);
+    }
+  }
+  return out;
+}
+
+function findNakedSubset(s: SolveState): Deduction | null {
+  for (const unit of UNITS) {
+    const open = cellsOf(unit).filter((i) => s.grid[i] === 0);
+    for (const size of [2, 3]) {
+      for (const group of combinations(open, size)) {
+        let union = 0;
+        for (const i of group) union |= s.cands[i];
+        if (countBits(union) !== size) continue;
+
+        const digits = digitsOf(union);
+        const removes = elimsFor(s, cellsOf(unit), new Set(group), digits);
+        if (removes.length === 0) continue;
+
+        return { kind: "naked-subset", cells: group, digits, unit, removes };
+      }
+    }
+  }
+  return null;
+}
+
+function findHiddenSubset(s: SolveState): Deduction | null {
+  for (const unit of UNITS) {
+    const open = cellsOf(unit).filter((i) => s.grid[i] === 0);
+    const live = digitsOf(
+      open.reduce((m, i) => m | s.cands[i], 0),
+    ).filter((d) => !cellsOf(unit).some((i) => s.grid[i] === d));
+
+    for (const size of [2, 3]) {
+      for (const digits of combinations(live, size)) {
+        const homes = open.filter((i) =>
+          digits.some((d) => (s.cands[i] & (1 << (d - 1))) !== 0),
+        );
+        if (homes.length !== size) continue;
+
+        const others = digitsOf(
+          homes.reduce((m, i) => m | s.cands[i], 0),
+        ).filter((d) => !digits.includes(d));
+        if (others.length === 0) continue;
+
+        const removes = elimsFor(s, homes, new Set(), others);
+        if (removes.length === 0) continue;
+
+        return { kind: "hidden-subset", cells: homes, digits, unit, removes };
+      }
+    }
+  }
+  return null;
+}
+
+function findXWing(s: SolveState): Deduction | null {
+  for (const [lineKind, coverKind] of [["row", "col"], ["col", "row"]] as const) {
+    const lines = UNITS.filter((u) => u.kind === lineKind);
+
+    for (let d = 1 as Digit; d <= 9; d = (d + 1) as Digit) {
+      const pairs: { line: Unit; cells: Idx[]; covers: number[] }[] = [];
+      for (const line of lines) {
+        const homes = cellsOf(line).filter(
+          (i) => s.grid[i] === 0 && (s.cands[i] & (1 << (d - 1))) !== 0,
+        );
+        if (homes.length !== 2) continue;
+        const covers = homes.map((i) => (coverKind === "col" ? colOf(i) : rowOf(i)));
+        pairs.push({ line, cells: homes, covers });
+      }
+
+      for (const [a, b] of combinations(pairs, 2)) {
+        if (a.covers[0] !== b.covers[0] || a.covers[1] !== b.covers[1]) continue;
+
+        const covers: Unit[] = a.covers.map((index) => ({ kind: coverKind, index }));
+        const corner = new Set([...a.cells, ...b.cells]);
+        const removes = covers.flatMap((u) => elimsFor(s, cellsOf(u), corner, [d]));
+        if (removes.length === 0) continue;
+
+        return {
+          kind: "x-wing",
+          digit: d,
+          cells: [...corner],
+          lines: [a.line, b.line],
+          covers,
+          removes,
+        };
+      }
+    }
+  }
+  return null;
+}
+
 export function nextDeductionIn(s: SolveState): Deduction | null {
-  return findNakedSingle(s) ?? findHiddenSingle(s) ?? null;
+  return (
+    findNakedSingle(s) ??
+    findHiddenSingle(s) ??
+    findLockedCandidates(s) ??
+    findNakedSubset(s) ??
+    findHiddenSubset(s) ??
+    findXWing(s) ??
+    null
+  );
 }
 
 export function applyToState(s: SolveState, d: Deduction): void {

@@ -105,3 +105,90 @@ describe("nextDeductionIn", () => {
     expect(nextDeductionIn(initState(parse(".".repeat(81))))).toBeNull();
   });
 });
+
+describe("locked candidates", () => {
+  it("confines a digit to one line inside a box and clears the rest of that line", () => {
+    // In box 0, 4 survives only in row 0 — so nowhere else in row 0 can be a 4.
+    const d = nextDeductionIn(
+      stateWith([{ cells: [9, 10, 11, 18, 19, 20], digits: [4] }]),
+    );
+
+    expect(d?.kind).toBe("locked-candidates");
+    if (d?.kind === "locked-candidates") {
+      expect(d.digit).toBe(4);
+      expect(d.box).toEqual({ kind: "box", index: 0 });
+      expect(d.line).toEqual({ kind: "row", index: 0 });
+      expect(d.cells.sort((a, b) => a - b)).toEqual([0, 1, 2]);
+      expect(d.removes.map((e) => e.cell).sort((a, b) => a - b)).toEqual([3, 4, 5, 6, 7, 8]);
+      for (const e of d.removes) expect(e.digit).toBe(4);
+    }
+  });
+});
+
+describe("naked subset", () => {
+  it("finds a pair that locks two digits out of the rest of its unit", () => {
+    const d = nextDeductionIn(stateWith([], { 0: [3, 8], 1: [3, 8] }));
+
+    expect(d?.kind).toBe("naked-subset");
+    if (d?.kind === "naked-subset") {
+      expect(d.cells.sort((a, b) => a - b)).toEqual([0, 1]);
+      expect(d.digits.sort((a, b) => a - b)).toEqual([3, 8]);
+      expect(d.unit).toEqual({ kind: "row", index: 0 });
+      expect(d.removes.map((e) => e.cell)).not.toContain(0);
+      expect(d.removes.map((e) => e.cell)).not.toContain(1);
+      for (const e of d.removes) expect([3, 8]).toContain(e.digit);
+    }
+  });
+});
+
+describe("hidden subset", () => {
+  it("finds two digits confined to the same two cells", () => {
+    // 1 and 2 survive in row 0 only at r1c1 and r1c2, so those two cells are
+    // spoken for and everything else they might have been is out.
+    const d = nextDeductionIn(
+      stateWith([{ cells: [2, 3, 4, 5, 6, 7, 8], digits: [1, 2] }]),
+    );
+
+    expect(d?.kind).toBe("hidden-subset");
+    if (d?.kind === "hidden-subset") {
+      expect(d.cells.sort((a, b) => a - b)).toEqual([0, 1]);
+      expect(d.digits.sort((a, b) => a - b)).toEqual([1, 2]);
+      expect(d.unit).toEqual({ kind: "row", index: 0 });
+      for (const e of d.removes) {
+        expect([0, 1]).toContain(e.cell);
+        expect([1, 2]).not.toContain(e.digit);
+      }
+    }
+  });
+});
+
+describe("x-wing", () => {
+  it("finds a digit boxed into two rows sharing two columns", () => {
+    // 1 survives in row 0 only at columns 0 and 4, and in row 3 only at the
+    // same two columns. Those four corners own both columns outright.
+    const d = nextDeductionIn(
+      stateWith([
+        { cells: [1, 2, 3, 5, 6, 7, 8], digits: [1] },
+        { cells: [28, 29, 30, 32, 33, 34, 35], digits: [1] },
+      ]),
+    );
+
+    expect(d?.kind).toBe("x-wing");
+    if (d?.kind === "x-wing") {
+      expect(d.digit).toBe(1);
+      expect(d.cells.sort((a, b) => a - b)).toEqual([0, 4, 27, 31]);
+      expect(d.lines).toEqual([{ kind: "row", index: 0 }, { kind: "row", index: 3 }]);
+      expect(d.covers).toEqual([{ kind: "col", index: 0 }, { kind: "col", index: 4 }]);
+      for (const e of d.removes) {
+        expect(e.digit).toBe(1);
+        expect([0, 4, 27, 31]).not.toContain(e.cell);
+        expect([0, 4]).toContain(e.cell % 9);
+      }
+    }
+  });
+
+  it("is ranked hardest of the implemented techniques", () => {
+    expect(techniqueRank("x-wing")).toBeGreaterThan(techniqueRank("hidden-subset"));
+    expect(techniqueRank("x-wing")).toBeGreaterThan(techniqueRank("locked-candidates"));
+  });
+});
