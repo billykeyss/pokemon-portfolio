@@ -47,6 +47,19 @@ describe("hardestRank", () => {
     expect(rank as number).toBeGreaterThanOrEqual(0);
     expect(rank as number).toBeLessThanOrEqual(4);
   });
+
+  it("tracks the maximum rank via Math.max, not the final deduction", () => {
+    // This grid requires a rank-2 technique (locked-candidates) at deductions
+    // 14–17, but then solves with ranks 0–1 afterwards. A naive implementation
+    // using plain assignment (hardest = techniqueRank(d.kind)) would report 0,
+    // the rank of the last deduction. This fixture asserts the correct answer:
+    // the hardest technique actually needed, not the final one applied.
+    const mediumPuzzle = parse(
+      "5..6.89......9534...8..2.6.8..7.1.2...6.5.....1.............2....74....53.5..6..9"
+    );
+    expect(hardestRank(mediumPuzzle)).toBe(2);
+    expect(gradeGrid(mediumPuzzle)).toBe("medium");
+  });
 });
 
 describe("gradeGrid", () => {
