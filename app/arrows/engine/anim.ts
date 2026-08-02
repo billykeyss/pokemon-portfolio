@@ -1,5 +1,5 @@
 import { ease, timelineAt, timelineDuration, type Phase } from "@/app/game/_shared/phases";
-import type { Arrow } from "./types";
+import { DIRS, type Arrow } from "./types";
 
 export type FlightPhase = "wind" | "fly";
 
@@ -95,4 +95,71 @@ export function rebuffGlow(t: number): number {
   if (t < 0 || t >= REBUFF_DURATION) return 0;
   const u = t / REBUFF_DURATION;
   return 1 - u;
+}
+
+/** A position on the board in cell coordinates, allowed to be fractional. */
+export interface TrackPoint {
+  row: number;
+  col: number;
+}
+
+/** Cells of run-up padded behind the tail, covering the wind-up recoil. */
+export const TRACK_PAD = 2;
+
+/**
+ * The arrow's own route, padded at both ends.
+ *
+ * An arrow is a winding track, and releasing it slides that track forward along
+ * *itself* — the tail retraces whatever bends the head went through. Sampling
+ * positions from this path is what produces that; translating every cell by one
+ * shared vector instead makes a bent arrow drift sideways out of its own
+ * corridor, which is both wrong and the thing that reads as cheap.
+ *
+ * Padded behind the tail so the recoil has somewhere to go, and well past the
+ * head so the whole body can clear the board.
+ */
+export function flightTrack(arrow: Arrow, ahead: number): TrackPoint[] {
+  const cells = arrow.cells;
+  const track: TrackPoint[] = [];
+
+  // Behind the tail, continuing the first segment backwards. A single-cell
+  // arrow has no segment, so it borrows the head's direction.
+  const back =
+    cells.length > 1
+      ? { dy: cells[0].row - cells[1].row, dx: cells[0].col - cells[1].col }
+      : { dy: -DIRS[arrow.dir].dy, dx: -DIRS[arrow.dir].dx };
+
+  for (let i = TRACK_PAD; i >= 1; i--) {
+    track.push({ row: cells[0].row + back.dy * i, col: cells[0].col + back.dx * i });
+  }
+
+  for (const cell of cells) track.push({ row: cell.row, col: cell.col });
+
+  // Past the head, straight out along the direction it points.
+  const head = cells[cells.length - 1];
+  const { dx, dy } = DIRS[arrow.dir];
+  for (let i = 1; i <= Math.max(1, Math.ceil(ahead)); i++) {
+    track.push({ row: head.row + dy * i, col: head.col + dx * i });
+  }
+
+  return track;
+}
+
+/**
+ * Sample a track at a fractional index, interpolating between its points.
+ * Clamps at both ends rather than extrapolating, so an offset past the padding
+ * parks at the last point instead of flying off to infinity.
+ */
+export function sampleTrack(track: TrackPoint[], at: number): TrackPoint {
+  if (track.length === 0) return { row: 0, col: 0 };
+
+  const clamped = Math.max(0, Math.min(track.length - 1, at));
+  const low = Math.floor(clamped);
+  const high = Math.min(track.length - 1, low + 1);
+  const f = clamped - low;
+
+  return {
+    row: track[low].row + (track[high].row - track[low].row) * f,
+    col: track[low].col + (track[high].col - track[low].col) * f,
+  };
 }

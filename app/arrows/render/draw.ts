@@ -1,8 +1,11 @@
 import {
   flightAlpha,
   flightOffset,
+  flightTrack,
   rebuffGlow,
   rebuffShake,
+  sampleTrack,
+  TRACK_PAD,
   type Flight,
   type Rebuff,
 } from "../engine/anim";
@@ -55,13 +58,28 @@ function drawTrack(
 ): void {
   const { dx, dy } = DIRS[arrow.dir];
   // Shake runs across the arrow's axis, so a refused arrow rocks sideways
-  // rather than nudging toward the exit it was just denied.
-  const shiftX = (dx * offsetCells - dy * shakeCells) * layout.cell;
-  const shiftY = (dy * offsetCells + dx * shakeCells) * layout.cell;
+  // rather than nudging toward the exit it was just denied. It stays a rigid
+  // jolt — the arrow is being stopped, not travelling anywhere.
+  const shakeX = -dy * shakeCells * layout.cell;
+  const shakeY = dx * shakeCells * layout.cell;
+
+  /**
+   * Each point rides the arrow's own route rather than every cell sharing one
+   * offset vector. On a bent arrow the two differ: sliding along the track
+   * takes the tail round the same corner the head turned, while a shared
+   * vector drags the whole shape sideways out of its corridor.
+   */
+  const track = flightTrack(arrow, Math.abs(offsetCells) + arrow.cells.length + 2);
 
   const centre = (index: number) => {
-    const rect = cellRect(layout, arrow.cells[index].row, arrow.cells[index].col);
-    return { x: rect.x + rect.w / 2 + shiftX, y: rect.y + rect.h / 2 + shiftY };
+    const at = sampleTrack(track, TRACK_PAD + index + offsetCells);
+    // cellRect wants whole cells; take cell (0,0) and shift by the fractional
+    // position, so a sample between two cells lands between them on screen.
+    const origin = cellRect(layout, 0, 0);
+    return {
+      x: origin.x + origin.w / 2 + at.col * layout.cell + shakeX,
+      y: origin.y + origin.h / 2 + at.row * layout.cell + shakeY,
+    };
   };
 
   const colour = glow > 0 ? BLOCKER : HUES[arrow.hue % HUES.length];
