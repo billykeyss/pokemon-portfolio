@@ -10,17 +10,26 @@ export interface SolveResult {
   passes: number;
 }
 
-/** Deduction only — never guesses, never backtracks. */
-const MAX_PASSES = 200;
-
 export function solve(puzzle: Puzzle): SolveResult {
   const { size } = puzzle;
+
+  /**
+   * Bounded by the cell count, not by a round number.
+   *
+   * A pass that changes nothing ends the loop, so every pass that continues has
+   * determined at least one cell — which bounds the useful passes by how many
+   * cells exist. A fixed 200 was below the 225 cells of the 15x15 tier this
+   * game ships, so a puzzle still making progress could be cut short and
+   * reported stalled: a fair picture wrongly failing the fairness gate.
+   */
+  const maxPasses = size * size + 1;
+
   const board: Board = new Uint8Array(size * size);
   const buffer = new Uint8Array(size);
 
   let passes = 0;
 
-  for (; passes < MAX_PASSES; passes++) {
+  for (; passes < maxPasses; passes++) {
     let changed = 0;
 
     for (let row = 0; row < size; row++) {

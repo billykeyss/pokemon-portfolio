@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { puzzleFrom } from "./clues";
 import { isLineSolvable, solve } from "./solve";
-import { FILLED, UNKNOWN, type Picture } from "./types";
+import { UNKNOWN, type Picture, type Puzzle } from "./types";
 
 const HEART: Picture = {
   id: "heart",
@@ -11,9 +11,15 @@ const HEART: Picture = {
 };
 
 /**
- * The smallest picture that is uniquely solvable but NOT line-solvable: two
- * diagonal pairs. Both diagonals satisfy every row and column clue, so no line
- * ever forces a cell and the player can only guess.
+ * Two solutions, so no line ever forces anything.
+ *
+ * Both diagonals satisfy every row and column clue, and the solver stalls with
+ * the whole board still unknown.
+ *
+ * This is ambiguity, which is not the subtler case the fairness bar also
+ * excludes: a puzzle with exactly one solution that still cannot be reached
+ * line by line. `isLineSolvable` rejects both, which is precisely why it is the
+ * bar rather than uniqueness.
  */
 const AMBIGUOUS: Picture = {
   id: "ambiguous",
@@ -47,6 +53,23 @@ describe("solve", () => {
 
   it("terminates", () => {
     expect(solve(puzzleFrom(HEART)).passes).toBeLessThan(100);
+  });
+
+  it("does not stall purely due to pass limit on larger puzzles", () => {
+    // Construct a 15x15 all-filled puzzle: trivially solvable in 1 pass,
+    // demonstrates the pass cap scales with board size.
+    const grid15 = Array(15).fill("#".repeat(15));
+    const puzzle15: Picture = {
+      id: "filled15",
+      name: "Filled 15x15",
+      colour: "#000000",
+      grid: grid15,
+    };
+    const result = solve(puzzleFrom(puzzle15));
+    // All filled means every cell is immediately forced, solves in 1 pass.
+    expect(result.status).toBe("solved");
+    // Passes should be well under the 226 passes that size*size+1 would allow.
+    expect(result.passes).toBeLessThan(5);
   });
 });
 
