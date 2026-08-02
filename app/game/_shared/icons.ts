@@ -127,6 +127,33 @@ const CHRONICLE: PixelSprite = {
   ],
 };
 
+/** A critter with its sword raised — the one cabinet where you do the swinging. */
+const CRITTER_KNIGHT: PixelSprite = {
+  palette: {
+    K: OUTLINE,
+    B: "#E05050",
+    D: "#9B3535",
+    W: "#FFFFFF",
+    E: "#141018",
+    S: "#D8D4E0",
+    G: "#7A5C3A",
+  },
+  grid: [
+    "..........S.",
+    ".........SS.",
+    "........SS..",
+    "..KKKK..S...",
+    ".KBBBBBBKG..",
+    "KBWEBBWEBK..",
+    "KBBBBBBBBK..",
+    "KBBBBBBBBK..",
+    ".KBDBBDBK...",
+    "..KKDDKK....",
+    "...KKKK.....",
+    "............",
+  ],
+};
+
 /** Keyed by the registry slug, so a cabinet finds its own badge. */
 export const GAME_ICONS: Record<string, PixelSprite> = {
   bouncedex: BOUNCEDEX,
@@ -135,4 +162,5 @@ export const GAME_ICONS: Record<string, PixelSprite> = {
   shelf: SHELF,
   arrows: ARROWS,
   chronicle: CHRONICLE,
+  "critter-knight": CRITTER_KNIGHT,
 };

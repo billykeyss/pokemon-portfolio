@@ -1,3 +1,5 @@
+import { levelProgress, waveProgress, type ProgressSource } from "./progress";
+
 export interface ArcadeGame {
   /** Stable id — used as a React key, never as a route fragment. */
   slug: string;
@@ -12,6 +14,8 @@ export interface ArcadeGame {
   /** Hex colour for the cabinet accent. */
   accent: string;
   available: boolean;
+  /** Where this cabinet reports your progress from, if it keeps any. */
+  progress?: ProgressSource;
 }
 
 /** Adding a game here is all it takes to list it on the dashboard. */
@@ -19,10 +23,11 @@ export const GAMES: readonly ArcadeGame[] = [
   {
     slug: "bouncedex",
     title: "BOUNCEDEX",
-    tagline: "Launch critters. Chain bounces. Defend the nest.",
+    tagline: "Launch critters. Chain the bounces.",
     href: "/bounce/bouncedex",
     accent: "#F8D030",
     available: true,
+    progress: waveProgress("bounce:bouncedex"),
   },
   {
     slug: "potion-sort",
@@ -31,6 +36,7 @@ export const GAMES: readonly ArcadeGame[] = [
     href: "/sort",
     accent: "#6890F0",
     available: true,
+    progress: levelProgress("game:sort"),
   },
   {
     slug: "traffic",
@@ -39,6 +45,7 @@ export const GAMES: readonly ArcadeGame[] = [
     href: "/traffic",
     accent: "#F08030",
     available: true,
+    progress: levelProgress("game:traffic"),
   },
   {
     slug: "shelf",
@@ -47,6 +54,7 @@ export const GAMES: readonly ArcadeGame[] = [
     href: "/shelf",
     accent: "#78C850",
     available: true,
+    progress: levelProgress("game:shelf"),
   },
   {
     slug: "arrows",
@@ -55,6 +63,7 @@ export const GAMES: readonly ArcadeGame[] = [
     href: "/arrows",
     accent: "#8FA8F0",
     available: true,
+    progress: levelProgress("game:arrows"),
   },
   {
     slug: "chronicle",
