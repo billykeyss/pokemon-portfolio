@@ -32,9 +32,12 @@ describe("flightPhases", () => {
     expect(flightDuration(6)).toBeGreaterThan(flightDuration(1));
   });
 
-  it("stays brisk even across a full board", () => {
-    // Every tap pays this; a board is cleared one arrow at a time.
-    expect(flightDuration(7)).toBeLessThan(0.4);
+  it("stays bounded even across a full board", () => {
+    // Deliberately unhurried — the flight is the payoff for reading the board
+    // right — but still bounded, because every tap pays it and a board is
+    // cleared one arrow at a time.
+    expect(flightDuration(7)).toBeLessThan(0.9);
+    expect(flightDuration(7)).toBeGreaterThan(0.5);
   });
 
   it("treats a zero-cell trip as one cell rather than an instant blink", () => {
@@ -62,6 +65,25 @@ describe("flightOffset", () => {
     expect(late).toBeGreaterThan(early);
   });
 
+  it("launches from where the recoil stopped, at the speed it stopped", () => {
+    // Position and velocity both continuous across the boundary. A mismatch
+    // here is a visible flick at exactly the moment the eye is on the arrow.
+    const phases = flightPhases(4);
+    const boundary = phases[0].dur;
+    const step = phases[1].dur / 400;
+
+    const before = flightOffset(at(boundary - step, 4));
+    const atBoundary = flightOffset(at(boundary, 4));
+    const after = flightOffset(at(boundary + step, 4));
+
+    expect(atBoundary).toBeCloseTo(before, 2);
+
+    // Speed either side of the seam, in cells per sample.
+    const incoming = atBoundary - before;
+    const outgoing = after - atBoundary;
+    expect(Math.abs(outgoing - incoming)).toBeLessThan(0.01);
+  });
+
   it("never moves backwards once it has launched", () => {
     const total = flightDuration(4);
     let previous = -Infinity;
@@ -80,6 +102,20 @@ describe("flightAlpha", () => {
 
   it("has faded out by the end", () => {
     expect(flightAlpha(at(flightDuration(3)))).toBeCloseTo(0);
+  });
+
+  it("eases into the fade rather than switching off", () => {
+    // Sampled across the fade, no single step may drop a large chunk of the
+    // opacity — that is what a linear fade starting at full rate looks like.
+    const total = flightDuration(4);
+    let previous = 1;
+    let biggestDrop = 0;
+    for (let t = 0; t <= total; t += total / 120) {
+      const a = flightAlpha(at(t, 4));
+      biggestDrop = Math.max(biggestDrop, previous - a);
+      previous = a;
+    }
+    expect(biggestDrop).toBeLessThan(0.06);
   });
 
   it("never leaves the range", () => {

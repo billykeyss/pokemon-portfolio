@@ -17,9 +17,14 @@ export interface Rebuff {
   t: number;
 }
 
-const WIND = 0.07;
-const FLY_BASE = 0.12;
-const FLY_PER_CELL = 0.028;
+const WIND = 0.11;
+const FLY_BASE = 0.22;
+const FLY_PER_CELL = 0.06;
+
+/** Cells the arrow pulls back before it goes. */
+const RECOIL = 0.22;
+/** Fraction of the flight spent at full opacity before the fade begins. */
+const FADE_START = 0.6;
 
 export const REBUFF_DURATION = 0.42;
 
@@ -56,19 +61,37 @@ export function isFlightDone(flight: Flight): boolean {
  */
 export function flightOffset(flight: Flight): number {
   const at = timelineAt(flightPhases(flight.distance), flight.t);
-  if (at.name === "wind") return -0.22 * ease(at.u);
 
-  // Accelerating rather than eased: it is leaving, not arriving. Overshoot the
-  // edge so it is fully clear of the board before it stops being drawn.
-  const u = at.u * at.u;
-  return -0.22 * (1 - at.u) + u * (flight.distance + 2);
+  // The wind-up eases to a stop at full recoil.
+  if (at.name === "wind") return -RECOIL * ease(at.u);
+
+  /**
+   * Launch picks up exactly where the recoil stopped — same position *and*
+   * same speed, which is zero.
+   *
+   * The previous curve carried a separate linear term that unwound the recoil,
+   * so the arrow was already drifting forward the instant the wind-up ended
+   * while the wind-up itself had eased to a halt. That mismatch is a kink: a
+   * visible flick right at the moment the eye is on the arrow.
+   *
+   * Squared rather than eased, because it is leaving, not arriving — speed
+   * should still be climbing as it crosses the edge. Overshoot so the body is
+   * fully clear before it stops being drawn.
+   */
+  return -RECOIL + (RECOIL + flight.distance + 2) * at.u * at.u;
 }
 
 /** Fades out over the back half of the flight. */
 export function flightAlpha(flight: Flight): number {
   const at = timelineAt(flightPhases(flight.distance), flight.t);
   if (at.name === "wind") return 1;
-  return at.u < 0.55 ? 1 : Math.max(0, 1 - (at.u - 0.55) / 0.45);
+  if (at.u < FADE_START) return 1;
+
+  // Smoothstep rather than linear: a linear fade begins at full rate the
+  // instant it starts, which reads as the arrow being switched off partway
+  // out. This eases in and out of the fade at both ends.
+  const f = (at.u - FADE_START) / (1 - FADE_START);
+  return Math.max(0, 1 - f * f * (3 - 2 * f));
 }
 
 export function startRebuff(id: number, blockerId: number): Rebuff {
