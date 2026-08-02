@@ -73,20 +73,32 @@ describe("solveLine", () => {
     const N = 8;
     const clues: Clue[] = [[], [1], [3], [8], [1, 1], [2, 3], [1, 1, 1], [2, 1, 2]];
 
+    // Track patterns to verify the generator produces diversity.
+    const patterns = new Set<string>();
+    let contradictions = 0;
+    let allUnknownCount = 0;
+
     for (const clue of clues) {
       // 3^N partial lines is too many; sample deterministically instead.
       for (let seed = 0; seed < 400; seed++) {
         const known = new Uint8Array(N);
-        let s = seed * 2654435761;
+        // Use Math.imul to keep intermediate values in 32-bit range and avoid loss of precision.
+        let s = Math.imul(seed + 1, 2654435761) >>> 0;
         for (let i = 0; i < N; i++) {
-          s = (s ^ (s >>> 13)) * 1274126177;
+          s ^= s >>> 13;
+          s = Math.imul(s, 1274126177) >>> 0;
           known[i] = [UNKNOWN, UNKNOWN, FILLED, BLANK][(s >>> 3) & 3];
         }
+
+        // Record this pattern for diversity assertions.
+        patterns.add([...known].join(","));
+        if (known.every((v) => v === UNKNOWN)) allUnknownCount++;
 
         const expected = forcedByBruteForce(known, clue);
         const actual = solveLine(known, clue);
 
         if (expected === null) {
+          contradictions++;
           expect(actual.status).toBe("contradiction");
         } else {
           expect(actual.status).toBe("ok");
@@ -95,5 +107,50 @@ describe("solveLine", () => {
         }
       }
     }
+
+    // Generator must produce diverse patterns to exercise the solver meaningfully.
+    // Across 8 clues and 400 seeds each (3200 total), expect >200 distinct patterns.
+    expect(patterns.size).toBeGreaterThanOrEqual(200);
+    // All-unknown lines should not dominate; if generator collapses, this fails.
+    // Expect ~1.3% at most, well below 10% of 3200 total generations.
+    expect(allUnknownCount).toBeLessThan(3200 * 0.1);
+    // The solver must handle contradictions, so the sample must reach them.
+    expect(contradictions).toBeGreaterThan(0);
+  });
+
+  it("agrees with brute force at larger width (12 cells)", () => {
+    const N = 12;
+    // Test a couple of representative clues at larger width.
+    const clues: Clue[] = [[2, 3], [1, 1, 1, 1]];
+
+    let contradictions = 0;
+
+    for (const clue of clues) {
+      // Sample 200 seeds at N=12; brute force is still cheap (4096 masks per seed).
+      for (let seed = 0; seed < 200; seed++) {
+        const known = new Uint8Array(N);
+        let s = Math.imul(seed + 1, 2654435761) >>> 0;
+        for (let i = 0; i < N; i++) {
+          s ^= s >>> 13;
+          s = Math.imul(s, 1274126177) >>> 0;
+          known[i] = [UNKNOWN, UNKNOWN, FILLED, BLANK][(s >>> 3) & 3];
+        }
+
+        const expected = forcedByBruteForce(known, clue);
+        const actual = solveLine(known, clue);
+
+        if (expected === null) {
+          contradictions++;
+          expect(actual.status).toBe("contradiction");
+        } else {
+          expect(actual.status).toBe("ok");
+          if (actual.status !== "ok") continue;
+          expect([...actual.line]).toEqual([...expected]);
+        }
+      }
+    }
+
+    // At width 12, contradictions are still reachable.
+    expect(contradictions).toBeGreaterThan(0);
   });
 });
