@@ -11,8 +11,10 @@ describe("levelCount", () => {
 });
 
 describe("puzzleForLevel", () => {
-  it("returns the same puzzle every call", () => {
-    expect(puzzleForLevel(2).id).toBe(puzzleForLevel(2).id);
+  it("returns the identical puzzle object every call", () => {
+    // Reference equality, not id equality: comparing ids would pass even if the
+    // cache were removed and every call rebuilt the puzzle from scratch.
+    expect(puzzleForLevel(2)).toBe(puzzleForLevel(2));
   });
 
   it("never shrinks as the level climbs", () => {
@@ -28,5 +30,9 @@ describe("puzzleForLevel", () => {
     expect(puzzleForLevel(0).id).toBe(puzzleForLevel(1).id);
     expect(puzzleForLevel(-5).id).toBe(puzzleForLevel(1).id);
     expect(puzzleForLevel(9999).id).toBe(puzzleForLevel(levelCount()).id);
+  });
+
+  it("falls back to level one for a level that is not a number", () => {
+    expect(puzzleForLevel(Number.NaN).id).toBe(puzzleForLevel(1).id);
   });
 });

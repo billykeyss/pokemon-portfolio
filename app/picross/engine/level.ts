@@ -20,7 +20,12 @@ export function levelCount(): number {
 }
 
 export function puzzleForLevel(level: number): Puzzle {
-  const n = Math.min(levelCount(), Math.max(1, Math.floor(level)));
+  // NaN survives every clamp — Math.floor(NaN), Math.max(1, NaN) and
+  // Math.min(n, NaN) are all NaN — and would then index the array out of
+  // bounds and throw. Every other extreme (+/-Infinity, 0, negatives, huge
+  // values) clamps correctly, so NaN is the one case worth rejecting up front.
+  const requested = Number.isFinite(level) ? Math.floor(level) : 1;
+  const n = Math.min(levelCount(), Math.max(1, requested));
 
   const cached = cache.get(n);
   if (cached !== undefined) return cached;
