@@ -35,6 +35,20 @@ const SAMPLES: Deduction[] = [
     covers: [{ kind: "col", index: 0 }, { kind: "col", index: 3 }],
     removes: [{ cell: 27, digit: 4 }],
   },
+  {
+    kind: "naked-subset",
+    cells: [9, 10, 11],
+    digits: [2, 5, 6],
+    unit: { kind: "row", index: 1 },
+    removes: [{ cell: 12, digit: 2 }, { cell: 13, digit: 5 }],
+  },
+  {
+    kind: "hidden-subset",
+    cells: [18, 19, 20],
+    digits: [4, 7, 9],
+    unit: { kind: "row", index: 2 },
+    removes: [{ cell: 18, digit: 3 }, { cell: 19, digit: 6 }],
+  },
 ];
 
 describe("cellName", () => {
@@ -175,6 +189,7 @@ describe("explain", () => {
 
   describe("naked-subset", () => {
     const pair = SAMPLES[3];
+    const triple = SAMPLES[6];
 
     it("uses correct headline for pair", () => {
       const e = explain(pair);
@@ -198,15 +213,46 @@ describe("explain", () => {
       expect(e.highlight.eliminated).toEqual([{ cell: 4, digit: 3 }]);
     });
 
-    it("mentions the digits in the body for pair", () => {
+    it("uses distinctive reasoning in body for pair", () => {
       const e = explain(pair);
-      expect(e.body).toContain("3");
-      expect(e.body).toContain("8");
+      expect(e.body).toContain("Between them they use all");
+    });
+
+    it("uses correct headline for triple", () => {
+      const e = explain(triple);
+      expect(e.headline).toBe("Naked triple");
+    });
+
+    it("has correct units and digits for triple", () => {
+      const e = explain(triple);
+      expect(e.highlight.units).toEqual([{ kind: "row", index: 1 }]);
+      expect(e.highlight.digits).toEqual([2, 5, 6]);
+    });
+
+    it("includes cells in highlight for triple", () => {
+      const e = explain(triple);
+      expect(e.highlight.cells).toContain(9);
+      expect(e.highlight.cells).toContain(10);
+      expect(e.highlight.cells).toContain(11);
+    });
+
+    it("carries removes to eliminated for triple", () => {
+      const e = explain(triple);
+      expect(e.highlight.eliminated).toEqual([
+        { cell: 12, digit: 2 },
+        { cell: 13, digit: 5 },
+      ]);
+    });
+
+    it("uses distinctive reasoning in body for triple", () => {
+      const e = explain(triple);
+      expect(e.body).toContain("Between them they use all");
     });
   });
 
   describe("hidden-subset", () => {
     const pair = SAMPLES[4];
+    const triple = SAMPLES[7];
 
     it("uses correct headline for pair", () => {
       const e = explain(pair);
@@ -230,10 +276,40 @@ describe("explain", () => {
       expect(e.highlight.eliminated).toEqual([{ cell: 0, digit: 5 }]);
     });
 
-    it("mentions the digits in the body for pair", () => {
+    it("uses distinctive reasoning in body for pair", () => {
       const e = explain(pair);
-      expect(e.body).toContain("1");
-      expect(e.body).toContain("2");
+      expect(e.body).toContain("Those cells have to take them");
+    });
+
+    it("uses correct headline for triple", () => {
+      const e = explain(triple);
+      expect(e.headline).toBe("Hidden triple");
+    });
+
+    it("has correct units and digits for triple", () => {
+      const e = explain(triple);
+      expect(e.highlight.units).toEqual([{ kind: "row", index: 2 }]);
+      expect(e.highlight.digits).toEqual([4, 7, 9]);
+    });
+
+    it("includes cells in highlight for triple", () => {
+      const e = explain(triple);
+      expect(e.highlight.cells).toContain(18);
+      expect(e.highlight.cells).toContain(19);
+      expect(e.highlight.cells).toContain(20);
+    });
+
+    it("carries removes to eliminated for triple", () => {
+      const e = explain(triple);
+      expect(e.highlight.eliminated).toEqual([
+        { cell: 18, digit: 3 },
+        { cell: 19, digit: 6 },
+      ]);
+    });
+
+    it("uses distinctive reasoning in body for triple", () => {
+      const e = explain(triple);
+      expect(e.body).toContain("Those cells have to take them");
     });
   });
 
