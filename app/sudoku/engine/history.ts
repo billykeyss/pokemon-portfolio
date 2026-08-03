@@ -1,16 +1,27 @@
 import type { Cell, Digit, Idx } from "./types";
 
 /**
- * A single undoable step. Placements and strike toggles are different shapes
- * of change — a Cell value versus one digit's struck flag in a cell's mark
- * mask — so this is a discriminated union rather than one shape wide enough
- * for both. `record`, `undo` and `redo` below never look inside a `Change`;
- * they move whichever one they are given, so a new kind only ever costs a
- * variant here, never a rewrite of the stack mechanics.
+ * A single undoable step. A placement, a strike toggle and an auto-finish's
+ * bundle of placements are different shapes of change — a Cell value, one
+ * digit's struck flag in a cell's mark mask, and a list of cell/before/after
+ * triples respectively — so this is a discriminated union rather than one
+ * shape wide enough for all three. `record`, `undo` and `redo` below never
+ * look inside a `Change`; they move whichever one they are given, so a new
+ * kind only ever costs a variant here, never a rewrite of the stack
+ * mechanics.
  */
 export type Change =
   | { kind: "place"; index: Idx; before: Cell; after: Cell }
-  | { kind: "strike"; index: Idx; digit: Digit; before: boolean; after: boolean };
+  | { kind: "strike"; index: Idx; digit: Digit; before: boolean; after: boolean }
+  | {
+      kind: "auto-finish";
+      /**
+       * Every cell auto-finish filled, bundled into the one step an undo
+       * should reverse — a player who undoes an auto-finish lands back before
+       * it entirely, not partway through it.
+       */
+      placements: { index: Idx; before: Cell; after: Cell }[];
+    };
 
 export interface History {
   past: Change[];

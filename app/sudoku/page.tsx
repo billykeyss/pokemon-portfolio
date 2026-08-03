@@ -26,6 +26,7 @@ import { SudokuBoard } from "./ui/Board";
 import { HintPanel } from "./ui/HintPanel";
 import { Keypad } from "./ui/Keypad";
 import { TierSelect } from "./ui/TierSelect";
+import { autoFinishable } from "./ui/autoFinish";
 import { highlightMap } from "./ui/highlight";
 import { actionForKey, keypadAction, movedIndex } from "./ui/keys";
 
@@ -33,6 +34,12 @@ const clock = (ms: number): string => {
   const total = Math.floor(ms / 1000);
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
 };
+
+// How far apart each auto-finish cell lands. Several short steps rather than
+// one jump is what makes the board read as finishing itself rather than as a
+// frame skipping — see the effect below. Kept well under a second so it never
+// reads as the game making the player wait.
+const AUTO_FINISH_STEP_MS = 90;
 
 export default function SudokuPage() {
   const [save, setSave] = useState<SudokuSave>(defaultSudokuSave);
@@ -58,6 +65,11 @@ export default function SudokuPage() {
   // — see the effect below for why. Reset on every deal, not derived from
   // `entries`, so undoing back to an empty board does not un-commit them.
   const [engaged, setEngaged] = useState(false);
+  // Whether an auto-finish reveal is currently staggering its fills onto the
+  // board. Gates the same controls `busy` gates, for the same reason: Undo,
+  // Redo and dealing a new puzzle all act on a board an auto-finish is still
+  // mid-write to.
+  const [autoFinishing, setAutoFinishing] = useState(false);
 
   const seedRef = useRef(1);
   // Which dealt puzzle the stats effect has already recorded a solve for, so
@@ -73,6 +85,11 @@ export default function SudokuPage() {
     frame: null,
     timer: null,
   });
+  // Mirrors `autoFinishing`, but readable synchronously inside the effect
+  // that starts a reveal — the state update it also makes is for the buttons
+  // it disables, and only takes effect on the next render.
+  const autoFinishingRef = useRef(false);
+  const autoFinishTimersRef = useRef<number[]>([]);
 
   const cancelSchedule = useCallback(() => {
     const s = scheduleRef.current;
@@ -82,7 +99,21 @@ export default function SudokuPage() {
     s.timer = null;
   }, []);
 
+  // Stops a reveal's remaining timers from landing on whatever board is on
+  // screen by the time they fire. Without this, dealing a new puzzle while an
+  // auto-finish is still staggering would leave its stale timers free to
+  // write leftover digits from the old puzzle into the new one's entries —
+  // the functional setBoard updates below always target whatever board is
+  // current, old or new.
+  const cancelAutoFinish = useCallback(() => {
+    for (const t of autoFinishTimersRef.current) window.clearTimeout(t);
+    autoFinishTimersRef.current = [];
+    autoFinishingRef.current = false;
+    setAutoFinishing(false);
+  }, []);
+
   const deal = useCallback((puzzle: Puzzle, seed: number) => {
+    cancelAutoFinish();
     seedRef.current = seed;
     setBoard({ puzzle, entries: new Array(CELLS).fill(0) as Cell[] });
     setHistory(emptyHistory());
@@ -96,7 +127,7 @@ export default function SudokuPage() {
     setHint(null);
     setBusy(false);
     setEngaged(false);
-  }, []);
+  }, [cancelAutoFinish]);
 
   const startPuzzle = useCallback(
     (tier: Tier, seed: number) => {
@@ -146,6 +177,7 @@ export default function SudokuPage() {
   );
 
   useEffect(() => cancelSchedule, [cancelSchedule]);
+  useEffect(() => cancelAutoFinish, [cancelAutoFinish]);
 
   // Restore a board if one was left mid-solve, otherwise deal a fresh one.
   useEffect(() => {
@@ -323,6 +355,54 @@ export default function SudokuPage() {
     if (armed !== null && remaining[armed] === 0) setArmed(null);
   }, [armed, remaining]);
 
+  // "The mop-up at the end of a puzzle is typing, not thinking" — once at most
+  // AUTO_FINISH_MAX empty cells remain, every one of them has exactly one
+  // candidate, and nothing already on the board is wrong, there is no
+  // decision left for the player to make. Finish it for them.
+  //
+  // This re-runs after every board change, including the ones the reveal
+  // below makes to itself — autoFinishingRef is what stops that from
+  // retriggering mid-reveal. It needs no explicit reset: the last fill always
+  // leaves zero empty cells, and autoFinishable refuses to fire on those.
+  useEffect(() => {
+    if (board === null || busy || autoFinishingRef.current) return;
+    const placements = autoFinishable(board, candidates);
+    if (placements === null) return;
+
+    autoFinishingRef.current = true;
+    setAutoFinishing(true);
+    setEngaged(true);
+    // One record for the whole reveal, taken up front — a player who undoes
+    // lands back before the auto-finish entirely, not partway through it. The
+    // staggered setBoard calls below are a display effect layered on top;
+    // nothing about them touches history.
+    setHistory((h) =>
+      record(h, {
+        kind: "auto-finish",
+        placements: placements.map((p) => ({ index: p.cell, before: 0, after: p.digit })),
+      }),
+    );
+
+    placements.forEach((p, i) => {
+      const timer = window.setTimeout(
+        () => {
+          setBoard((b) => {
+            if (b === null) return b;
+            const entries = [...b.entries] as Cell[];
+            entries[p.cell] = p.digit;
+            return { ...b, entries };
+          });
+          if (i === placements.length - 1) {
+            autoFinishingRef.current = false;
+            setAutoFinishing(false);
+          }
+        },
+        (i + 1) * AUTO_FINISH_STEP_MS,
+      );
+      autoFinishTimersRef.current.push(timer);
+    });
+  }, [board, candidates, busy]);
+
   const place = useCallback(
     (index: Idx, digit: Cell) => {
       if (board === null) return;
@@ -389,24 +469,33 @@ export default function SudokuPage() {
 
   // Replays one Change in either direction. Undo and redo differ only in
   // which side of the Change they read, so both funnel through here rather
-  // than duplicating the place/strike dispatch twice.
+  // than duplicating the place/strike/auto-finish dispatch twice.
   const applyChange = useCallback((change: Change, dir: "before" | "after") => {
-    if (change.kind === "place") {
-      const value = dir === "before" ? change.before : change.after;
-      setBoard((b) => {
-        if (b === null) return b;
-        const entries = [...b.entries] as Cell[];
-        entries[change.index] = value;
-        return { ...b, entries };
-      });
-      // Same reasoning as the live path in `place`: marks are never touched
-      // by a placement, replayed or not. Undoing a fill has to bring the
-      // player's strikes straight back, and it does — for free, once nothing
-      // ever clears them.
+    if (change.kind === "strike") {
+      const on = dir === "before" ? change.before : change.after;
+      setMarks((m) => setStrike(m, change.index, change.digit, on));
       return;
     }
-    const on = dir === "before" ? change.before : change.after;
-    setMarks((m) => setStrike(m, change.index, change.digit, on));
+
+    // A "place" is a single-cell write; an "auto-finish" is the same write
+    // repeated for every cell it filled. Reducing both to one write-list
+    // means undoing or redoing the several cells an auto-finish touched is
+    // exactly as atomic as undoing one placement — a single setBoard call,
+    // not one per cell.
+    const writes =
+      change.kind === "place"
+        ? [{ index: change.index, before: change.before, after: change.after }]
+        : change.placements;
+    setBoard((b) => {
+      if (b === null) return b;
+      const entries = [...b.entries] as Cell[];
+      for (const w of writes) entries[w.index] = dir === "before" ? w.before : w.after;
+      return { ...b, entries };
+    });
+    // Same reasoning as the live path in `place`: marks are never touched by
+    // a placement, replayed or not, single or bundled. Undoing a fill has to
+    // bring the player's strikes straight back, and it does — for free, once
+    // nothing ever clears them.
   }, []);
 
   const doUndo = useCallback(() => {
@@ -465,9 +554,10 @@ export default function SudokuPage() {
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      // A deal in flight is about to replace the board; a keypress landing in
-      // that window would be applied to a position on its way out.
-      if (board === null || busy) return;
+      // A deal in flight is about to replace the board, and an auto-finish
+      // reveal is still writing to it — either way, a keypress landing in
+      // that window would be applied to a position on its way out from under it.
+      if (board === null || busy || autoFinishing) return;
 
       const action = actionForKey(event.key, event.shiftKey);
       if (action === null) return;
@@ -521,7 +611,7 @@ export default function SudokuPage() {
 
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [board, busy, selected, markMode, place, strike, doUndo, doRedo]);
+  }, [board, busy, autoFinishing, selected, markMode, place, strike, doUndo, doRedo]);
 
   if (board === null) {
     return (
@@ -600,7 +690,7 @@ export default function SudokuPage() {
           <button
             type="button"
             onClick={() => setShowTiers(true)}
-            disabled={busy}
+            disabled={busy || autoFinishing}
             className="underline decoration-dotted underline-offset-4 disabled:no-underline disabled:opacity-40"
           >
             {board.puzzle.tier}
@@ -611,20 +701,21 @@ export default function SudokuPage() {
         </div>
 
         {/* Everything here acts on the board about to be replaced, so all four
-            go down together while a puzzle is being built. */}
+            go down together while a puzzle is being built or an auto-finish
+            reveal is still writing to it. */}
         <div className="grid grid-cols-4 gap-2">
-          <PixelButton onClick={doUndo} disabled={busy} className="!px-1 !py-2 text-[10px]">
+          <PixelButton onClick={doUndo} disabled={busy || autoFinishing} className="!px-1 !py-2 text-[10px]">
             Undo
           </PixelButton>
-          <PixelButton onClick={doRedo} disabled={busy} className="!px-1 !py-2 text-[10px]">
+          <PixelButton onClick={doRedo} disabled={busy || autoFinishing} className="!px-1 !py-2 text-[10px]">
             Redo
           </PixelButton>
-          <PixelButton onClick={showHint} disabled={busy} className="!px-1 !py-2 text-[10px]">
+          <PixelButton onClick={showHint} disabled={busy || autoFinishing} className="!px-1 !py-2 text-[10px]">
             Hint
           </PixelButton>
           <PixelButton
             onClick={() => startPuzzle(board.puzzle.tier, seedRef.current + 1)}
-            disabled={busy}
+            disabled={busy || autoFinishing}
             className="!px-1 !py-2 text-[10px]"
           >
             {busy ? "…" : "New"}

@@ -114,4 +114,46 @@ describe("history", () => {
 
     expect(undo(u4.history)).toBeNull();
   });
+
+  it("undoes an auto-finish's several placements in one step, not one per cell", () => {
+    // The whole point of bundling auto-finish into a single Change: if a
+    // caller instead pushed one "place" per cell, `past` would hold N entries
+    // here instead of one, and undoing once would only revert the last of
+    // them — leaving the player partway through the auto-finish rather than
+    // back where they were before it.
+    const placements = [
+      { index: 4, before: 0 as const, after: 6 as const },
+      { index: 5, before: 0 as const, after: 1 as const },
+      { index: 6, before: 0 as const, after: 3 as const },
+    ];
+    const h = record(emptyHistory(), { kind: "auto-finish", placements });
+    expect(h.past).toHaveLength(1);
+
+    const back = undo(h)!;
+    expect(back.change).toEqual({ kind: "auto-finish", placements });
+    expect(back.history.past).toHaveLength(0);
+    // Nothing left to undo: no per-cell entries were ever pushed alongside it.
+    expect(undo(back.history)).toBeNull();
+
+    const forward = redo(back.history)!;
+    expect(forward.change).toEqual({ kind: "auto-finish", placements });
+    expect(redo(forward.history)).toBeNull();
+  });
+
+  it("does not conflate an auto-finish with a place or a strike sitting next to it", () => {
+    let h = record(emptyHistory(), { kind: "place", index: 0, before: 0, after: 9 });
+    h = record(h, {
+      kind: "auto-finish",
+      placements: [{ index: 1, before: 0, after: 2 }],
+    });
+    h = record(h, { kind: "strike", index: 3, digit: 5, before: false, after: true });
+
+    const u1 = undo(h)!;
+    expect(u1.change.kind).toBe("strike");
+    const u2 = undo(u1.history)!;
+    expect(u2.change.kind).toBe("auto-finish");
+    const u3 = undo(u2.history)!;
+    expect(u3.change).toEqual({ kind: "place", index: 0, before: 0, after: 9 });
+    expect(undo(u3.history)).toBeNull();
+  });
 });
