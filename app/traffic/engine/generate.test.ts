@@ -88,13 +88,20 @@ describe("paramsForLevel", () => {
     expect(paramsForLevel(13).vehicles).toBe(12);
   });
 
-  it("keeps the search budget small enough to hide behind play", () => {
-    // The next board is built on the main thread while this one is played, so
-    // the budget is bounded by how long a freeze is tolerable, not by patience.
+  it("bounds the search budget by the one wait a player can see", () => {
+    // Generation is in a worker, so the budget no longer trades against a
+    // freeze. What bounds it is jumping to an unbuilt level from level select,
+    // which is the only case where the build is not hidden behind play.
     for (const n of [1, 20, 500]) {
-      expect(paramsForLevel(n).attempts ?? 0).toBeLessThanOrEqual(16);
+      expect(paramsForLevel(n).attempts ?? 0).toBeLessThanOrEqual(30);
       expect(paramsForLevel(n).attempts ?? 0).toBeGreaterThan(0);
     }
+  });
+
+  it("spends less on early levels, which are not prefetched yet", () => {
+    expect(paramsForLevel(1).attempts ?? 0).toBeLessThan(
+      paramsForLevel(30).attempts ?? 0,
+    );
   });
 
   it("keeps generating past the point the dials stop moving", () => {

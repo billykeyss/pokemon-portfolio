@@ -1,7 +1,7 @@
 import { makeRng, type Rng } from "@/app/game/_shared/rng";
 import { fitsOnBoard, isSolved, overlaps } from "./rules";
 import { isSolvable, parWithin } from "./solve";
-import { PLAYER_ID, type Board, type LevelParams, type Vehicle } from "./types";
+import { exitRowFor, PLAYER_ID, type Board, type LevelParams, type Vehicle } from "./types";
 
 /**
  * Total boards to try. Every attempt costs a breadth-first search, so this is
@@ -174,7 +174,7 @@ function layout(params: LevelParams, exitRow: number, rng: Rng): Board | null {
  */
 export function generate(params: LevelParams, seed: number): Board {
   const rng = makeRng(seed);
-  const exitRow = Math.floor(params.size / 2) - 1;
+  const exitRow = exitRowFor(params.size);
 
   let best: Board | null = null;
   let bestPar = 1;

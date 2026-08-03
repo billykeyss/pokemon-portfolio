@@ -13,7 +13,8 @@ import {
   startSlide,
   type Slide,
 } from "./engine/anim";
-import { levelFor, paramsForLevel } from "./engine/level";
+import { blankBoard, paramsForLevel } from "./engine/level";
+import { LevelSource } from "./engine/levelSource";
 import {
   applyMove,
   cloneBoard,
@@ -43,7 +44,13 @@ export default function TrafficPage() {
 
   const [save, setSave] = useState<TrafficSave>(defaultTrafficSave);
   const [loaded, setLoaded] = useState(false);
-  const [board, setBoard] = useState<Board>(() => cloneBoard(levelFor(1)));
+  /**
+   * Empty until a board arrives. Generation is off the main thread now, so
+   * there is a moment on first load with nothing to draw — which is the price
+   * of never freezing the board mid-play.
+   */
+  const [board, setBoard] = useState<Board>(() => blankBoard(1));
+  const [building, setBuilding] = useState(true);
   const [history, setHistory] = useState<Board[]>([]);
   const [selected, setSelected] = useState<number | null>(null);
   const [moves, setMoves] = useState(0);
@@ -70,11 +77,33 @@ export default function TrafficPage() {
     setSelected(id);
   }, []);
 
+  const sourceRef = useRef<LevelSource | null>(null);
+  if (sourceRef.current === null && typeof window !== "undefined") {
+    sourceRef.current = new LevelSource();
+  }
+
+  useEffect(() => () => sourceRef.current?.dispose(), []);
+
   useEffect(() => {
     const restored = loadTrafficSave(window.localStorage);
     setSave(restored);
-    setBoard(cloneBoard(levelFor(restored.level)));
     setLoaded(true);
+
+    let live = true;
+    setBuilding(true);
+    sourceRef.current?.request(restored.level).then((first) => {
+      if (!live) return;
+      const copy = cloneBoard(first);
+      // Synchronously, because the render loop reads the ref and would
+      // otherwise judge the empty placeholder as a solved board.
+      boardRef.current = copy;
+      setBoard(copy);
+      setBuilding(false);
+    });
+
+    return () => {
+      live = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -90,7 +119,7 @@ export default function TrafficPage() {
    */
   useEffect(() => {
     if (!loaded) return;
-    const timer = window.setTimeout(() => levelFor(save.level + 1), 400);
+    const timer = window.setTimeout(() => sourceRef.current?.prefetch(save.level + 1), 400);
     return () => window.clearTimeout(timer);
   }, [save.level, loaded]);
 
@@ -100,12 +129,35 @@ export default function TrafficPage() {
     hintRef.current = null;
 
     setBusy(false);
-    setBoard(cloneBoard(levelFor(level)));
     setHistory([]);
     select(null);
     setMoves(0);
     setWon(false);
     setSave((s) => ({ ...s, level, best: Math.max(s.best, level) }));
+
+    const prepared = sourceRef.current?.ready(level) ?? null;
+    if (prepared !== null) {
+      // Prefetched: swap straight in, no visible gap.
+      const copy = cloneBoard(prepared);
+      boardRef.current = copy;
+      setBoard(copy);
+      setBuilding(false);
+      return;
+    }
+
+    // Not prefetched — a jump from level select, usually. Blank the board so
+    // the previous level is not left on screen looking playable.
+    const empty = blankBoard(level);
+    boardRef.current = empty;
+    setBoard(empty);
+    setBuilding(true);
+
+    sourceRef.current?.request(level).then((next) => {
+      const copy = cloneBoard(next);
+      boardRef.current = copy;
+      setBoard(copy);
+      setBuilding(false);
+    });
   }, [select]);
 
   const commitMove = useCallback((move: Move) => {
@@ -126,7 +178,7 @@ export default function TrafficPage() {
 
   const onPointerDown = useCallback(
     (event: React.PointerEvent<HTMLCanvasElement>) => {
-      if (slideRef.current !== null || won || showLevels) return;
+      if (slideRef.current !== null || won || showLevels || building) return;
 
       const canvas = canvasRef.current;
       if (canvas === null) return;
@@ -187,7 +239,7 @@ export default function TrafficPage() {
 
       commitMove({ id: chosen, delta });
     },
-    [commitMove, select, showLevels, won],
+    [building, commitMove, select, showLevels, won],
   );
 
   const step = useCallback(() => {
@@ -307,7 +359,12 @@ export default function TrafficPage() {
           </span>
         </div>
 
-        <PixelPanel className="!p-2">
+        <PixelPanel className="relative !p-2">
+          {building && (
+            <span className="absolute inset-0 z-10 flex items-center justify-center text-[10px] uppercase tracking-widest opacity-60">
+              Building level…
+            </span>
+          )}
           <canvas
             ref={canvasRef}
             onPointerDown={onPointerDown}

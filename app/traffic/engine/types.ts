@@ -42,3 +42,14 @@ export interface LevelParams {
 }
 
 export const PLAYER_ID = 0;
+
+/**
+ * Row the player's car escapes along.
+ *
+ * Lives here rather than beside the generator so both the generator and the
+ * placeholder a page shows while a board is building can derive it without the
+ * two modules importing each other.
+ */
+export function exitRowFor(size: number): number {
+  return Math.floor(size / 2) - 1;
+}
