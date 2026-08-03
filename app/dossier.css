@@ -3807,15 +3807,12 @@ footer .footer-ball {
 }
 */
 
-/* The arcade is the one nav item that leaves the dossier, so it reads as a
-   destination rather than another anchor on this page. */
+/* The arcade is the one nav item that leaves the dossier. It used to say so by
+   restyling the pill — a thinner border, tighter padding and its own hover —
+   which just made it look like a different component that had wandered into
+   the row. It now inherits the pill exactly; the ▸ in the label is what marks
+   it as a destination, and one glyph carries that better than a shape nobody
+   can compare against without the others beside it. */
 .strip-links .strip-arcade {
-  border: 1px solid currentColor;
-  border-radius: 999px;
-  padding: 0.15em 0.7em;
   white-space: nowrap;
-}
-.strip-links .strip-arcade:hover {
-  background: currentColor;
-  color: var(--background, #fff);
 }
