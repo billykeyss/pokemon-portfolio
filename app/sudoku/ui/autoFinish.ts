@@ -1,6 +1,6 @@
 import { soleDigit, valueAt, type Mask } from "../engine/candidates";
 import { CELLS } from "../engine/grid";
-import type { Board, Digit, Idx } from "../engine/types";
+import type { Board, Digit, Idx, Puzzle } from "../engine/types";
 
 /**
  * How few empty cells left counts as "the mop-up" rather than "the puzzle".
@@ -55,4 +55,33 @@ export function autoFinishable(board: Board, candidates: Mask[]): AutoFinishPlac
     placements.push({ cell, digit });
   }
   return placements;
+}
+
+/**
+ * Whether auto-finish should act on this board right now: `autoFinishable`'s
+ * placement decision, gated to fire at most once per dealt puzzle.
+ *
+ * Without this gate, undo accomplishes nothing at the one moment it is used
+ * here. Reverting an auto-finish's placements lands the board back in the
+ * exact state that qualified it, and a trigger that only reads board state
+ * would fire again immediately — silently discarding the intent behind the
+ * press. The player asked for that board back; "nothing is left to work out"
+ * being still true is exactly why undo has to win, not a reason to override
+ * it.
+ *
+ * `firedFor` is the puzzle auto-finish has already completed, or null —
+ * typically a ref the caller owns, the same pattern `recordedPuzzleRef`
+ * already uses for solve-stats idempotency. Compared by reference rather
+ * than value: `puzzleFor` returns a fresh `Puzzle` on every deal and every
+ * restore, so this only ever suppresses a re-fire on the exact same dealt
+ * puzzle — a new deal is always live, and the guard clears itself for free
+ * without needing an explicit reset.
+ */
+export function autoFinishTrigger(
+  board: Board,
+  candidates: Mask[],
+  firedFor: Puzzle | null,
+): AutoFinishPlacement[] | null {
+  if (firedFor === board.puzzle) return null;
+  return autoFinishable(board, candidates);
 }

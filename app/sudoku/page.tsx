@@ -26,7 +26,7 @@ import { SudokuBoard } from "./ui/Board";
 import { HintPanel } from "./ui/HintPanel";
 import { Keypad } from "./ui/Keypad";
 import { TierSelect } from "./ui/TierSelect";
-import { autoFinishable } from "./ui/autoFinish";
+import { autoFinishTrigger } from "./ui/autoFinish";
 import { highlightMap } from "./ui/highlight";
 import { actionForKey, keypadAction, movedIndex } from "./ui/keys";
 
@@ -77,6 +77,12 @@ export default function SudokuPage() {
   // Compared by reference: a fresh deal (or a restore) always produces a new
   // `Puzzle` object, so the guard clears itself for free on the next puzzle.
   const recordedPuzzleRef = useRef<Puzzle | null>(null);
+  // Which dealt puzzle auto-finish has already fired for, so undoing it does
+  // not hand the still-qualifying board straight back to the trigger — undo
+  // has to win over "nothing is left to work out," not lose to it. Same
+  // reference-comparison reasoning as `recordedPuzzleRef` above, and the same
+  // free reset on the next puzzle.
+  const autoFinishedPuzzleRef = useRef<Puzzle | null>(null);
   // The next puzzle for the current tier, built during play. Tagged with what
   // it is a puzzle *of*, so a tier change or a seed skip falls through to a
   // fresh generation instead of dealing the wrong board.
@@ -362,13 +368,18 @@ export default function SudokuPage() {
   //
   // This re-runs after every board change, including the ones the reveal
   // below makes to itself — autoFinishingRef is what stops that from
-  // retriggering mid-reveal. It needs no explicit reset: the last fill always
-  // leaves zero empty cells, and autoFinishable refuses to fire on those.
+  // retriggering mid-reveal, and autoFinishedPuzzleRef is what stops it from
+  // firing a second time on this same puzzle once undo hands the trigger the
+  // exact board that qualified it in the first place. Neither ref needs an
+  // explicit reset: the last fill always leaves zero empty cells (so
+  // autoFinishTrigger refuses on its own), and a new deal is always a new
+  // `Puzzle` object.
   useEffect(() => {
     if (board === null || busy || autoFinishingRef.current) return;
-    const placements = autoFinishable(board, candidates);
+    const placements = autoFinishTrigger(board, candidates, autoFinishedPuzzleRef.current);
     if (placements === null) return;
 
+    autoFinishedPuzzleRef.current = board.puzzle;
     autoFinishingRef.current = true;
     setAutoFinishing(true);
     setEngaged(true);

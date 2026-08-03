@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { bit, type Mask } from "../engine/candidates";
 import type { Board, Cell, Digit, Grid, Puzzle } from "../engine/types";
-import { AUTO_FINISH_MAX, autoFinishable } from "./autoFinish";
+import { AUTO_FINISH_MAX, autoFinishTrigger, autoFinishable } from "./autoFinish";
 
 const parse = (s: string): Grid =>
   [...s.replaceAll(/[^0-9.]/g, "")].map((c) => (c === "." ? 0 : Number(c)) as Cell);
@@ -123,5 +123,61 @@ describe("autoFinishable", () => {
     // or as a wrong entry.
     const b = makeBoard([0]);
     for (let i = 1; i < 81; i++) expect(b.puzzle.givens[i]).toBe(SOLUTION[i]);
+  });
+});
+
+describe("autoFinishTrigger", () => {
+  it("fires when nothing has fired for this puzzle yet", () => {
+    const empties = [0, 1];
+    const b = makeBoard(empties);
+    const cands = singletonCandidates(empties);
+    expect(autoFinishTrigger(b, cands, null)).toEqual(
+      empties.map((cell) => ({ cell, digit: SOLUTION[cell] })),
+    );
+  });
+
+  it("fires the exact fire-then-undo sequence once, then refuses to re-fire", () => {
+    // This is the scenario the gate exists for: auto-finish fires, the
+    // player undoes it — landing back on the identical board, same Puzzle
+    // object, same candidates, still qualifying — and the trigger must not
+    // immediately hand the same placements back. Undo said "put that back";
+    // "nothing is left to work out" being still true is not permission to
+    // override that.
+    const empties = [18, 40, 65];
+    const b = makeBoard(empties);
+    const cands = singletonCandidates(empties);
+
+    const first = autoFinishTrigger(b, cands, null);
+    expect(first).toEqual(empties.map((cell) => ({ cell, digit: SOLUTION[cell] })));
+
+    // The caller records `b.puzzle` as fired-for right after the first call,
+    // then undo (which never touches `board.puzzle`) leaves the exact same
+    // board and candidates in front of the trigger a second time.
+    const second = autoFinishTrigger(b, cands, b.puzzle);
+    expect(second).toBeNull();
+  });
+
+  it("fires again for a different Puzzle object, even one built the same way", () => {
+    // Compared by reference, not value: puzzleFor returns a fresh Puzzle on
+    // every deal, so a new deal must always be able to auto-finish even if
+    // its content happens to be identical to a previous one.
+    const empties = [0, 1];
+    const b = makeBoard(empties);
+    const cands = singletonCandidates(empties);
+    const differentPuzzleSameContent: Puzzle = { ...b.puzzle };
+    expect(autoFinishTrigger(b, cands, differentPuzzleSameContent)).toEqual(
+      empties.map((cell) => ({ cell, digit: SOLUTION[cell] })),
+    );
+  });
+
+  it("still defers to autoFinishable's own refusals — the once-per-puzzle gate does not paper over them", () => {
+    // Not firing here is autoFinishable's wrong-entry guard, not the gate
+    // this function adds; the gate must not be the only thing standing
+    // between a mistake and an auto-fill.
+    const empties = [0, 1];
+    const wrong = otherDigit(SOLUTION[2] as number);
+    const b = makeBoard([...empties, 2], { 2: wrong });
+    const cands = singletonCandidates(empties);
+    expect(autoFinishTrigger(b, cands, null)).toBeNull();
   });
 });
