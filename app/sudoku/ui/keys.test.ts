@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { colOf, rowOf } from "../engine/grid";
-import { actionForKey, keypadAction, movedIndex } from "./keys";
+import { actionForKey, inputStatus, keypadAction, movedIndex } from "./keys";
 
 describe("actionForKey", () => {
   it("maps every digit key to its digit", () => {
@@ -143,5 +143,41 @@ describe("keypadAction", () => {
     // on the board that cannot be filled this way.
     expect(keypadAction(3, 0, false).kind).toBe("place");
     expect(keypadAction(3, 0, true).kind).toBe("strike");
+  });
+});
+
+describe("inputStatus", () => {
+  const name = (i: number) => `r${Math.floor(i / 9) + 1}c${(i % 9) + 1}`;
+
+  it("names the armed digit and says taps will place it", () => {
+    expect(inputStatus(null, 5, false, name)).toBe("5 armed — tap cells to place it");
+  });
+
+  it("names the selected cell and says taps will fill it", () => {
+    expect(inputStatus(40, null, false, name)).toBe("r5c5 — tap a number to fill it");
+  });
+
+  it("invites either direction when neither is chosen", () => {
+    expect(inputStatus(null, null, false, name)).toBe("Tap a cell, or a number to arm it");
+  });
+
+  it("says striking, not filling, in mark mode", () => {
+    // The whole point of the line: the same tap does something different here,
+    // and nothing else on screen distinguishes the two.
+    expect(inputStatus(40, null, true, name)).toBe(
+      "Marking r5c5 — tap a number to cross it off",
+    );
+  });
+
+  it("asks for a cell first in mark mode, since there is no digit-first strike", () => {
+    expect(inputStatus(null, null, true, name)).toBe("Marking — tap a cell first");
+  });
+
+  it("lets mark mode win over an armed digit, since that is what a tap will do", () => {
+    expect(inputStatus(null, 5, true, name)).toBe("Marking — tap a cell first");
+  });
+
+  it("distinguishes the two non-mark directions — the mix-up this exists to stop", () => {
+    expect(inputStatus(null, 5, false, name)).not.toBe(inputStatus(40, null, false, name));
   });
 });

@@ -95,3 +95,33 @@ export function movedIndex(from: Idx, delta: number): Idx | null {
   if ((delta === -1 || delta === 1) && rowOf(next) !== rowOf(from)) return null;
   return next;
 }
+
+/**
+ * One line naming what the next tap will do.
+ *
+ * The board switches input direction implicitly: arm a digit and taps paint it
+ * across cells, select a cell and taps fill that one, and mark mode redirects a
+ * tap to a strike. Implicit switching is the right behaviour — an explicit mode
+ * selector would cost a tap every turn — but with nothing naming the current
+ * state the two directions are easy to confuse, and guessing wrong puts a digit
+ * in the wrong square.
+ *
+ * `selected` and `armed` are mutually exclusive by construction: arming clears
+ * the selection, and a tap on a cell while armed places rather than selects. So
+ * exactly one branch below is ever live.
+ */
+export function inputStatus(
+  selected: Idx | null,
+  armed: Digit | null,
+  markMode: boolean,
+  nameOf: (i: Idx) => string,
+): string {
+  if (markMode) {
+    return selected === null
+      ? "Marking — tap a cell first"
+      : `Marking ${nameOf(selected)} — tap a number to cross it off`;
+  }
+  if (armed !== null) return `${armed} armed — tap cells to place it`;
+  if (selected !== null) return `${nameOf(selected)} — tap a number to fill it`;
+  return "Tap a cell, or a number to arm it";
+}

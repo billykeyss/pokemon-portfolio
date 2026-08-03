@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PixelButton, PixelPanel } from "@/app/game/_shared/pixel-ui";
 import { allCandidates, mergedGrid, valueAt } from "./engine/candidates";
-import { explain, type Explanation } from "./engine/explain";
+import { cellName, explain, type Explanation } from "./engine/explain";
 import { CELLS } from "./engine/grid";
 import { emptyHistory, record, redo, undo, type Change, type History } from "./engine/history";
 import { puzzleFor } from "./engine/generate";
@@ -28,7 +28,7 @@ import { Keypad } from "./ui/Keypad";
 import { TierSelect } from "./ui/TierSelect";
 import { autoFinishTrigger } from "./ui/autoFinish";
 import { highlightMap } from "./ui/highlight";
-import { actionForKey, keypadAction, movedIndex } from "./ui/keys";
+import { actionForKey, inputStatus, keypadAction, movedIndex } from "./ui/keys";
 
 const clock = (ms: number): string => {
   const total = Math.floor(ms / 1000);
@@ -667,6 +667,19 @@ export default function SudokuPage() {
           highlights={highlights}
           onPick={onPick}
         />
+
+        {/* The board switches input direction implicitly — arm a digit and taps
+            paint it, select a cell and taps fill it — which is the right
+            behaviour but leaves the two easy to confuse, and guessing wrong
+            puts a digit in the wrong square. This says which one is live. Sits
+            between the board and the keypad because that is the gap the eye
+            crosses while deciding what to tap. */}
+        <p
+          aria-live="polite"
+          className="text-center text-[10px] uppercase tracking-widest text-[#f8f0e0] opacity-60"
+        >
+          {inputStatus(selected, armed, markMode, cellName)}
+        </p>
 
         <Keypad
           remaining={remaining}
