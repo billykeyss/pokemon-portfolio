@@ -57,6 +57,16 @@ export default function PicrossPage() {
   const revealRef = useRef(0);
   const refusedRef = useRef<{ row: number; col: number; t: number } | null>(null);
   const paintingRef = useRef<number | null>(null);
+  /**
+   * The cell painted most recently in this stroke.
+   *
+   * A pointermove arrives for the same cell the pointerdown just handled, and a
+   * refusal leaves no board change behind for the `!== UNKNOWN` guard to catch,
+   * so without this a single refused tap counted as two misses.
+   */
+  const lastCellRef = useRef<number | null>(null);
+  /** Canvas-space position of the previous pointer sample, for interpolation. */
+  const lastPointRef = useRef<{ x: number; y: number } | null>(null);
 
   const install = useCallback((level: number, restored: Board | null) => {
     const next = puzzleForLevel(level);
@@ -125,6 +135,13 @@ export default function PicrossPage() {
     const active = puzzleRef.current;
     const index = row * active.size + col;
 
+    // An immediate repeat of the last cell touched in this stroke is a
+    // resampled pointer event, not a new visit — skip it so a refusal isn't
+    // double-counted. A later, distinct revisit of the same cell (crossed,
+    // left, then crossed again) is not caught here, by design.
+    if (lastCellRef.current === index) return;
+    lastCellRef.current = index;
+
     if (current[index] !== UNKNOWN) return;
 
     if (modeRef.current === "mark") {
@@ -149,6 +166,7 @@ export default function PicrossPage() {
     setBoard(next);
   }, []);
 
+  /** Canvas-space (not client-space) position of a pointer event. */
   const pointFrom = useCallback((event: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (canvas === null) return null;
@@ -156,35 +174,70 @@ export default function PicrossPage() {
     const rect = canvas.getBoundingClientRect();
     const x = ((event.clientX - rect.left) / rect.width) * canvas.width;
     const y = ((event.clientY - rect.top) / rect.height) * canvas.height;
+    return { x, y };
+  }, []);
 
-    const layout = layoutPuzzle(puzzleRef.current, canvas.width, canvas.height);
-    return cellAt(layout, x, y);
+  const currentLayout = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (canvas === null) return null;
+    return layoutPuzzle(puzzleRef.current, canvas.width, canvas.height);
   }, []);
 
   const onPointerDown = useCallback(
     (event: React.PointerEvent<HTMLCanvasElement>) => {
       if (wonRef.current || showLevels) return;
-      const cell = pointFrom(event);
+      const point = pointFrom(event);
+      const layout = currentLayout();
+      if (point === null || layout === null) return;
+
+      const cell = cellAt(layout, point.x, point.y);
       if (cell === null) return;
 
       event.currentTarget.setPointerCapture(event.pointerId);
       paintingRef.current = event.pointerId;
+      lastPointRef.current = point;
+      // Null, not carried over: a fresh tap landing on the same cell a prior
+      // stroke ended on must still register as a new visit.
+      lastCellRef.current = null;
       paint(cell.row, cell.col);
     },
-    [paint, pointFrom, showLevels],
+    [paint, pointFrom, currentLayout, showLevels],
   );
 
   const onPointerMove = useCallback(
     (event: React.PointerEvent<HTMLCanvasElement>) => {
       if (paintingRef.current !== event.pointerId) return;
-      const cell = pointFrom(event);
-      if (cell !== null) paint(cell.row, cell.col);
+      const point = pointFrom(event);
+      const layout = currentLayout();
+      if (point === null || layout === null) return;
+
+      const from = lastPointRef.current ?? point;
+      const dx = point.x - from.x;
+      const dy = point.y - from.y;
+      const distance = Math.hypot(dx, dy);
+
+      // Pointer events are sampled, not continuous: a fast drag can jump
+      // several cells between two samples. Walking the path in thirds of a
+      // cell and painting every cell crossed keeps a quick swipe from
+      // skipping cells it visibly passed over.
+      const step = Math.max(1, layout.cell / 3);
+      const steps = Math.max(1, Math.ceil(distance / step));
+
+      for (let i = 1; i <= steps; i++) {
+        const t = i / steps;
+        const cell = cellAt(layout, from.x + dx * t, from.y + dy * t);
+        if (cell !== null) paint(cell.row, cell.col);
+      }
+
+      lastPointRef.current = point;
     },
-    [paint, pointFrom],
+    [paint, pointFrom, currentLayout],
   );
 
   const endStroke = useCallback(() => {
     paintingRef.current = null;
+    lastCellRef.current = null;
+    lastPointRef.current = null;
   }, []);
 
   const step = useCallback(() => {
