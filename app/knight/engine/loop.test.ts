@@ -3,6 +3,7 @@ import type { World } from "./world";
 import { createWorld, spawnHero, spawnEnemy, heroOf, stepWorld } from "./world";
 import type { Entity } from "./types";
 import { SWING_REACH, IFRAME_TICKS } from "./combat";
+import { levelFor } from "./level";
 import { GRUNT } from "../data/enemies";
 
 const arena = { width: 360, height: 560 };
@@ -57,28 +58,16 @@ function idealBotStep(world: World): void {
 }
 
 describe("whole-loop: an ideal player", () => {
-  it("clears a wave of grunts at real HP without dying", () => {
-    const w = createWorld({ arena, seed: 1 });
-    const hero = spawnHero(w, { x: arena.width / 2, y: arena.height - 90 });
-    // Two grunts side by side, one further back. Close enough together that
-    // fighting one lets the other bump the hero from a different angle —
-    // producing real knockback mid-fight, not just during approach — while
-    // still winnable by a bot this simple. Slice 1's actual room
-    // (app/knight/page.tsx's WAVE) throws all five enemies at the hero at
-    // once from every side, which a no-kiting bot this simple cannot be
-    // expected to out-tactic; that is a room-design question for later
-    // slices, not what this test is checking. This test's job is narrower:
-    // can the hero fight and win at all, with real facing and real HP, once
-    // combat actually connects — including the knockback-then-swing
-    // sequence that is exactly Critical 1's failure mode. (Verified: with
-    // the auto-aim fix reverted, this exact scenario has the hero die with
-    // two grunts still alive — see final-fix-report.md.)
-    const starts = [
-      { x: 100, y: 150 },
-      { x: 260, y: 150 },
-      { x: 180, y: 60 },
-    ];
-    for (const pos of starts) spawnEnemy(w, pos, GRUNT.hp);
+  it("clears the opening room at real HP without dying", () => {
+    // The real level 1, not a hand-picked wave. A room the shipping game hands
+    // a new player has to be winnable by a bot with no kiting and no tactics —
+    // if this fails, level 1 is mistuned, which is exactly what this should
+    // catch. (Verified: with the auto-aim fix reverted, the hero dies here
+    // with enemies still standing — see final-fix-report.md.)
+    const room = levelFor(1);
+    const w = createWorld({ arena: room.arena, seed: 1 });
+    const hero = spawnHero(w, room.heroStart);
+    for (const pos of room.spawns) spawnEnemy(w, pos, room.enemyHp);
 
     const TICK_CAP = 120 * 60; // 60s at 120Hz — generous.
     let ticks = 0;

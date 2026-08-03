@@ -8,6 +8,8 @@ export interface Fx {
   y: number;
   /** Radians. Used by slashes to orient the arc. */
   angle: number;
+  /** Reach this slash was thrown with, so a powered-up arc draws wider. */
+  reach: number;
   tick: number;
 }
 

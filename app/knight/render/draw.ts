@@ -3,7 +3,7 @@ import type { Entity } from "../engine/types";
 import type { Fx } from "../engine/fx";
 import { FX_TICKS } from "../engine/fx";
 import { poseFor, shakeFrom } from "./anim";
-import { SWING_REACH, SWING_ARC } from "../engine/combat";
+import { SWING_ARC, reachOf } from "../engine/combat";
 import { GRUNT } from "../data/enemies";
 
 export interface DrawOptions {
@@ -73,11 +73,12 @@ function drawReach(ctx: CanvasRenderingContext2D, world: World): void {
   const hero = world.entities.find((e) => e.kind === "hero" && e.deadAtTick < 0);
   if (!hero) return;
 
+  const reach = reachOf(world);
   const armed = world.entities.some(
     (e) =>
       e.kind === "enemy" &&
       e.deadAtTick < 0 &&
-      Math.hypot(e.pos.x - hero.pos.x, e.pos.y - hero.pos.y) <= SWING_REACH + e.radius,
+      Math.hypot(e.pos.x - hero.pos.x, e.pos.y - hero.pos.y) <= reach + e.radius,
   );
 
   ctx.save();
@@ -85,7 +86,7 @@ function drawReach(ctx: CanvasRenderingContext2D, world: World): void {
   ctx.lineWidth = armed ? 2 : 1;
   ctx.strokeStyle = armed ? "rgba(248,240,224,0.5)" : "rgba(160,148,196,0.22)";
   ctx.beginPath();
-  ctx.arc(px(hero.pos.x), px(hero.pos.y), SWING_REACH, 0, Math.PI * 2);
+  ctx.arc(px(hero.pos.x), px(hero.pos.y), reach, 0, Math.PI * 2);
   ctx.stroke();
   ctx.restore();
 }
@@ -198,7 +199,7 @@ function drawFx(ctx: CanvasRenderingContext2D, f: Fx, tick: number): void {
     ctx.strokeStyle = "#f8f0e0";
     ctx.lineWidth = 4 * (1 - t) + 1;
     ctx.beginPath();
-    ctx.arc(f.x, f.y, SWING_REACH * (0.5 + t * 0.5), f.angle - SWING_ARC / 2, f.angle + SWING_ARC / 2);
+    ctx.arc(f.x, f.y, f.reach * (0.5 + t * 0.5), f.angle - SWING_ARC / 2, f.angle + SWING_ARC / 2);
     ctx.stroke();
   } else if (f.kind === "impact") {
     ctx.fillStyle = "#F8D030";

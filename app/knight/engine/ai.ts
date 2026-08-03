@@ -64,6 +64,7 @@ export function applyTouchDamage(world: World, def: EnemyDef): void {
       x: hero.pos.x,
       y: hero.pos.y,
       angle: 0,
+      reach: 0,
       tick: world.tick,
     });
     world.lastHitTick = world.tick;

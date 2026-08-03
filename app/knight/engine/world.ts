@@ -1,7 +1,7 @@
 import type { Arena, Entity, Vec2 } from "./types";
 import { steerHero } from "./move";
 import type { SwingHit } from "./combat";
-import { updateAttack, IFRAME_TICKS, ENEMY_IFRAME_TICKS } from "./combat";
+import { updateAttack, reachOf, IFRAME_TICKS, ENEMY_IFRAME_TICKS } from "./combat";
 import { steerEnemy, applyTouchDamage } from "./ai";
 import { GRUNT } from "../data/enemies";
 import type { Fx } from "./fx";
@@ -17,6 +17,19 @@ const HERO_RADIUS = 12;
 const HERO_HP = 5;
 const ENEMY_RADIUS = 11;
 
+/**
+ * What a run has earned. Kept on the world so the simulation is the single
+ * source of truth and a headless harness can play a powered-up run.
+ */
+export interface RunMods {
+  /** Extra swing reach in pixels, granted by clearing levels. */
+  reachBonus: number;
+}
+
+export function defaultMods(): RunMods {
+  return { reachBonus: 0 };
+}
+
 export interface World {
   tick: number;
   arena: Arena;
@@ -26,6 +39,7 @@ export interface World {
   over: boolean;
   /** Where the thumb is dragging the hero, in arena space, or null. */
   moveTarget: Vec2 | null;
+  mods: RunMods;
   /** Swing hits produced by the most recent step; the renderer drains this. */
   hits: SwingHit[];
   /** Short-lived visual effects. Owned by the sim so they survive the gap
@@ -44,6 +58,7 @@ export function createWorld(opts: { arena: Arena; seed: number }): World {
     rngSeed: opts.seed,
     over: false,
     moveTarget: null,
+    mods: defaultMods(),
     hits: [],
     fx: [],
     lastHitTick: -1,
@@ -125,6 +140,7 @@ export function stepWorld(world: World): void {
         x: e.pos.x + e.facing.x * 18,
         y: e.pos.y + e.facing.y * 18,
         angle: Math.atan2(e.facing.y, e.facing.x),
+        reach: reachOf(world),
         tick: world.tick,
       });
     }
@@ -136,6 +152,7 @@ export function stepWorld(world: World): void {
         x: target.pos.x,
         y: target.pos.y,
         angle: 0,
+        reach: 0,
         tick: world.tick,
       });
       world.lastHitTick = world.tick;

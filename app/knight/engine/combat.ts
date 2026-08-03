@@ -1,6 +1,5 @@
 import type { Entity } from "./types";
 import type { World } from "./world";
-import { isStandingStill } from "./move";
 
 /** Swing timing, in ticks at 120Hz. Wind-up is long enough to read as a tell. */
 export const WINDUP_TICKS = 14;
@@ -32,10 +31,10 @@ export const KNOCKBACK = 210;
 export const CONTACT_KNOCKBACK = 70;
 
 /** Distance-only reach test, ignoring facing. */
-export function inSwingRange(attacker: Entity, target: Entity): boolean {
+export function inSwingRange(attacker: Entity, target: Entity, reach = SWING_REACH): boolean {
   const dx = target.pos.x - attacker.pos.x;
   const dy = target.pos.y - attacker.pos.y;
-  return Math.hypot(dx, dy) <= SWING_REACH + target.radius;
+  return Math.hypot(dx, dy) <= reach + target.radius;
 }
 
 export interface SwingHit {
@@ -44,12 +43,17 @@ export interface SwingHit {
   killed: boolean;
 }
 
+/** The attacker's effective reach, including anything the run has earned. */
+export function reachOf(world: World): number {
+  return SWING_REACH + world.mods.reachBonus;
+}
+
 /** Whether `target` is inside `attacker`'s swing wedge. */
-export function inSwingArc(attacker: Entity, target: Entity): boolean {
+export function inSwingArc(attacker: Entity, target: Entity, reach = SWING_REACH): boolean {
   const dx = target.pos.x - attacker.pos.x;
   const dy = target.pos.y - attacker.pos.y;
   const dist = Math.hypot(dx, dy);
-  if (dist > SWING_REACH + target.radius) return false;
+  if (dist > reach + target.radius) return false;
 
   if (dist === 0) return true;
 
@@ -139,8 +143,12 @@ export function updateAttack(world: World, e: Entity): SwingHit[] {
 
   switch (e.attack.phase) {
     case "idle": {
-      // Stopping next to something is the whole input for attacking.
-      if (!isStandingStill(e)) break;
+      // Swing whenever something is in reach, moving or not.
+      //
+      // This replaces an earlier "stop to swing" rule. Stopping meant lifting
+      // your thumb, and since enemies chase you, the natural motion — hold and
+      // reposition — was exactly the motion that stopped you attacking.
+      // Spacing now costs you position rather than your attack.
       const foe = foeInReach(world, e);
       if (!foe) break;
       e.attack.phase = "windup";
@@ -176,8 +184,9 @@ export function updateAttack(world: World, e: Entity): SwingHit[] {
           // rejected the very enemy the swing was aimed at. Everything else
           // still has to be in front of you, so being surrounded stays
           // dangerous.
-          const locked = e.attack.targetId === target.id && inSwingRange(e, target);
-          if (!locked && !inSwingArc(e, target)) continue;
+          const reach = reachOf(world);
+          const locked = e.attack.targetId === target.id && inSwingRange(e, target, reach);
+          if (!locked && !inSwingArc(e, target, reach)) continue;
           if (!damageEntity(world, target, SWING_DAMAGE, e.pos.x, e.pos.y)) continue;
           hits.push({
             targetId: target.id,
