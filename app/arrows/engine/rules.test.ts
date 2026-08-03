@@ -11,8 +11,11 @@ import {
   freeArrows,
   isFree,
   isSolved,
+  isStuck,
   legalMoves,
   occupancy,
+  slideCells,
+  slideDistance,
 } from "./rules";
 import { headOf, type Arrow, type Board, type Cell, type Dir } from "./types";
 
@@ -138,9 +141,25 @@ describe("applyMove", () => {
     expect(before.arrows).toHaveLength(1);
   });
 
-  it("throws rather than releasing a blocked arrow", () => {
+  it("slides up to the blocker instead of refusing the tap", () => {
+    // One clear cell between them, so the tap is a move — just not an exit.
     const b = board([arrow(0, cells([2, 1]), E), arrow(1, cells([2, 3]), W)]);
+    const after = applyMove(b, { id: 0 });
+
+    expect(after.arrows).toHaveLength(2);
+    expect(arrowById(after, 0)?.cells).toEqual(cells([2, 2]));
+  });
+
+  it("throws only when the arrow is hard against something", () => {
+    const b = board([arrow(0, cells([2, 1]), E), arrow(1, cells([2, 2]), W)]);
     expect(() => applyMove(b, { id: 0 })).toThrow();
+  });
+
+  it("lets an arrow already on the edge leave, despite a zero-length run", () => {
+    // Its exit path is empty, which must not read as "cannot move".
+    const b = board([arrow(0, cells([2, 4]), E)]);
+    expect(canMove(b, { id: 0 })).toBe(true);
+    expect(applyMove(b, { id: 0 }).arrows).toHaveLength(0);
   });
 
   it("unblocks whatever the removed arrow was holding up", () => {
@@ -192,5 +211,105 @@ describe("arrowById / cloneBoard / coverage", () => {
     const copy = cloneBoard(b);
     copy.arrows[0].cells[0].row = 4;
     expect(b.arrows[0].cells[0].row).toBe(1);
+  });
+});
+
+describe("slideDistance", () => {
+  it("reports a clear run as an exit", () => {
+    const b = board([arrow(0, cells([2, 1]), E)]);
+    expect(slideDistance(b, 0).exits).toBe(true);
+  });
+
+  it("stops one short of a blocker", () => {
+    const b = board([arrow(0, cells([2, 1]), E), arrow(1, cells([2, 4]), W)]);
+    expect(slideDistance(b, 0)).toEqual({ cells: 2, exits: false });
+  });
+
+  it("is zero when hard against a neighbour", () => {
+    const b = board([arrow(0, cells([2, 1]), E), arrow(1, cells([2, 2]), W)]);
+    expect(slideDistance(b, 0)).toEqual({ cells: 0, exits: false });
+  });
+
+  it("is zero and not an exit for an arrow that does not exist", () => {
+    expect(slideDistance(board([]), 9)).toEqual({ cells: 0, exits: false });
+  });
+
+  it("ignores the arrow's own body", () => {
+    // A long track must not count its own cells as an obstruction.
+    const b = board([arrow(0, cells([2, 0], [2, 1], [2, 2]), E)]);
+    expect(slideDistance(b, 0).exits).toBe(true);
+  });
+});
+
+describe("slideCells", () => {
+  it("keeps the track the same length", () => {
+    const a = arrow(0, cells([2, 0], [2, 1], [2, 2]), E);
+    expect(slideCells(a, 2)).toHaveLength(3);
+  });
+
+  it("advances a straight arrow along its axis", () => {
+    const a = arrow(0, cells([2, 0], [2, 1]), E);
+    expect(slideCells(a, 2)).toEqual(cells([2, 2], [2, 3]));
+  });
+
+  it("straightens a bend as the body passes it", () => {
+    // East along row 2, then turning north up column 2. After two steps the
+    // whole body has cleared the corner and continues north.
+    const a = arrow(0, cells([2, 0], [2, 1], [2, 2], [1, 2]), N);
+    expect(slideCells(a, 2)).toEqual(cells([2, 2], [1, 2], [0, 2], [-1, 2]));
+  });
+
+  it("returns the track untouched for a zero or negative step", () => {
+    const a = arrow(0, cells([2, 0], [2, 1]), E);
+    expect(slideCells(a, 0)).toEqual(cells([2, 0], [2, 1]));
+    expect(slideCells(a, -3)).toEqual(cells([2, 0], [2, 1]));
+  });
+
+  it("does not mutate the arrow it was given", () => {
+    const a = arrow(0, cells([2, 0], [2, 1]), E);
+    slideCells(a, 2);
+    expect(a.cells).toEqual(cells([2, 0], [2, 1]));
+  });
+});
+
+describe("the mechanic is no longer confluent", () => {
+  it("a partial slide can block an arrow that was free before it", () => {
+    // Arrow 0 slides east and parks in column 2, straight across the path of
+    // arrow 2, which was clear to the north. This is the wedge the old rule
+    // made impossible, and the reason order now matters.
+    const b = board([
+      arrow(0, cells([2, 0]), E),
+      arrow(1, cells([2, 3]), W),
+      arrow(2, cells([4, 2]), N),
+    ]);
+
+    expect(isFree(b, 2)).toBe(true);
+
+    const after = applyMove(b, { id: 0 });
+    expect(arrowById(after, 0)?.cells).toEqual(cells([2, 2]));
+    expect(isFree(after, 2)).toBe(false);
+  });
+
+  it("counts a slider as a legal move even though it cannot leave", () => {
+    const b = board([arrow(0, cells([2, 1]), E), arrow(1, cells([2, 4]), W)]);
+    expect(freeArrows(b).map((a) => a.id)).not.toContain(0);
+    expect(legalMoves(b).map((m) => m.id)).toContain(0);
+  });
+});
+
+describe("isStuck", () => {
+  it("is false on a solved board", () => {
+    expect(isStuck(board([]))).toBe(false);
+  });
+
+  it("is false while anything can still move", () => {
+    expect(isStuck(board([arrow(0, cells([2, 1]), E)]))).toBe(false);
+  });
+
+  it("is true when every arrow is hard against another", () => {
+    // Two arrows nose to nose in the middle of the row, each facing the other,
+    // with nothing behind either to give them room.
+    const b = board([arrow(0, cells([2, 1]), E), arrow(1, cells([2, 2]), W)]);
+    expect(isStuck(b)).toBe(true);
   });
 });

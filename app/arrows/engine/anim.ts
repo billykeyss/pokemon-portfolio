@@ -5,8 +5,16 @@ export type FlightPhase = "wind" | "fly";
 
 export interface Flight {
   arrow: Arrow;
-  /** Cells travelled before leaving the board; longer trips take longer. */
+  /** Cells travelled. For an exit, the run to the edge; otherwise the slide. */
   distance: number;
+  /**
+   * Whether the arrow leaves the board or parks short of it.
+   *
+   * The two need different motion, not just different endpoints: one is a
+   * departure and should still be gaining speed as it crosses the edge, the
+   * other is an arrival and has to settle onto the cell it stops at.
+   */
+  exits: boolean;
   t: number;
 }
 
@@ -39,8 +47,8 @@ export function flightDuration(distance: number): number {
   return timelineDuration(flightPhases(distance));
 }
 
-export function startFlight(arrow: Arrow, distance: number): Flight {
-  return { arrow, distance, t: 0 };
+export function startFlight(arrow: Arrow, distance: number, exits = true): Flight {
+  return { arrow, distance, exits, t: 0 };
 }
 
 /** Returns a new Flight; the caller's copy is untouched. */
@@ -78,11 +86,24 @@ export function flightOffset(flight: Flight): number {
    * should still be climbing as it crosses the edge. Overshoot so the body is
    * fully clear before it stops being drawn.
    */
+  if (!flight.exits) {
+    /**
+     * A slide that stops has to *arrive*. Easing out lands it on the cell it
+     * parks at instead of slamming into the blocker, and it travels exactly
+     * its distance rather than overshooting — it is still on the board, and
+     * the cells it now occupies are the ones the rules just gave it.
+     */
+    return -RECOIL + (RECOIL + flight.distance) * ease(at.u);
+  }
+
   return -RECOIL + (RECOIL + flight.distance + 2) * at.u * at.u;
 }
 
 /** Fades out over the back half of the flight. */
 export function flightAlpha(flight: Flight): number {
+  // An arrow that parks is still on the board, so it never fades.
+  if (!flight.exits) return 1;
+
   const at = timelineAt(flightPhases(flight.distance), flight.t);
   if (at.name === "wind") return 1;
   if (at.u < FADE_START) return 1;

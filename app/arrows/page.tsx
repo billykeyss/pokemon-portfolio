@@ -24,6 +24,8 @@ import {
   coverage,
   exitPath,
   isSolved,
+  isStuck,
+  slideDistance,
 } from "./engine/rules";
 import {
   defaultArrowsSave,
@@ -56,6 +58,11 @@ export default function ArrowsPage() {
     size: paramsForLevel(1).size,
     arrows: [],
   }));
+  /**
+   * Snapshots for undo. A slide that parks can wedge the board, and the only
+   * other way back is Reset — which throws away every arrow already cleared.
+   */
+  const [history, setHistory] = useState<Board[]>([]);
   const [cleared, setCleared] = useState(0);
   const [misses, setMisses] = useState(0);
   const [won, setWon] = useState(false);
@@ -99,6 +106,7 @@ export default function ArrowsPage() {
     boardRef.current = next;
 
     setBoard(next);
+    setHistory([]);
     setMisses(0);
     setCleared(0);
     setWon(false);
@@ -125,21 +133,27 @@ export default function ArrowsPage() {
       const arrow = arrowAt(current, cell.row, cell.col);
       if (arrow === null) return;
 
-      const blocker = blockerOf(current, arrow.id);
-      if (blocker !== null) {
+      const slide = slideDistance(current, arrow.id);
+
+      // Only an arrow with nowhere at all to go is refused. Anything with room
+      // moves, even if it cannot leave — that is the whole mechanic.
+      if (!slide.exits && slide.cells === 0) {
+        const blocker = blockerOf(current, arrow.id);
         // A refused arrow calls out what stopped it. Telling the player only
         // that they were wrong teaches nothing; showing them the blocker is
         // what turns a lost heart into something they learn from.
-        rebuffRef.current = startRebuff(arrow.id, blocker.id);
+        if (blocker !== null) rebuffRef.current = startRebuff(arrow.id, blocker.id);
         setMisses((m) => m + 1);
         return;
       }
 
       // Logic commits now; the flight is presentation catching up.
-      flightRef.current = startFlight(arrow, exitPath(current, arrow).length);
+      const travel = slide.exits ? exitPath(current, arrow).length : slide.cells;
+      flightRef.current = startFlight(arrow, travel, slide.exits);
       rebuffRef.current = null;
+      setHistory((h) => [...h, cloneBoard(current)]);
       setBoard(applyMove(current, { id: arrow.id }));
-      setCleared((c) => c + 1);
+      if (slide.exits) setCleared((c) => c + 1);
     },
     [showLevels, won],
   );
@@ -224,6 +238,30 @@ export default function ArrowsPage() {
     });
   }, [won, misses]);
 
+  const undo = useCallback(() => {
+    setHistory((h) => {
+      if (h.length === 0) return h;
+
+      const previous = h[h.length - 1];
+      // Read the board being replaced before the ref is overwritten, or the
+      // comparison below is against itself and never fires.
+      const undoneAnExit = previous.arrows.length > boardRef.current.arrows.length;
+
+      flightRef.current = null;
+      rebuffRef.current = null;
+      // Synchronously for the same reason loadLevel is: a frame reading the
+      // stale ref would judge the restored board against the wrong state.
+      boardRef.current = previous;
+      setBoard(previous);
+      setWon(false);
+      // Cleared counts arrows that left, so it only winds back when the move
+      // being undone was an exit rather than a slide.
+      if (undoneAnExit) setCleared((c) => Math.max(0, c - 1));
+
+      return h.slice(0, -1);
+    });
+  }, []);
+
   const showHint = useCallback(() => {
     const move = solveHint(boardRef.current);
     if (move === null) return;
@@ -232,12 +270,14 @@ export default function ArrowsPage() {
     const arrow = current.arrows.find((a) => a.id === move.id);
     if (arrow === undefined) return;
 
-    flightRef.current = startFlight(arrow, exitPath(current, arrow).length);
+    flightRef.current = startFlight(arrow, exitPath(current, arrow).length, true);
     rebuffRef.current = null;
+    setHistory((h) => [...h, cloneBoard(current)]);
     setBoard(applyMove(current, move));
     setCleared((c) => c + 1);
   }, []);
 
+  const stuck = isStuck(board);
   const total = cleared + board.arrows.length;
   void coverage;
 
@@ -280,7 +320,14 @@ export default function ArrowsPage() {
             <span className="opacity-60">Best {save.best}</span>
           </div>
 
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-3 gap-2">
+            <PixelButton
+              onClick={undo}
+              disabled={history.length === 0 || won}
+              className="!px-1 !py-2 text-[10px]"
+            >
+              Undo
+            </PixelButton>
             <PixelButton
               onClick={() => loadLevel(save.level)}
               className="!px-1 !py-2 text-[10px]"
@@ -297,7 +344,9 @@ export default function ArrowsPage() {
           </div>
 
           <p className="text-center text-[10px] uppercase tracking-widest opacity-40">
-            Tap an arrow with a clear path out
+            {stuck
+              ? "Nothing can move — undo a slide"
+              : "Tap an arrow. A clear run leaves; otherwise it slides."}
           </p>
         </div>
 
