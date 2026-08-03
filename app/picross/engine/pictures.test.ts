@@ -44,4 +44,18 @@ describe("PICTURES", () => {
       ).toBe(true);
     }
   });
+
+  it("never leaves a whole row or column empty", () => {
+    // An empty line renders as a "0" clue and gives the player a strip of board
+    // that is never in play. It passes the solver and still wastes the grid.
+    for (const picture of PICTURES) {
+      const puzzle = puzzleFrom(picture);
+      expect(puzzle.rowClues.every((c) => c.length > 0), `${picture.id} row`).toBe(true);
+      expect(puzzle.colClues.every((c) => c.length > 0), `${picture.id} col`).toBe(true);
+    }
+  });
+
+  it("ships the full library, so the gate cannot pass vacuously", () => {
+    expect(PICTURES.length).toBe(20);
+  });
 });
