@@ -81,4 +81,33 @@ export const GAMES: readonly ArcadeGame[] = [
     accent: "#E05050",
     available: true,
   },
+  {
+    slug: "sudoku",
+    title: "SUDOKU",
+    tagline: "Notes write themselves. Hints explain.",
+    href: "/sudoku",
+    accent: "#A890F0",
+    available: true,
+    // Sudoku has no level and no best wave, so neither shared factory applies.
+    // The key is written as a literal, like every other cabinet's, rather than
+    // imported from the game — the registry should not depend on a game's
+    // internals to render a dashboard row.
+    progress: {
+      key: "game:sudoku",
+      summarize(save) {
+        if (typeof save !== "object" || save === null) return null;
+        const stats = (save as { stats?: unknown }).stats;
+        if (typeof stats !== "object" || stats === null) return null;
+
+        let solved = 0;
+        for (const entry of Object.values(stats as Record<string, unknown>)) {
+          const n = (entry as { solved?: unknown } | null)?.solved;
+          if (typeof n === "number" && Number.isFinite(n) && n > 0) {
+            solved += Math.floor(n);
+          }
+        }
+        return solved > 0 ? `${solved} solved` : null;
+      },
+    },
+  },
 ];

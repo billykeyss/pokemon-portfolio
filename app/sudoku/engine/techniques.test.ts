@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { ALL_DIGITS } from "./candidates";
 import {
+  applyToState,
   initState,
   nextDeductionIn,
   placementOf,
   techniqueRank,
+  type Deduction,
   type SolveState,
 } from "./techniques";
 import type { Cell, Grid } from "./types";
@@ -216,5 +218,39 @@ describe("x-wing", () => {
   it("is ranked hardest of the implemented techniques", () => {
     expect(techniqueRank("x-wing")).toBeGreaterThan(techniqueRank("hidden-subset"));
     expect(techniqueRank("x-wing")).toBeGreaterThan(techniqueRank("locked-candidates"));
+  });
+});
+
+describe("applyToState", () => {
+  it("places a single and reprunes the board", () => {
+    const s = initState(parse("12345678." + ".".repeat(72)));
+    applyToState(s, { kind: "naked-single", cell: 8, digit: 9 });
+    expect(s.grid[8]).toBe(9);
+    // 9 is gone from every peer of cell 8, because the recompute saw it land.
+    expect(s.cands[17] & (1 << 8)).toBe(0);
+  });
+
+  it("clears exactly the candidates an elimination-only deduction names", () => {
+    const s = stateWith();
+    applyToState(s, {
+      kind: "locked-candidates",
+      digit: 7,
+      box: { kind: "box", index: 0 },
+      line: { kind: "row", index: 0 },
+      cells: [0, 1],
+      removes: [{ cell: 5, digit: 7 }],
+    });
+    expect(s.cands[5] & (1 << 6)).toBe(0);
+    expect(s.cands[6] & (1 << 6)).not.toBe(0);
+  });
+
+  it("throws rather than no-op on a deduction that neither places nor eliminates", () => {
+    // hardestRank loops until the state stops changing and has no iteration
+    // cap, so a silent no-op here is an infinite loop inside generation — a
+    // hung tab with nothing to point at. Better a thrown error than that.
+    const s = stateWith();
+    expect(() =>
+      applyToState(s, { kind: "invented-technique" } as unknown as Deduction),
+    ).toThrow(/neither places nor eliminates/);
   });
 });

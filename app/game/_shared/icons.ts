@@ -154,6 +154,25 @@ const CRITTER_KNIGHT: PixelSprite = {
   ],
 };
 
+/** A 3x3 sudoku block, heavy-ruled, with two of its cells already filled. */
+const SUDOKU: PixelSprite = {
+  palette: { K: OUTLINE, G: "#EAE6F5", F: "#A890F0", H: "#D6C9FA" },
+  grid: [
+    "............",
+    ".KKKKKKKKKK.",
+    ".KHFKGGKGGK.",
+    ".KFFKGGKGGK.",
+    ".KKKKKKKKKK.",
+    ".KGGKGGKHFK.",
+    ".KGGKGGKFFK.",
+    ".KKKKKKKKKK.",
+    ".KGGKGGKGGK.",
+    ".KGGKGGKGGK.",
+    ".KKKKKKKKKK.",
+    "............",
+  ],
+};
+
 /** Keyed by the registry slug, so a cabinet finds its own badge. */
 export const GAME_ICONS: Record<string, PixelSprite> = {
   bouncedex: BOUNCEDEX,
@@ -163,4 +182,5 @@ export const GAME_ICONS: Record<string, PixelSprite> = {
   arrows: ARROWS,
   chronicle: CHRONICLE,
   "critter-knight": CRITTER_KNIGHT,
+  sudoku: SUDOKU,
 };

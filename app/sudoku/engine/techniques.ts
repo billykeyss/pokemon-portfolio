@@ -280,15 +280,35 @@ export function nextDeductionIn(s: SolveState): Deduction | null {
   );
 }
 
+function unhandled(d: never): never {
+  throw new Error(`applyToState: deduction neither places nor eliminates: ${JSON.stringify(d)}`);
+}
+
 export function applyToState(s: SolveState, d: Deduction): void {
-  const place = placementOf(d);
-  if (place !== null) {
-    s.grid[place.cell] = place.digit;
-    s.cands = candidatesForGrid(s.grid);
-    return;
-  }
-  if ("removes" in d) {
-    for (const e of d.removes) s.cands[e.cell] &= ~(1 << (e.digit - 1));
+  switch (d.kind) {
+    case "naked-single":
+    case "hidden-single":
+      s.grid[d.cell] = d.digit;
+      s.cands = candidatesForGrid(s.grid);
+      return;
+
+    case "locked-candidates":
+    case "naked-subset":
+    case "hidden-subset":
+    case "x-wing":
+      for (const e of d.removes) s.cands[e.cell] &= ~(1 << (e.digit - 1));
+      return;
+
+    // hardestRank's for(;;) has no iteration cap. It terminates only because
+    // every deduction either places a digit (monotonic, capped at 81) or
+    // clears a candidate bit (monotonic, capped at 729). A kind that did
+    // neither would leave the state byte-identical and spin that loop forever,
+    // hanging the tab mid-generation with no error to point at. The proof rested
+    // on a convention nothing enforced; this enforces it — at compile time for
+    // a variant added to the union, and loudly at runtime for one that slips
+    // past the type system.
+    default:
+      return unhandled(d);
   }
 }
 
