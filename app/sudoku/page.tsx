@@ -8,7 +8,7 @@ import { explain, type Explanation } from "./engine/explain";
 import { CELLS } from "./engine/grid";
 import { emptyHistory, record, redo, undo, type Change, type History } from "./engine/history";
 import { puzzleFor } from "./engine/generate";
-import { clearStrikesAt, emptyMarks, setStrike, toggleStrike, visibleMarks, type Marks } from "./engine/marks";
+import { emptyMarks, setStrike, toggleStrike, visibleMarks, type Marks } from "./engine/marks";
 import {
   decodeGrid,
   decodeMarks,
@@ -334,15 +334,15 @@ export default function SudokuPage() {
       const entries = [...board.entries] as Cell[];
       entries[index] = digit;
       setBoard({ ...board, entries });
-      // Filling a cell — with a digit, or back to empty — retires whatever
-      // was struck there. A strike is an opinion about which digits *could*
-      // still go here; once the cell holds an answer (right or wrong) or is
-      // cleared back to blank, that opinion has nothing left to be about.
-      // This is not itself an undo step, the same way the mistake count below
-      // is not: undoing the placement brings the digit back to `before`, not
-      // the marks back to what they were — one asymmetry the codebase already
-      // accepts elsewhere rather than a new one.
-      setMarks((m) => clearStrikesAt(m, index));
+      // Marks are left entirely alone here. Filling a cell already hides its
+      // strikes for free: `visibleMarks` intersects with the live candidate
+      // mask, and a filled cell's mask is always 0 — nothing to strike, so
+      // nothing renders. Clearing the stored bits on top of that would only
+      // destroy information that becomes relevant again the moment the cell
+      // empties, whether by erasing or by undoing this very placement. A
+      // strike records "I worked out this digit cannot go here"; that
+      // deduction does not stop being true because a different digit was
+      // tried and taken back.
       setHistory((h) => record(h, { kind: "place", index, before, after: digit }));
       setEngaged(true);
       if (digit !== 0 && digit !== board.puzzle.solution[index]) {
@@ -395,11 +395,10 @@ export default function SudokuPage() {
         entries[change.index] = value;
         return { ...b, entries };
       });
-      // A placement always retires that cell's strikes on the live path
-      // (see `place` above); replaying one has to match, or a redo could
-      // leave a struck mark stranded under a digit that was filled in a
-      // different session's undo/redo dance than the one that struck it.
-      setMarks((m) => clearStrikesAt(m, change.index));
+      // Same reasoning as the live path in `place`: marks are never touched
+      // by a placement, replayed or not. Undoing a fill has to bring the
+      // player's strikes straight back, and it does — for free, once nothing
+      // ever clears them.
       return;
     }
     const on = dir === "before" ? change.before : change.after;

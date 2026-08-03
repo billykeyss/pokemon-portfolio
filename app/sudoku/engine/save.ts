@@ -61,8 +61,12 @@ export function decodeGrid(text: string): Cell[] {
  */
 const MARK_HEX_DIGITS = 3;
 
+// Unreachable today — setStrike only ever sets single valid-digit bits, and
+// a malformed value would still get caught by isMarksText's length check on
+// the way back in — but it costs one `&` to make the encoder as defensive
+// about what it writes as decodeMarks already is about what it reads.
 export const encodeMarks = (marks: Marks): string =>
-  marks.map((m) => m.toString(16).padStart(MARK_HEX_DIGITS, "0")).join("");
+  marks.map((m) => (m & ALL_DIGITS).toString(16).padStart(MARK_HEX_DIGITS, "0")).join("");
 
 const isMarksText = (v: unknown): v is string =>
   typeof v === "string" &&

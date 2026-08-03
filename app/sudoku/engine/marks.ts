@@ -54,14 +54,6 @@ export function toggleStrike(
   return { marks: setStrike(marks, index, digit, after), before, after };
 }
 
-/** Filling a cell — with a digit, or back to empty — clears its strikes. */
-export function clearStrikesAt(marks: Marks, index: Idx): Marks {
-  if (marks[index] === 0) return marks;
-  const out = [...marks];
-  out[index] = 0;
-  return out;
-}
-
 /**
  * The strikes actually worth drawing: a mark on a digit that has since
  * fallen out of the candidate set (a peer claimed it) is moot rather than

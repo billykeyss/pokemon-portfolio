@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { ALL_DIGITS, bit } from "./candidates";
 import { CELLS } from "./grid";
-import { clearStrikesAt, emptyMarks, setStrike, toggleStrike, visibleMarks } from "./marks";
+import { emptyMarks, setStrike, toggleStrike, visibleMarks } from "./marks";
 
 describe("emptyMarks", () => {
   it("is 81 cells, all unstruck", () => {
@@ -78,27 +78,6 @@ describe("toggleStrike", () => {
   });
 });
 
-describe("clearStrikesAt", () => {
-  it("zeroes exactly the named cell", () => {
-    let m = setStrike(emptyMarks(), 5, 7, true);
-    m = setStrike(m, 6, 3, true);
-    const cleared = clearStrikesAt(m, 5);
-    expect(cleared[5]).toBe(0);
-    expect(cleared[6]).toBe(bit(3));
-  });
-
-  it("is a no-op on an already-clear cell", () => {
-    const m = emptyMarks();
-    expect(clearStrikesAt(m, 5)).toEqual(m);
-  });
-
-  it("does not mutate the array it is given", () => {
-    const before = setStrike(emptyMarks(), 5, 7, true);
-    clearStrikesAt(before, 5);
-    expect(before[5]).toBe(bit(7));
-  });
-});
-
 describe("visibleMarks", () => {
   it("keeps a struck digit that is still a live candidate", () => {
     expect(visibleMarks(bit(4), bit(4) | bit(6))).toBe(bit(4));
@@ -119,5 +98,33 @@ describe("visibleMarks", () => {
 
   it("shows nothing for a filled cell, whose candidate mask is always 0", () => {
     expect(visibleMarks(bit(4), 0)).toBe(0);
+  });
+});
+
+describe("the fill/undo lifecycle", () => {
+  it("keeps a strike alive under a placement — hidden while filled, back once emptied", () => {
+    // The regression this pins: strike a digit, place into that cell, undo
+    // the placement. The player's own deduction must still be there and
+    // still render. It survives with no help from marks.ts at all — a
+    // filled cell's candidate mask is always 0 (see candidatesForGrid), so
+    // `visibleMarks` already hides a struck digit the instant the cell is
+    // filled, with nothing stored ever touched. Undoing the fill is just the
+    // candidate mask going back to what it was; the stored strike was never
+    // gone, so it reappears with no special-casing anywhere.
+    const empty = emptyMarks();
+    const struck = toggleStrike(empty, 0, 4, ALL_DIGITS)!.marks;
+    expect(struck[0]).toBe(bit(4));
+
+    // Filled: page.tsx's place() never touches marks — nothing here calls
+    // anything on `struck`. The cell's own candidate mask is 0, same as
+    // candidatesForGrid produces for any occupied cell, so there is nothing
+    // to strike and nothing shows.
+    expect(visibleMarks(struck[0], 0)).toBe(0);
+    // The strike itself was never touched by the fill.
+    expect(struck[0]).toBe(bit(4));
+
+    // Undo (or an outright erase) returns the cell to empty, and its real
+    // candidate set — here, still every digit — comes back with it.
+    expect(visibleMarks(struck[0], ALL_DIGITS)).toBe(bit(4));
   });
 });
