@@ -3,7 +3,7 @@
 // Next.js emits content-hashed asset filenames that are unknown when this file
 // is written, so nothing here precaches a build's chunks by name — routes are
 // precached, and everything under them is cached as it is fetched.
-const CACHE_NAME = "arcade-v7";
+const CACHE_NAME = "arcade-v8";
 
 // Every route the arcade can land on. Precached together so a player who has
 // only ever opened one game can still reach the others with no connection.
@@ -69,12 +69,34 @@ async function networkFirst(request) {
   }
 }
 
+/**
+ * Precache one URL, tolerating anything that goes wrong with it.
+ *
+ * Deliberately fetch-then-put rather than `cache.add`. `add` rejects outright
+ * on a redirected response, and these are directory-style routes on a static
+ * host — exactly the shape that redirects. One such rejection used to take the
+ * whole precache down with it, which is why only the route a player had
+ * actually opened was ever available offline.
+ *
+ * `redirect: "follow"` plus an explicit put stores whatever the route finally
+ * resolves to, keyed by the URL asked for, which is what a later navigation
+ * looks up.
+ */
+async function precache(cache, url) {
+  try {
+    const response = await fetch(url, { redirect: "follow", cache: "reload" });
+    if (response.ok) await cache.put(url, response);
+  } catch {
+    // A route that cannot be reached now is simply not available offline
+    // later. It must never stop the rest of the arcade being cached.
+  }
+}
+
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches
       .open(CACHE_NAME)
-      // allSettled: one missing URL must not abort the whole install.
-      .then((cache) => Promise.allSettled(CORE.map((url) => cache.add(url))))
+      .then((cache) => Promise.all(CORE.map((url) => precache(cache, url))))
       .then(() => self.skipWaiting()),
   );
 });
