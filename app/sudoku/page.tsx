@@ -378,7 +378,11 @@ export default function SudokuPage() {
         place(index, armed);
         return;
       }
-      setSelected(index);
+      // Tapping the already-selected cell again deselects it — the way back
+      // to digit-first once a selection has made every digit tap place
+      // instead of arm. Without this toggle there is no way to drop a
+      // selection short of placing into it.
+      setSelected((s) => (s === index ? null : index));
     },
     [armed, place],
   );
@@ -498,8 +502,10 @@ export default function SudokuPage() {
           // Every dismissible thing on screen, not just the two it used to
           // close: the difficulty modal offers only a Close button, so leaving
           // it open on Escape is the one case where the key visibly does
-          // nothing.
+          // nothing. A selection is dismissible too — leaving it behind was
+          // the gap that made digit-first unreachable once a cell was picked.
           setArmed(null);
+          setSelected(null);
           setHint(null);
           setShowTiers(false);
           return;

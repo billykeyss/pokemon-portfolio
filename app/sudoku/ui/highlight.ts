@@ -77,8 +77,11 @@ export function highlightMap(input: HighlightInput): CellHighlight[] {
     map[i].eliminated = struck[i];
     map[i].wrong = !isGiven && value !== 0 && value !== board.puzzle.solution[i];
     map[i].sameDigit = focusDigit !== null && value === focusDigit;
+    // Keyed off focusDigit, not armed alone: selecting a cell that already
+    // holds a digit is "see all remaining" reached from the board rather than
+    // the keypad, and it should light the same cells arming that digit would.
     map[i].armedCandidate =
-      armed !== null && value === 0 && hasDigit(candidates[i], armed);
+      focusDigit !== null && value === 0 && hasDigit(candidates[i], focusDigit);
   }
 
   if (selected !== null) {

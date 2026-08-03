@@ -106,6 +106,24 @@ describe("highlightMap", () => {
     expect(map.some((h) => h.armedCandidate)).toBe(true);
   });
 
+  it("marks cells that could still take the selected cell's own digit, with nothing armed", () => {
+    // Selecting a cell that already holds a 5 is "see all remaining" reached
+    // from the board rather than the keypad — it must light exactly what
+    // arming 5 would, without arming anything.
+    const b = board({ 2: 4 });
+    const map = highlightMap(input({ board: b, selected: 2, armed: null }));
+    const armedMap = highlightMap(input({ board: b, armed: 4 }));
+    expect(map.map((h) => h.armedCandidate)).toEqual(armedMap.map((h) => h.armedCandidate));
+    expect(map.some((h) => h.armedCandidate)).toBe(true);
+  });
+
+  it("does not mark armedCandidate anywhere when the selected cell is empty and nothing is armed", () => {
+    // Regression guard for the focusDigit refactor: an empty selected cell
+    // must not somehow read as "digit 0" and light every other empty cell.
+    const map = highlightMap(input({ selected: 40, armed: null }));
+    expect(map.some((h) => h.armedCandidate)).toBe(false);
+  });
+
   it("marks an entry that disagrees with the solution as wrong", () => {
     const wrongDigit = SOLUTION[2] === 4 ? 5 : 4;
     const map = highlightMap(input({ board: board({ 2: wrongDigit }) }));
