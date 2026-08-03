@@ -698,13 +698,21 @@ export default function SudokuPage() {
         />
 
         <div className="flex items-center justify-between text-xs uppercase tracking-widest">
+          {/* This opens the difficulty picker, and used to be the bare tier word
+              with a dotted underline — sitting beside the mistake count, it read
+              as a status line rather than a control, and the picker behind it
+              went unfound. Every other control here is a bordered pixel button,
+              so this one is too; the caret says it opens something. */}
           <button
             type="button"
             onClick={() => setShowTiers(true)}
             disabled={busy || autoFinishing}
-            className="underline decoration-dotted underline-offset-4 disabled:no-underline disabled:opacity-40"
+            className="flex items-center gap-2 border-2 border-[#f8f0e0] bg-[#2f2447] px-3 py-1.5 font-bold uppercase tracking-widest text-[#f8f0e0] shadow-[2px_2px_0_0_#000] transition-transform active:translate-x-[2px] active:translate-y-[2px] active:shadow-none disabled:opacity-40"
           >
             {board.puzzle.tier}
+            <span aria-hidden="true" className="opacity-60">
+              ▾
+            </span>
           </button>
           <span className="opacity-60">
             {busy ? "Dealing…" : `Mistakes ${mistakes}`}
