@@ -177,3 +177,44 @@ describe("swing lifecycle", () => {
     expect(e.attack.phase).toBe("idle");
   });
 });
+
+describe("earned reach starts swings, not just lands them", () => {
+  it("swings at a foe inside earned reach but outside base reach", () => {
+    const w = createWorld({ arena: { width: 360, height: 560 }, seed: 1 });
+    w.mods.reachBonus = 45; // effective reach 91
+    const hero = spawnHero(w, { x: 180, y: 300 });
+    // 80px away: outside base reach (46 + 11 = 57), inside earned (91 + 11 = 102).
+    const foe = spawnEnemy(w, { x: 260, y: 300 }, 500);
+
+    let swung = false;
+    for (let i = 0; i < 60; i++) {
+      // Pin the foe so only the reach test decides whether a swing starts.
+      foe.pos.x = 260;
+      foe.pos.y = 300;
+      foe.vel.x = 0;
+      foe.vel.y = 0;
+      stepWorld(w);
+      if (hero.attack.phase !== "idle") swung = true;
+    }
+
+    expect(swung).toBe(true);
+  });
+
+  it("still refuses a foe outside even the earned reach", () => {
+    const w = createWorld({ arena: { width: 360, height: 560 }, seed: 1 });
+    w.mods.reachBonus = 45;
+    const hero = spawnHero(w, { x: 180, y: 300 });
+    const foe = spawnEnemy(w, { x: 340, y: 300 }, 500); // 160px — well beyond 102
+
+    for (let i = 0; i < 60; i++) {
+      foe.pos.x = 340;
+      foe.pos.y = 300;
+      foe.vel.x = 0;
+      foe.vel.y = 0;
+      stepWorld(w);
+    }
+
+    expect(hero.attack.phase).toBe("idle");
+    expect(foe.hp).toBe(500);
+  });
+});

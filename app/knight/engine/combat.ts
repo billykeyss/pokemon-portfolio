@@ -109,6 +109,12 @@ export function damageEntity(
  * and zero distance always satisfies an arc check, so a hardcoded kind check
  * made every stationary enemy match itself and wind up forever regardless of
  * where the hero was.
+ *
+ * Gated on reachOf, not the base SWING_REACH: the decision to *start* a swing
+ * and the decision of what that swing *hits* have to use the same number.
+ * While they disagreed, a bought reach bonus widened the blow but never
+ * widened the trigger, so a hero with +45 reach stood idle beside a foe at
+ * 80px — the "auto attack doesn't work" bug in its purest form.
  */
 function foeInReach(world: World, attacker: Entity): Entity | null {
   let best: Entity | null = null;
@@ -116,7 +122,7 @@ function foeInReach(world: World, attacker: Entity): Entity | null {
   for (const t of world.entities) {
     if (t.kind === attacker.kind || t.deadAtTick >= 0) continue;
     const dist = Math.hypot(t.pos.x - attacker.pos.x, t.pos.y - attacker.pos.y);
-    if (dist > SWING_REACH + t.radius) continue;
+    if (dist > reachOf(world) + t.radius) continue;
     if (dist < bestDist || (dist === bestDist && (best === null || t.id < best.id))) {
       best = t;
       bestDist = dist;
