@@ -11,11 +11,29 @@ export interface DrawState {
 }
 
 const PAPER = "#F5F1E4";
-const RULE = "#CFC7B0";
+// Darkened from the original #CFC7B0 (contrast 1.49:1 against PAPER) to
+// #BBB093 (1.91:1) — a real bump without approaching RULE_BOLD's 2.36:1, so
+// the two ranks of line stay clearly distinct and neither competes with INK.
+const RULE = "#BBB093";
 const RULE_BOLD = "#A79E86";
 const INK = "#2E2A24";
 const PENCIL = "#8A8172";
 const REFUSED = "#E0483F";
+
+/**
+ * Grid line widths in device pixels, derived from the cell size rather than
+ * hard-coded.
+ *
+ * The canvas is dpr-scaled (see page.tsx), so a hard-coded `lineWidth` of 1
+ * is one *device* pixel — half a CSS pixel on a retina screen. Deriving the
+ * width from the cell instead means the line scales with the board and the
+ * display together: a hairline on a phone at dpr 1 stays a hairline, but the
+ * same board on a retina screen gets a line that actually shows up.
+ */
+function gridLineWidths(cell: number): { light: number; heavy: number } {
+  const light = Math.max(1, Math.round(cell * 0.03));
+  return { light, heavy: light * 2 };
+}
 
 /** Duration of the refusal flash, in seconds. */
 export const REFUSE_DURATION = 0.32;
@@ -63,21 +81,30 @@ function drawClues(ctx: CanvasRenderingContext2D, layout: Layout, puzzle: Puzzle
 
 function drawGrid(ctx: CanvasRenderingContext2D, layout: Layout): void {
   const end = layout.cell * layout.size;
+  const { light, heavy } = gridLineWidths(layout.cell);
 
   for (let i = 0; i <= layout.size; i++) {
     // Every fifth line is heavier, which is how a player counts a long run
     // without touching the screen.
-    const heavy = i % 5 === 0;
-    ctx.strokeStyle = heavy ? RULE_BOLD : RULE;
-    ctx.lineWidth = heavy ? 2 : 1;
+    const isHeavy = i % 5 === 0;
+    const width = isHeavy ? heavy : light;
+    ctx.strokeStyle = isHeavy ? RULE_BOLD : RULE;
+    ctx.lineWidth = width;
 
-    const at = Math.floor(layout.originX + i * layout.cell) + 0.5;
+    // Crisp-line trick, generalised past 1px: a stroke of even width centred
+    // on a whole device pixel covers whole pixels on both sides, so no
+    // offset is needed. An odd width needs the classic +0.5 to land the same
+    // way — centring an odd width directly on a pixel boundary straddles two
+    // rows/columns at half intensity instead.
+    const half = width % 2 === 0 ? 0 : 0.5;
+
+    const at = Math.round(layout.originX + i * layout.cell) + half;
     ctx.beginPath();
     ctx.moveTo(at, layout.originY);
     ctx.lineTo(at, layout.originY + end);
     ctx.stroke();
 
-    const down = Math.floor(layout.originY + i * layout.cell) + 0.5;
+    const down = Math.round(layout.originY + i * layout.cell) + half;
     ctx.beginPath();
     ctx.moveTo(layout.originX, down);
     ctx.lineTo(layout.originX + end, down);
@@ -97,6 +124,16 @@ export function drawScene(
 
   const { puzzle, board } = state;
 
+  // Half the interior line width, symmetric on every side: the gap it opens
+  // between two adjacent filled cells then exactly matches the light rule
+  // drawn through it (drawGrid paints over the grid after these fills), so
+  // neither a sliver of paper nor a bite out of the ink shows at an ordinary
+  // boundary. A heavy (every-fifth) line is wider than that gap and does cut
+  // a little into the ink on both sides — deliberately: it is the same
+  // "heavier line" emphasis the grid already uses elsewhere.
+  const { light } = gridLineWidths(layout.cell);
+  const inset = Math.max(1, Math.round(light / 2));
+
   for (let row = 0; row < puzzle.size; row++) {
     for (let col = 0; col < puzzle.size; col++) {
       const cell = board[row * puzzle.size + col];
@@ -112,12 +149,12 @@ export function drawScene(
         // in a single frame, so the moment of winning reads as a flash rather
         // than the fade it is meant to be.
         ctx.fillStyle = INK;
-        ctx.fillRect(rect.x + 1, rect.y + 1, rect.w - 1, rect.h - 1);
+        ctx.fillRect(rect.x + inset, rect.y + inset, rect.w - inset * 2, rect.h - inset * 2);
 
         if (state.reveal > 0) {
           ctx.globalAlpha = state.reveal;
           ctx.fillStyle = puzzle.colour;
-          ctx.fillRect(rect.x + 1, rect.y + 1, rect.w - 1, rect.h - 1);
+          ctx.fillRect(rect.x + inset, rect.y + inset, rect.w - inset * 2, rect.h - inset * 2);
           ctx.globalAlpha = 1;
         }
         continue;

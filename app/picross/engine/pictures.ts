@@ -128,20 +128,22 @@ export const PICTURES: readonly Picture[] = [
     id: "shell",
     name: "Shell",
     colour: "#E8C9A0",
-    // A scallop: a domed hinge fanning down to three ribbed lobes, cut by two
-    // notches that deepen row by row — the classic fan-shell read, and the
-    // notches (uneven on purpose) keep the placement unambiguous.
+    // A scallop the right way up: a small flat hinge at the BOTTOM, the
+    // shell fanning outward and upward from it, with the scalloped edge
+    // along the top. A dome over evenly spaced verticals — hinge at the top,
+    // legs hanging below — reads as a jellyfish, which is what both earlier
+    // drafts were.
     grid: [
-      "...####...",
-      "..######..",
+      ".##.##.##.",
+      "##########",
+      "##########",
+      "#.######.#",
+      "##########",
       ".########.",
-      "##########",
-      "##########",
-      "##########",
-      "##########",
-      "###.##.###",
-      "##..##..##",
-      "#...#...#.",
+      "..######..",
+      "...####...",
+      "....##....",
+      "....##....",
     ],
   },
   {
