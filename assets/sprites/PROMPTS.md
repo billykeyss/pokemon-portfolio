@@ -36,32 +36,50 @@ gradients, no text
 
 ## Generated so far
 
-| File | Subject |
-|---|---|
-| `raw/traffic/car-red.webp` | `red sedan car` |
-| `raw/traffic/car-blue.webp` | `blue hatchback car` |
-| `raw/traffic/car-green.webp` | `green hatchback car` |
-| `raw/traffic/car-yellow.webp` | `yellow taxi car` |
-| `raw/traffic/car-purple.webp` | `purple sports car` |
+| File | Subject | Resolution |
+|---|---|---|
+| `raw/traffic/car-red.webp` | `red sedan car` | 1:1 |
+| `raw/traffic/car-blue.webp` | `blue hatchback car` | 1:1 |
+| `raw/traffic/car-green.webp` | `green hatchback car` | 1:1 |
+| `raw/traffic/car-yellow.webp` | `yellow taxi car` | 1:1 |
+| `raw/traffic/car-purple.webp` | `purple sports car` | 1:1 |
+| `raw/traffic/truck-white.webp` | `long white box delivery truck, elongated rectangular cargo van` | 9:16 |
+| `raw/traffic/truck-silver.webp` | `long silver grey box delivery truck, elongated rectangular cargo van` | 9:16 |
+
+Trucks key slightly worse than the cars (72-76% of the frame removed against
+81%) because the 9:16 frame is mostly vehicle, not because the cut is dirtier —
+both come out with zero magenta fringe.
+
+## Subjects the space refuses
+
+The space runs a classifier on the *output*, and when it fires it returns a
+photograph of a chalkboard reading "maybe not safe" instead of an error. It is
+easy to mistake for a bug: the response looks successful, carries a normal image
+URL, and comes back at 1:1 whatever resolution was asked for. The same URL comes
+back every time, so a retry is never worth it.
+
+Warm-coloured box trucks trip it. `orange` and `brown` were both refused, at a
+fixed seed and a random one, and reworded twice. `white` and `silver grey` pass
+with the identical prompt around them, which is why the second truck is silver —
+the pair is less distinct than white and orange would have been.
+
+If a subject comes back as the chalkboard, change the colour rather than the
+wording. Rewording did nothing; colour was the whole difference.
+
+## Quota
+
+The free ZeroGPU quota is account-wide — every image space on Hugging Face draws
+from the same daily budget, so switching spaces does not help. It refills daily
+and is worth roughly six generations at these settings, which is the unit to
+plan a session around: pick the six subjects that matter before starting, rather
+than discovering the ceiling half-way through a set.
+
+Unlike the classifier, exhaustion is a real error and says so.
 
 ## Still to generate
 
-The free ZeroGPU quota ran out part-way through, and it is account-wide — every
-image space on Hugging Face draws from the same daily budget, so switching
-spaces does not help. Both gaps are currently filled by hand-drawn pixel art
-that is good enough to ship, so these are upgrades rather than blockers.
-
-**Traffic Jam trucks** (`raw/traffic/`) — three-cell vehicles currently use the
-drawn sprite in `app/traffic/render/truck.ts`. Use a 9:16 resolution so the art
-comes out long:
-
-```
-truck-white   long white box delivery truck, elongated rectangular cargo van
-truck-orange  long orange box delivery truck, elongated rectangular cargo van
-```
-
-Then in `app/traffic/render/draw.ts`, add the names to `SPRITE_NAMES` and drop
-the `vehicle.len !== 2` guard in `spriteFor` so trucks pick up their art.
+Filled by hand-drawn pixel art that is good enough to ship, so these are
+upgrades rather than blockers.
 
 **Shelf Sort goods** (`raw/shelf/`) — currently hand-drawn 10x10 grids in
 `app/shelf/engine/items.ts`, which honestly read better at the size a shelf slot
@@ -75,6 +93,11 @@ egg, juice bottle, bunch of purple berries
 
 and load them through `useSprites` the way Traffic Jam does, keeping the grids
 as the fallback.
+
+**Not the cabinet icons.** Every game already has one and they are drawn on
+purpose — see the comment in `app/game/_shared/icons.ts`. They are 12x12, which
+is small enough that a downscaled illustration turns to mush, so generating them
+would be a downgrade rather than a gap being filled.
 
 ## Running the pipeline
 

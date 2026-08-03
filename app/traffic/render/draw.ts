@@ -26,7 +26,7 @@ const EXIT_GLOW = "#78C850";
  * horizontal one is the same art rotated, which is why only five car images
  * cover both orientations.
  */
-export const SPRITE_NAMES = [
+const CAR_NAMES = [
   "car-red",
   "car-blue",
   "car-green",
@@ -34,7 +34,16 @@ export const SPRITE_NAMES = [
   "car-purple",
 ] as const;
 
-/** Body colours for vehicles with no sprite — the trucks, today. */
+/**
+ * Trucks are their own set because a vehicle's length is the thing a player
+ * reads first, and art that scales a car to three cells reads as a stretched
+ * car rather than a different vehicle.
+ */
+const TRUCK_NAMES = ["truck-white", "truck-silver"] as const;
+
+export const SPRITE_NAMES = [...CAR_NAMES, ...TRUCK_NAMES] as const;
+
+/** Body colours for the drawn fallback, used until the art has loaded. */
 const BODY = ["#E03A3A", "#3B82F6", "#4ADE58", "#FACC15", "#A855F7"];
 
 export function spriteSources(): Record<string, string> {
@@ -44,9 +53,10 @@ export function spriteSources(): Record<string, string> {
 }
 
 function spriteFor(vehicle: Vehicle, sprites: SpriteMap): HTMLImageElement | undefined {
-  // Only two-cell vehicles have art; trucks fall through to the drawn version.
-  if (vehicle.len !== 2) return undefined;
-  return sprites[SPRITE_NAMES[vehicle.kind % SPRITE_NAMES.length]];
+  // Length picks the set, so a three-cell vehicle is always drawn as a truck.
+  // Anything not yet loaded returns undefined and falls back to the drawn grid.
+  const names = vehicle.len === 2 ? CAR_NAMES : TRUCK_NAMES;
+  return sprites[names[vehicle.kind % names.length]];
 }
 
 function drawVehicle(
