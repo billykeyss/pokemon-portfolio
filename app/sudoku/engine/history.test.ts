@@ -57,7 +57,7 @@ describe("history", () => {
 
   it("does not mutate record's input", () => {
     const h = record(emptyHistory(), { kind: "place", index: 0, before: 0, after: 1 });
-    const h2 = record(h, { kind: "place", index: 1, before: 0, after: 2 });
+    record(h, { kind: "place", index: 1, before: 0, after: 2 });
     expect(h.past).toHaveLength(1);
     expect(h.future).toHaveLength(0);
   });

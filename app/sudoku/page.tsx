@@ -45,7 +45,9 @@ export default function SudokuPage() {
   const [save, setSave] = useState<SudokuSave>(defaultSudokuSave);
   const [loaded, setLoaded] = useState(false);
   const [board, setBoard] = useState<Board | null>(null);
-  const [history, setHistory] = useState<History>(emptyHistory);
+  // Only the setter is read; the value is unused. Kept as state so the
+  // existing update flow is untouched.
+  const [, setHistory] = useState<History>(emptyHistory);
   const [selected, setSelected] = useState<Idx | null>(null);
   const [armed, setArmed] = useState<Digit | null>(null);
   // A per-cell bitmask of digits the player has struck by hand — a display

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { StorageLike } from "@/app/game/_shared/storage";
-import { ALL_DIGITS, bit } from "./candidates";
+import { ALL_DIGITS } from "./candidates";
 import { CELLS } from "./grid";
 import { emptyMarks, setStrike, type Marks } from "./marks";
 import {
