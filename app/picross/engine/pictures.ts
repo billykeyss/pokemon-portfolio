@@ -107,12 +107,15 @@ export const PICTURES: readonly Picture[] = [
     name: "Droplet",
     colour: "#6890F0",
     // A narrow point widening to a full-width equator, unlike ember and
-    // boulder's symmetric diamonds — the taper only goes one way.
+    // boulder's symmetric diamonds — the taper only goes one way. The notch
+    // in rows 2-3 is the glass highlight every raindrop icon carries; it also
+    // breaks the silhouette out of pure convexity so there is something to
+    // deduce, not just a run length to read off.
     grid: [
       "....##....",
       "...####...",
-      "..######..",
-      ".########.",
+      "..#.####..",
+      ".##.#####.",
       "##########",
       "##########",
       "##########",
@@ -125,26 +128,30 @@ export const PICTURES: readonly Picture[] = [
     id: "shell",
     name: "Shell",
     colour: "#E8C9A0",
-    // A fan: wide dome at the hinge, tapering to a point — droplet's taper
-    // read the other way up.
+    // A scallop: a domed hinge fanning down to three ribbed lobes, cut by two
+    // notches that deepen row by row — the classic fan-shell read, and the
+    // notches (uneven on purpose) keep the placement unambiguous.
     grid: [
+      "...####...",
       "..######..",
-      "##########",
-      "##########",
-      "##########",
       ".########.",
-      "..######..",
-      "...####...",
-      "...####...",
-      "....##....",
-      "....##....",
+      "##########",
+      "##########",
+      "##########",
+      "##########",
+      "###.##.###",
+      "##..##..##",
+      "#...#...#.",
     ],
   },
   {
     id: "arrow",
     name: "Arrow",
     colour: "#8FA8F0",
-    // The chevron the Arrow Escape cabinet clears, on a shaft.
+    // The chevron the Arrow Escape cabinet clears, on a shaft with a single
+    // fletching notch at the nock end. The notch is off-centre by one cell —
+    // a symmetric pair of notches here left two equally valid readings and
+    // failed the solver; this one has just enough asymmetry to pin down.
     grid: [
       "....##....",
       "...####...",
@@ -155,18 +162,19 @@ export const PICTURES: readonly Picture[] = [
       "...####...",
       "...####...",
       "...####...",
-      "...####...",
+      "...#.##...",
     ],
   },
   {
     id: "crate",
     name: "Crate",
     colour: "#6B4A2A",
-    // The stocked crate Shelf Sort works with, lid bevelled top and bottom.
+    // The stocked crate Shelf Sort works with: bevelled lid, and a cut
+    // hand-hold under the rim like a real packing crate.
     grid: [
       ".########.",
-      "##########",
-      "##########",
+      "####..####",
+      "####..####",
       "##########",
       "##########",
       "##########",
@@ -219,15 +227,18 @@ export const PICTURES: readonly Picture[] = [
     id: "wisp",
     name: "Wisp",
     colour: "#B39CD9",
-    // Round head, straight robe, a scalloped hem in three thick teeth rather
-    // than single pixels, which the solver reads as noise, not a hem.
+    // Round head with two eye-holes at row 5, a straight robe, and a
+    // scalloped hem in three thick teeth rather than single pixels, which the
+    // solver reads as noise, not a hem. The eyes break the robe's columns
+    // into two runs apiece, so the face is genuine board structure, not
+    // decoration painted on afterward.
     grid: [
       "....####....",
       "...######...",
       "..########..",
       ".##########.",
       "############",
-      "############",
+      "###.####.###",
       "############",
       "############",
       "############",
@@ -282,9 +293,12 @@ export const PICTURES: readonly Picture[] = [
     id: "avalanche",
     name: "Avalanche",
     colour: "#A89880",
-    // A single peak widening straight down into solid rock — deliberately
-    // solid rather than a jagged multi-peak range, to keep clue lists shallow
-    // at this size.
+    // A snow-capped peak — the critter's own emoji, 🏔️ — over solid rock with
+    // a cave mouth cut into the base: a hollow fully enclosed by rock above,
+    // below and to both sides, so it reads as a cavity rather than a notch
+    // cut from an edge (the earlier draft was a solid triangle on a solid
+    // block, which is orthogonally convex and has nothing left to deduce
+    // once a single run length is known).
     grid: [
       ".......#.......",
       "......###......",
@@ -295,9 +309,9 @@ export const PICTURES: readonly Picture[] = [
       ".#############.",
       "###############",
       "###############",
-      "###############",
-      "###############",
-      "###############",
+      "######...######",
+      "######...######",
+      "######...######",
       "###############",
       "###############",
       "###############",
@@ -307,15 +321,17 @@ export const PICTURES: readonly Picture[] = [
     id: "bulwark",
     name: "Bulwark",
     colour: "#C4A277",
-    // A shield: flat full-width top, tapering in steadily to a clipped point.
+    // A shield, flat full-width top tapering to a clipped point, with a
+    // heraldic window cut into the face — the emblem opening reads as the
+    // shield's crest and gives the middle rows and columns a second run.
     grid: [
       "###############",
       "###############",
       "###############",
       ".#############.",
       ".#############.",
-      "..###########..",
-      "..###########..",
+      "..####...####..",
+      "..####...####..",
       "...#########...",
       "...#########...",
       "....#######....",
@@ -330,14 +346,20 @@ export const PICTURES: readonly Picture[] = [
     id: "geode",
     name: "Geode",
     colour: "#8AA8C4",
-    // A cut crystal: a solid rhombus, point to point.
+    // A geode is a hollow stone lined with crystal, so the cavity here isn't
+    // decoration, it's the subject: a rhombus with an open pocket cut into
+    // its upper half. The pocket stays clear of the diamond's one full-width
+    // row (the widest, at the centre) so that row survives as the anchor a
+    // solid diamond needs — carving the pocket through it in an earlier draft
+    // removed the only line that pinned the shape's horizontal position and
+    // the puzzle stopped being line-solvable.
     grid: [
       ".......#.......",
       "......###......",
       ".....#####.....",
-      "....#######....",
-      "...#########...",
-      "..###########..",
+      "....###.###....",
+      "...###...###...",
+      "..###.....###..",
       ".#############.",
       "###############",
       ".#############.",

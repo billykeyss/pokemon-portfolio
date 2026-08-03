@@ -58,4 +58,19 @@ describe("PICTURES", () => {
   it("ships the full library, so the gate cannot pass vacuously", () => {
     expect(PICTURES.length).toBe(20);
   });
+
+  it("gives the larger pictures something to deduce", () => {
+    // A picture whose every row and column is a single run is orthogonally
+    // convex: knowing a run's length tells you its position, so there is no
+    // deduction left. Fine on a 5x5, worthless on a 15x15.
+    for (const picture of PICTURES) {
+      const puzzle = puzzleFrom(picture);
+      if (puzzle.size < 10) continue;
+      const deepest = Math.max(
+        ...puzzle.rowClues.map((c) => c.length),
+        ...puzzle.colClues.map((c) => c.length),
+      );
+      expect(deepest, `${picture.id} is convex — nothing to deduce`).toBeGreaterThan(1);
+    }
+  });
 });
