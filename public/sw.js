@@ -3,7 +3,7 @@
 // Next.js emits content-hashed asset filenames that are unknown when this file
 // is written, so nothing here precaches a build's chunks by name — routes are
 // precached, and everything under them is cached as it is fetched.
-const CACHE_NAME = "arcade-v8";
+const CACHE_NAME = "arcade-v9";
 
 // Every route the arcade can land on. Precached together so a player who has
 // only ever opened one game can still reach the others with no connection.
@@ -20,7 +20,7 @@ const ROUTES = [
   "/sudoku/",
 ];
 
-const CORE = [...ROUTES, "/manifest.webmanifest", "/icon.svg"];
+const CORE = [...ROUTES, "/manifest.webmanifest", "/icon.svg", "/asset-manifest.json"];
 
 // Runtime assets live under these. Traffic and Shelf fetch their sprites from
 // /game/traffic/ and /game/shelf/ at play time, so those must be intercepted
@@ -92,12 +92,40 @@ async function precache(cache, url) {
   }
 }
 
+/**
+ * The sprites Traffic, Shelf and BOUNCEDEX fetch while being played.
+ *
+ * Read from a generated file rather than listed here: there are eighty of them
+ * and they change whenever someone draws one, so a hardcoded copy would rot
+ * silently — and the failure would first appear as a game that loads but
+ * cannot draw itself, with no connection to fix it. scripts/asset-manifest.mjs
+ * writes the file and a test fails the suite if it drifts from what is on disk.
+ */
+async function runtimeAssets() {
+  try {
+    const response = await fetch("/asset-manifest.json", { cache: "reload" });
+    if (!response.ok) return [];
+    const { assets } = await response.json();
+    return Array.isArray(assets) ? assets : [];
+  } catch {
+    // No manifest, no sprites precached — the routes still install, and the
+    // sprites still cache the first time a game is opened online. A degraded
+    // install beats no install.
+    return [];
+  }
+}
+
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches
-      .open(CACHE_NAME)
-      .then((cache) => Promise.all(CORE.map((url) => precache(cache, url))))
-      .then(() => self.skipWaiting()),
+    (async () => {
+      const cache = await caches.open(CACHE_NAME);
+      const assets = await runtimeAssets();
+      // Routes first: they are what makes the arcade navigable offline, and
+      // they should not wait behind eighty sprites.
+      await Promise.all(CORE.map((url) => precache(cache, url)));
+      await Promise.all(assets.map((url) => precache(cache, url)));
+      await self.skipWaiting();
+    })(),
   );
 });
 
