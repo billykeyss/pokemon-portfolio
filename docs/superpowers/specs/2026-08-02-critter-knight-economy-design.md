@@ -173,7 +173,7 @@ Nine fields, each with exactly one consumer:
 | `knockbackMult` | `statsOf` → knockback impulse |
 | `iframeBonus` | `statsOf` → invulnerability window |
 | `coinMult` | `coins.ts` drop value |
-| `healOnClear` | hearts restored when a room clears |
+| `healOnClear` | hearts restored when a room clears, stacked on top of the `BASE_ROOM_HEAL` floor (see "Room-clear healing" below) |
 
 ```ts
 export interface Upgrade {
@@ -191,7 +191,7 @@ export interface Upgrade {
 
 | id | name | price | weight | effect |
 |---|---|---|---|---|
-| `reach` | Long Arm | 12 | 5 | `reachBonus += 8` |
+| `reach` | Long Arm | 10 | 5 | `reachBonus += 8` |
 | `damage` | Sharpened | 18 | 3 | `damageBonus += 4` |
 | `heart` | Stout | 26 | 3 | `maxHpBonus += 1` |
 | `swift` | Quickstep | 20 | 3 | `moveSpeedMult × 1.12` |
@@ -199,11 +199,36 @@ export interface Upgrade {
 | `heavy` | Heavy Hands | 16 | 2 | `knockbackMult × 1.4` |
 | `greed` | Coin Sense | 22 | 2 | `coinMult × 1.35` |
 | `ward` | Warded | 24 | 2 | `iframeBonus += 8` |
-| `mend` | Mending | 34 | 2 | `healOnClear += 1` |
+| `mend` | Mending | 26 | 2 | `healOnClear += 1` |
 
 Reach is cheapest and heaviest-weighted deliberately: with the guaranteed
 grant gone, a player who buys without a plan must still drift toward the stat
 that keeps the ladder winnable. Phase 6 proves that they do.
+
+**Balance note (set during implementation, not chosen up front):** `reach`
+was originally priced 12 and `mend` 34. The level-9 balance harness
+(`ladder.test.ts`) retuned `reach` down to 10 so that clearing level one (2
+grunts at `COIN_VALUE` 5 each) yields exactly enough for one Long Arm — the
+first shop is a decision, not a shrug — and `mend` down to 26 once it stopped
+being the run's only source of healing (see "Room-clear healing" below).
+
+### Room-clear healing
+
+**Added during implementation; not in the original design.** Rooms used to
+refill the hero to full on every clear, and the ladder's difficulty curve was
+tuned against that guarantee. Carrying hp forward between rooms (so
+`healOnClear`/Mending could mean anything at all) removed that automatic
+refill, and nothing replaced it — the level-9 balance harness found every
+shopper personality dying by level 4-5 as a direct result. The fix is a flat
+floor, applied at every clear on top of whatever Mending has bought:
+
+```ts
+export const BASE_ROOM_HEAL = 1;
+```
+
+A cleared room heals `BASE_ROOM_HEAL + mods.healOnClear`, so a run always
+recovers at least one heart even with no Mending purchased, and each stack of
+Mending adds on top of that floor rather than replacing it.
 
 ---
 
@@ -270,6 +295,20 @@ export interface RangedSpec {
 These are level-1 values. HP scales per archetype rather than per room:
 `def.hp + (level - 1) * 5`. A brute at level 10 is a brute, not a grunt with a
 brute's name.
+
+**Balance note (set during implementation, not chosen up front):** phase 1
+("economy core") shipped before this archetype table existed, so its interim
+room generator (`engine/level.ts`) uses a single grunt-only curve rather than
+per-archetype scaling — enemy count `min(14, 1 + ceil(level * 0.55))`, HP
+`20 + floor((level - 1) * 3)`. Both started steeper (`1 + ceil(level * 0.9)`
+and `(level - 1) * 5` — this table's own number, reused as the interim curve's
+starting point) and were retuned down by the level-9 balance harness after a
+careless shopper was found dying by level 4-5. The interim generator also
+holds its most dangerous spawn shape — a full encirclement (`ring`) — out of
+rotation until level 8, so the first surround room lands only once a purse
+has had a real chance to grow. When phase 3 replaces this interim curve with
+real per-archetype scaling, these tuned numbers are the starting point, not
+this section's original `(level - 1) * 5`.
 
 **This changes `RoomSpec`.** A room can no longer carry one `enemyHp`, because
 its enemies are no longer one kind:

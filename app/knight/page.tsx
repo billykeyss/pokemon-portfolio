@@ -5,16 +5,11 @@ import Link from "next/link";
 import { useGameLoop } from "@/app/game/_shared/useGameLoop";
 import { PixelPanel, PixelButton } from "@/app/game/_shared/pixel-ui";
 import { BASE_CRITTERS, getCritter } from "@/app/game/_shared/critters";
-import {
-  createWorld,
-  spawnHero,
-  spawnEnemy,
-  stepWorld,
-  heroOf,
-  FIXED_DT,
-  type World,
-} from "./engine/world";
-import { levelFor, ARENA, REACH_PER_BONUS } from "./engine/level";
+import { stepWorld, heroOf, FIXED_DT, type World } from "./engine/world";
+import { ARENA } from "./engine/level";
+import { statsOf } from "./engine/stats";
+import { openShop, purchase, reroll, type ShopState } from "./engine/shop";
+import { beginRoom, settleClear, carryForward, freshCarry } from "./engine/run";
 import {
   loadSave,
   writeSave,
@@ -24,36 +19,22 @@ import {
 } from "./engine/save";
 import { drawWorld } from "./render/draw";
 import { Hud } from "./ui/Hud";
+import { Shop } from "./ui/Shop";
 
 const STARTER = BASE_CRITTERS[0].id;
-
-/**
- * Build the room for a level.
- *
- * `reachBonus` is passed in rather than read from a save: powerups belong to
- * the current run, not to the profile, so they have to survive moving between
- * rooms and vanish when a run ends.
- */
-function populate(level: number, reachBonus: number): World {
-  const room = levelFor(level);
-  const world = createWorld({ arena: room.arena, seed: level });
-  world.mods.reachBonus = reachBonus;
-  spawnHero(world, room.heroStart);
-  for (const spawn of room.spawns) spawnEnemy(world, spawn, room.enemyHp);
-  return world;
-}
 
 export default function KnightPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [save, setSave] = useState<KnightSave>(defaultSave());
   const [level, setLevel] = useState(1);
-  // Reach earned this run. A ref because the render loop reads it every frame
-  // and must not re-subscribe when it changes.
-  const reachRef = useRef(0);
-  const worldRef = useRef<World>(populate(1, 0));
+  // The world is the only copy of the run's build (mods, purse, hp). There is
+  // deliberately no parallel ref for it — see the comment on `Carry` in
+  // `./engine/run`, and on `beginRoom`, the sole producer of a room's world.
+  const worldRef = useRef<World>(beginRoom(1, freshCarry()));
+  const [shop, setShop] = useState<ShopState | null>(null);
   const [reducedMotion, setReducedMotion] = useState(false);
   const [canvasFailed, setCanvasFailed] = useState(false);
-  const [hud, setHud] = useState({ hp: 5, maxHp: 5, over: false, cleared: false });
+  const [hud, setHud] = useState({ hp: 5, maxHp: 5, purse: 0, over: false, cleared: false });
 
   const critter = getCritter(STARTER);
 
@@ -75,8 +56,8 @@ export default function KnightPage() {
     const loaded = loadSave(window.localStorage);
     setSave(loaded);
     setLevel(loaded.level);
-    reachRef.current = 0;
-    worldRef.current = populate(loaded.level, 0);
+    setShop(null);
+    worldRef.current = beginRoom(loaded.level, freshCarry());
   }, []);
 
   const step = useCallback(() => {
@@ -96,11 +77,13 @@ export default function KnightPage() {
       const next = {
         hp: hero?.hp ?? 0,
         maxHp: hero?.maxHp ?? 5,
+        purse: world.purse,
         over: world.over,
         cleared: !alive,
       };
       return prev.hp === next.hp &&
         prev.maxHp === next.maxHp &&
+        prev.purse === next.purse &&
         prev.over === next.over &&
         prev.cleared === next.cleared
         ? prev
@@ -117,27 +100,63 @@ export default function KnightPage() {
   });
 
   /**
-   * Clearing banks a reach powerup and opens the next room; falling replays
-   * the same one with the run's gains lost. Losing what you earned is what
-   * makes the powerup worth having.
+   * The moment a room clears (and the hero is still standing — a same-tick
+   * mutual kill favours the death branch, never a shop for a dead hero),
+   * bank every coin left on the floor, mend `BASE_ROOM_HEAL` plus whatever
+   * `healOnClear` earns, and open the shop exactly once — that sequencing
+   * lives in `settleClear` now, but still fires from here, before the shop
+   * opens, so the HUD shows post-heal HP for the whole time the player is
+   * browsing. `shop` in the dependency list is what makes this fire only on
+   * the transition: once it is non-null the guard below skips every
+   * subsequent re-render, including the ones purchases cause.
    */
-  const advance = useCallback(() => {
-    const cleared = hud.cleared && !hud.over;
-    const next = cleared ? level + 1 : level;
+  useEffect(() => {
+    if (!hud.cleared || hud.over || shop) return;
 
-    if (cleared) {
-      reachRef.current += REACH_PER_BONUS;
-      const updated = recordClear(save, level);
-      setSave(updated);
-      writeSave(window.localStorage, updated);
-    } else {
-      reachRef.current = 0;
-    }
+    const world = worldRef.current;
+    settleClear(world);
+    const hero = heroOf(world);
+    setShop(openShop(level));
+    // The game loop is paused the instant a room clears, so nothing will
+    // redraw to pick up the sweep or the mend — without this, the Hud keeps
+    // showing whatever purse/hp it last drew mid-fight while the shop right
+    // below it shows the true, post-sweep numbers.
+    setHud((h) => ({ ...h, purse: world.purse, hp: hero?.hp ?? h.hp }));
+  }, [hud.cleared, hud.over, shop, level]);
 
+  /** Leaving the shop banks the clear and carries the run's build, purse and
+   *  health forward into the next room — read fresh from the live world, so
+   *  every purchase and reroll made in the shop is included. */
+  const nextRoom = useCallback(() => {
+    const carry = carryForward(worldRef.current);
+    const updated = recordClear(save, level);
+    setSave(updated);
+    writeSave(window.localStorage, updated);
+
+    const next = level + 1;
     setLevel(next);
-    worldRef.current = populate(next, reachRef.current);
-    setHud({ hp: 5, maxHp: 5, over: false, cleared: false });
-  }, [hud.cleared, hud.over, level, save]);
+    worldRef.current = beginRoom(next, carry);
+    setShop(null);
+    // maxHp is read from statsOf rather than hardcoded: a "heart" purchase
+    // raises it above the base 5, and a stale literal here would show the
+    // HUD's old, lower max for the one frame before the next draw() corrects
+    // it.
+    setHud({
+      hp: 5,
+      maxHp: statsOf(worldRef.current).maxHp,
+      purse: carry.purse,
+      over: false,
+      cleared: false,
+    });
+  }, [level, save]);
+
+  /** Falling loses the run: mods and purse reset, and the same room replays
+   *  at full health. */
+  const retry = useCallback(() => {
+    setShop(null);
+    worldRef.current = beginRoom(level, freshCarry());
+    setHud({ hp: 5, maxHp: statsOf(worldRef.current).maxHp, purse: 0, over: false, cleared: false });
+  }, [level]);
 
   const toArena = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -152,6 +171,7 @@ export default function KnightPage() {
       <Hud
         hp={hud.hp}
         maxHp={hud.maxHp}
+        purse={hud.purse}
         critterName={`${critter.name} · lv ${level}`}
       />
 
@@ -191,27 +211,15 @@ export default function KnightPage() {
           }}
         />
 
-        {finished && (
+        {hud.over && (
           <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/80 p-4">
             <PixelPanel className="w-full max-w-sm text-center">
-              <h2 className="mb-3 text-lg font-bold uppercase tracking-widest">
-                {hud.cleared ? `Level ${level} cleared` : "You fell"}
-              </h2>
-
-              {hud.cleared ? (
-                <p className="mb-4 text-[11px] uppercase tracking-widest text-[#F8D030]">
-                  +{REACH_PER_BONUS} reach
-                </p>
-              ) : (
-                <p className="mb-4 text-[11px] uppercase tracking-widest opacity-60">
-                  Reach resets
-                </p>
-              )}
-
+              <h2 className="mb-3 text-lg font-bold uppercase tracking-widest">You fell</h2>
+              <p className="mb-4 text-[11px] uppercase tracking-widest opacity-60">
+                Coins and upgrades reset
+              </p>
               <div className="flex flex-col gap-2">
-                <PixelButton onClick={advance}>
-                  {hud.cleared ? `Level ${level + 1}` : "Try again"}
-                </PixelButton>
+                <PixelButton onClick={retry}>Try again</PixelButton>
                 <Link
                   href="/game"
                   className="text-center text-xs uppercase tracking-widest underline opacity-70"
@@ -221,6 +229,30 @@ export default function KnightPage() {
               </div>
             </PixelPanel>
           </div>
+        )}
+
+        {!hud.over && hud.cleared && shop && (
+          <Shop
+            shop={shop}
+            purse={worldRef.current.purse}
+            level={level}
+            onBuy={(i) => {
+              if (purchase(worldRef.current, shop, i)) {
+                setShop({ ...shop });
+                // Spending coins here bypasses the draw loop (it's paused
+                // while the shop is up), so the Hud's purse readout has to be
+                // told directly or it goes stale mid-shop.
+                setHud((h) => ({ ...h, purse: worldRef.current.purse }));
+              }
+            }}
+            onReroll={() => {
+              if (reroll(worldRef.current, shop, level)) {
+                setShop({ ...shop });
+                setHud((h) => ({ ...h, purse: worldRef.current.purse }));
+              }
+            }}
+            onNext={nextRoom}
+          />
         )}
       </div>
     </main>

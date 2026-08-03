@@ -6,6 +6,16 @@ import { steerEnemy, applyTouchDamage } from "./ai";
 import { GRUNT } from "../data/enemies";
 import type { Fx } from "./fx";
 import { pushFx, expireFx } from "./fx";
+import { HERO_RADIUS, ENEMY_RADIUS } from "./constants";
+import { statsOf } from "./stats";
+import { defaultMods, type RunMods } from "../data/upgrades";
+import type { Coin } from "./coins";
+import { dropCoins, updateCoins } from "./coins";
+
+/** Re-exported so existing importers of `RunMods` from `world.ts` still work;
+ *  the type itself now lives in `../data/upgrades` alongside the catalogue
+ *  that produces values of it. */
+export type { RunMods };
 
 /** Simulation runs at a fixed 120Hz regardless of render frame rate. */
 export const FIXED_DT = 1 / 120;
@@ -13,22 +23,11 @@ export const FIXED_DT = 1 / 120;
 /** How long a corpse lingers so its death can animate, in ticks. */
 export const CORPSE_TICKS = 36;
 
-const HERO_RADIUS = 12;
-const HERO_HP = 5;
-const ENEMY_RADIUS = 11;
-
-/**
- * What a run has earned. Kept on the world so the simulation is the single
- * source of truth and a headless harness can play a powered-up run.
- */
-export interface RunMods {
-  /** Extra swing reach in pixels, granted by clearing levels. */
-  reachBonus: number;
-}
-
-export function defaultMods(): RunMods {
-  return { reachBonus: 0 };
-}
+/** Coins a kill drops, before the run's coinMult scales it. Flat for every
+ *  archetype until phase 3's monster table gives each its own value. Set so
+ *  clearing level one (2 grunts) yields exactly one Long Arm's worth of
+ *  coins — the first shop must be a real decision, not a shrug. */
+const COIN_VALUE = 5;
 
 export interface World {
   tick: number;
@@ -47,6 +46,10 @@ export interface World {
   fx: Fx[];
   /** Tick of the most recent damaging hit, for screen shake. */
   lastHitTick: number;
+  /** Coins currently on the floor, mid-flight to the hero or waiting for a sweep. */
+  coins: Coin[];
+  /** Coins banked so far this run. */
+  purse: number;
 }
 
 export function createWorld(opts: { arena: Arena; seed: number }): World {
@@ -62,6 +65,8 @@ export function createWorld(opts: { arena: Arena; seed: number }): World {
     hits: [],
     fx: [],
     lastHitTick: -1,
+    coins: [],
+    purse: 0,
   };
 }
 
@@ -86,7 +91,10 @@ function baseEntity(world: World, kind: Entity["kind"], pos: Vec2, radius: numbe
 }
 
 export function spawnHero(world: World, pos: Vec2): Entity {
-  return baseEntity(world, "hero", pos, HERO_RADIUS, HERO_HP);
+  const s = statsOf(world);
+  const hero = baseEntity(world, "hero", pos, HERO_RADIUS, s.maxHp);
+  hero.iframeTicks = s.iframeTicks;
+  return hero;
 }
 
 export function spawnEnemy(world: World, pos: Vec2, hp: number): Entity {
@@ -113,7 +121,7 @@ export function stepWorld(world: World): void {
 
   const steering = heroOf(world);
   if (steering && steering.deadAtTick < 0) {
-    steerHero(steering, world.moveTarget, FIXED_DT);
+    steerHero(world, steering, world.moveTarget, FIXED_DT);
   }
 
   for (const e of world.entities) {
@@ -147,6 +155,7 @@ export function stepWorld(world: World): void {
     for (const hit of swings) {
       const target = world.entities.find((t) => t.id === hit.targetId);
       if (!target) continue;
+      if (hit.killed) dropCoins(world, target.pos, COIN_VALUE);
       pushFx(world, {
         kind: hit.killed ? "death" : "impact",
         x: target.pos.x,
@@ -178,6 +187,7 @@ export function stepWorld(world: World): void {
   }
   if (!hero || hero.hp <= 0) world.over = true;
 
+  updateCoins(world, FIXED_DT);
   expireFx(world);
   world.tick += 1;
 }

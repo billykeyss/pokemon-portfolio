@@ -4,9 +4,6 @@ import type { Arena, Vec2 } from "./types";
 /** Every room is this size; only what fills it changes. */
 export const ARENA: Arena = { width: 360, height: 560 };
 
-/** How the hero's swing reach grows over a run. */
-export const REACH_PER_BONUS = 9;
-
 export interface LevelParams {
   /** How many enemies the room holds. */
   enemies: number;
@@ -34,7 +31,17 @@ export interface RoomSpec {
  */
 export type SpawnPattern = "arc" | "pincer" | "ring" | "column" | "corners";
 
+/**
+ * `ring` surrounds the hero's start by design ("the opening move is an
+ * escape" — see `layout`'s `ring` case) — a fair ask once a run can plausibly
+ * have bought a couple of upgrades, but a spike, not a curve, against a
+ * fresh build. Held out of rotation until `RING_UNLOCK_LEVEL` so the first
+ * encirclement lands after a purse has had a real chance to grow.
+ */
+const EARLY_PATTERNS: SpawnPattern[] = ["arc", "pincer", "column", "corners"];
 const PATTERNS: SpawnPattern[] = ["arc", "pincer", "column", "corners", "ring"];
+/** First level `ring` is eligible to appear. */
+const RING_UNLOCK_LEVEL = 8;
 
 /** Two swings at level one; GRUNT.hp is the archetype's own default. */
 const OPENING_HP = 20;
@@ -56,11 +63,22 @@ export function paramsForLevel(level: number): LevelParams {
   return {
     // Level one is two grunts that die in two swings — a room you can lose to
     // only by standing still, so the controls are learnable before the game
-    // starts asking for spacing. Both dials then climb.
-    enemies: Math.min(14, 1 + Math.ceil(n * 0.9)),
-    enemyHp: OPENING_HP + Math.floor((n - 1) * 5),
+    // starts asking for spacing. Both dials then climb — count more slowly
+    // than health, so a room fills up without outrunning what a purse still
+    // forming can buy.
+    enemies: Math.min(14, 1 + Math.ceil(n * 0.55)),
+    enemyHp: OPENING_HP + Math.floor((n - 1) * 3),
     // Cycle deterministically so consecutive levels never repeat a shape.
-    pattern: PATTERNS[(n - 1) % PATTERNS.length],
+    // Below RING_UNLOCK_LEVEL, cycle only the four non-encircling patterns.
+    // From RING_UNLOCK_LEVEL on, cycle the full five with the counter
+    // restarted at that level (rather than continuing (n-1) % 5) so the
+    // hand-off itself can never repeat a shape across the seam — continuing
+    // the same counter would land level 8 on "column" right after level 7's
+    // "column".
+    pattern:
+      n < RING_UNLOCK_LEVEL
+        ? EARLY_PATTERNS[(n - 1) % EARLY_PATTERNS.length]
+        : PATTERNS[(n - RING_UNLOCK_LEVEL) % PATTERNS.length],
   };
 }
 

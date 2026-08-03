@@ -51,6 +51,8 @@ export function drawWorld(
 
   drawFloor(ctx, arena.width, arena.height);
 
+  drawCoins(ctx, world, opts);
+
   drawReach(ctx, world);
 
   // Corpses first, so living things are never hidden behind them.
@@ -89,6 +91,29 @@ function drawReach(ctx: CanvasRenderingContext2D, world: World): void {
   ctx.arc(px(hero.pos.x), px(hero.pos.y), reach, 0, Math.PI * 2);
   ctx.stroke();
   ctx.restore();
+}
+
+/**
+ * Coins dropped by kills, magnetised toward the hero and banked on pickup.
+ *
+ * Drawn after the floor and before every entity so a coin can never sit on
+ * top of the hero or a critter and hide it — the floor is the only thing a
+ * coin is allowed to cover. `#F8D030` is knight's accent colour in the arcade
+ * registry, so coins read as this game's gold rather than a generic pickup.
+ */
+function drawCoins(ctx: CanvasRenderingContext2D, world: World, opts: DrawOptions): void {
+  for (const coin of world.coins) {
+    // Coins read as pickup-able rather than as scenery because they bob. The
+    // phase is keyed off the coin id so a pile does not pulse in unison, and
+    // off world.tick (not wall-clock time) so the sim stays deterministic.
+    const bob = opts.reducedMotion
+      ? 0
+      : Math.round(Math.sin((world.tick + coin.id * 17) * 0.08));
+    ctx.fillStyle = "#F8D030";
+    ctx.fillRect(px(coin.pos.x) - 2, px(coin.pos.y) - 2 + bob, 5, 5);
+    ctx.fillStyle = "#FFF3B0";
+    ctx.fillRect(px(coin.pos.x) - 2, px(coin.pos.y) - 2 + bob, 5, 1);
+  }
 }
 
 function drawFloor(ctx: CanvasRenderingContext2D, w: number, h: number): void {

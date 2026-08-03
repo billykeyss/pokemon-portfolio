@@ -5,6 +5,7 @@ import {
   damageEntity,
   IFRAME_TICKS,
   SWING_REACH,
+  SWING_ARC,
   SWING_DAMAGE,
   WINDUP_TICKS,
   ACTIVE_TICKS,
@@ -21,7 +22,7 @@ describe("inSwingArc", () => {
     const h = spawnHero(w, { x: 180, y: 300 });
     h.facing = { x: 0, y: -1 };
     const e = spawnEnemy(w, { x: 180, y: 300 - SWING_REACH * 0.5 }, 30);
-    expect(inSwingArc(h, e)).toBe(true);
+    expect(inSwingArc(h, e, SWING_REACH, SWING_ARC)).toBe(true);
   });
 
   it("misses a target behind the attacker", () => {
@@ -29,7 +30,7 @@ describe("inSwingArc", () => {
     const h = spawnHero(w, { x: 180, y: 300 });
     h.facing = { x: 0, y: -1 };
     const e = spawnEnemy(w, { x: 180, y: 300 + SWING_REACH * 0.5 }, 30);
-    expect(inSwingArc(h, e)).toBe(false);
+    expect(inSwingArc(h, e, SWING_REACH, SWING_ARC)).toBe(false);
   });
 
   it("misses a target beyond reach", () => {
@@ -37,7 +38,7 @@ describe("inSwingArc", () => {
     const h = spawnHero(w, { x: 180, y: 300 });
     h.facing = { x: 0, y: -1 };
     const e = spawnEnemy(w, { x: 180, y: 300 - SWING_REACH * 4 }, 30);
-    expect(inSwingArc(h, e)).toBe(false);
+    expect(inSwingArc(h, e, SWING_REACH, SWING_ARC)).toBe(false);
   });
 
   it("hits to the side, since the arc is wide", () => {
@@ -45,7 +46,19 @@ describe("inSwingArc", () => {
     const h = spawnHero(w, { x: 180, y: 300 });
     h.facing = { x: 0, y: -1 };
     const e = spawnEnemy(w, { x: 180 + 26, y: 300 - 26 }, 30);
-    expect(inSwingArc(h, e)).toBe(true);
+    expect(inSwingArc(h, e, SWING_REACH, SWING_ARC)).toBe(true);
+  });
+
+  it("widens with a caller-supplied arc, not a hardcoded one", () => {
+    // Regression guard for threading statsOf(world).arc through rather than
+    // re-deriving SWING_ARC/2 locally: a wide caller-supplied arc must hit a
+    // target a narrow one would miss.
+    const w = fresh();
+    const h = spawnHero(w, { x: 180, y: 300 });
+    h.facing = { x: 0, y: -1 };
+    const e = spawnEnemy(w, { x: 180 + 26, y: 300 - 26 }, 30);
+    expect(inSwingArc(h, e, SWING_REACH, 0.01)).toBe(false);
+    expect(inSwingArc(h, e, SWING_REACH, Math.PI * 2)).toBe(true);
   });
 });
 

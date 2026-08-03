@@ -1,6 +1,10 @@
 import { describe, it, expect } from "vitest";
 import { steerHero, isStandingStill, HERO_SPEED, STOP_SPEED } from "./move";
+import { createWorld } from "./world";
 import type { Entity } from "./types";
+
+const arena = { width: 360, height: 560 };
+const freshWorld = () => createWorld({ arena, seed: 1 });
 
 function hero(over: Partial<Entity> = {}): Entity {
   return {
@@ -22,42 +26,48 @@ function hero(over: Partial<Entity> = {}): Entity {
 
 describe("steerHero", () => {
   it("accelerates toward the target rather than snapping", () => {
+    const w = freshWorld();
     const h = hero();
-    steerHero(h, { x: 300, y: 100 }, 1 / 120);
+    steerHero(w, h, { x: 300, y: 100 }, 1 / 120);
     expect(h.vel.x).toBeGreaterThan(0);
     // One step must not reach full speed, or movement feels weightless.
     expect(h.vel.x).toBeLessThan(HERO_SPEED);
   });
 
   it("converges on full speed when held", () => {
+    const w = freshWorld();
     const h = hero();
-    for (let i = 0; i < 240; i++) steerHero(h, { x: 300, y: 100 }, 1 / 120);
+    for (let i = 0; i < 240; i++) steerHero(w, h, { x: 300, y: 100 }, 1 / 120);
     expect(Math.hypot(h.vel.x, h.vel.y)).toBeCloseTo(HERO_SPEED, 0);
   });
 
   it("decelerates to a stop when the target is released", () => {
+    const w = freshWorld();
     const h = hero({ vel: { x: HERO_SPEED, y: 0 } });
-    for (let i = 0; i < 240; i++) steerHero(h, null, 1 / 120);
+    for (let i = 0; i < 240; i++) steerHero(w, h, null, 1 / 120);
     expect(Math.hypot(h.vel.x, h.vel.y)).toBeLessThan(1);
   });
 
   it("faces the direction of travel", () => {
+    const w = freshWorld();
     const h = hero();
-    for (let i = 0; i < 30; i++) steerHero(h, { x: 100, y: 400 }, 1 / 120);
+    for (let i = 0; i < 30; i++) steerHero(w, h, { x: 100, y: 400 }, 1 / 120);
     expect(h.facing.y).toBeGreaterThan(0.9);
   });
 
   it("keeps facing after stopping rather than snapping to a default", () => {
+    const w = freshWorld();
     const h = hero();
-    for (let i = 0; i < 30; i++) steerHero(h, { x: 400, y: 100 }, 1 / 120);
+    for (let i = 0; i < 30; i++) steerHero(w, h, { x: 400, y: 100 }, 1 / 120);
     const facedX = h.facing.x;
-    for (let i = 0; i < 240; i++) steerHero(h, null, 1 / 120);
+    for (let i = 0; i < 240; i++) steerHero(w, h, null, 1 / 120);
     expect(h.facing.x).toBeCloseTo(facedX, 1);
   });
 
   it("does not jitter when the target is already underfoot", () => {
+    const w = freshWorld();
     const h = hero();
-    for (let i = 0; i < 60; i++) steerHero(h, { x: 100, y: 100 }, 1 / 120);
+    for (let i = 0; i < 60; i++) steerHero(w, h, { x: 100, y: 100 }, 1 / 120);
     expect(Math.hypot(h.vel.x, h.vel.y)).toBeLessThan(STOP_SPEED);
   });
 });

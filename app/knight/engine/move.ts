@@ -1,7 +1,9 @@
 import type { Entity, Vec2 } from "./types";
+import type { World } from "./world";
+import { statsOf } from "./stats";
+import { HERO_SPEED } from "./constants";
 
-/** Top speed in pixels per second. */
-export const HERO_SPEED = 132;
+export { HERO_SPEED };
 /** How fast velocity converges on the desired velocity, per second. */
 export const ACCEL = 14;
 /** Below this speed the hero counts as standing still, and may swing. */
@@ -17,7 +19,7 @@ const ARRIVE_RADIUS = 6;
  * it directly makes the hero feel like a cursor, and the whole skill of the
  * game is spacing, which needs weight to read.
  */
-export function steerHero(hero: Entity, target: Vec2 | null, dt: number): void {
+export function steerHero(world: World, hero: Entity, target: Vec2 | null, dt: number): void {
   let desiredX = 0;
   let desiredY = 0;
 
@@ -26,8 +28,9 @@ export function steerHero(hero: Entity, target: Vec2 | null, dt: number): void {
     const dy = target.y - hero.pos.y;
     const dist = Math.hypot(dx, dy);
     if (dist > ARRIVE_RADIUS) {
-      desiredX = (dx / dist) * HERO_SPEED;
-      desiredY = (dy / dist) * HERO_SPEED;
+      const speed = statsOf(world).moveSpeed;
+      desiredX = (dx / dist) * speed;
+      desiredY = (dy / dist) * speed;
     }
   }
 

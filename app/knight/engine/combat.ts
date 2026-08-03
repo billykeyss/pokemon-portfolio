@@ -1,13 +1,24 @@
 import type { Entity } from "./types";
 import type { World } from "./world";
+import { statsOf } from "./stats";
+import {
+  WINDUP_TICKS,
+  ACTIVE_TICKS,
+  RECOVER_TICKS,
+  IFRAME_TICKS,
+  SWING_REACH,
+  SWING_ARC,
+  SWING_DAMAGE,
+  KNOCKBACK,
+} from "./constants";
 
-/** Swing timing, in ticks at 120Hz. Wind-up is long enough to read as a tell. */
-export const WINDUP_TICKS = 14;
-export const ACTIVE_TICKS = 7;
-export const RECOVER_TICKS = 20;
+// Re-exported so existing consumers (world.ts, combat.test.ts, stats.ts)
+// keep importing these from "./combat" unchanged. The values live in
+// constants.ts — a leaf module — so that stats.ts, which needs them for
+// BASE_STATS, never has to import this file back. See the comment on
+// WINDUP_TICKS in constants.ts for why that matters.
+export { WINDUP_TICKS, ACTIVE_TICKS, RECOVER_TICKS, IFRAME_TICKS, SWING_REACH, SWING_ARC, SWING_DAMAGE, KNOCKBACK };
 
-/** Invulnerability after taking a hit, so a crowd cannot chain-delete you. */
-export const IFRAME_TICKS = 42;
 /**
  * An enemy's window. Short by design: the swing cycle is WINDUP + ACTIVE +
  * RECOVER, so anything close to that length silently makes the hero unable to
@@ -15,11 +26,6 @@ export const IFRAME_TICKS = 42;
  */
 export const ENEMY_IFRAME_TICKS = 6;
 
-export const SWING_REACH = 46;
-/** Total arc width in radians — generous, because aiming is automatic. */
-export const SWING_ARC = Math.PI * 0.7;
-export const SWING_DAMAGE = 10;
-export const KNOCKBACK = 210;
 /**
  * Knockback applied when the hero is hurt by contact.
  *
@@ -30,8 +36,16 @@ export const KNOCKBACK = 210;
  */
 export const CONTACT_KNOCKBACK = 70;
 
-/** Distance-only reach test, ignoring facing. */
-export function inSwingRange(attacker: Entity, target: Entity, reach = SWING_REACH): boolean {
+/**
+ * Distance-only reach test, ignoring facing.
+ *
+ * `reach` has no default: every production caller already resolves it from
+ * `statsOf(world)` (a bought reach bonus must widen this the same way it
+ * widens the arc test below), so a fallback to the base `SWING_REACH` would
+ * only ever be reached by a caller that forgot to pass the real value — a
+ * silent trap, not a convenience.
+ */
+export function inSwingRange(attacker: Entity, target: Entity, reach: number): boolean {
   const dx = target.pos.x - attacker.pos.x;
   const dy = target.pos.y - attacker.pos.y;
   return Math.hypot(dx, dy) <= reach + target.radius;
@@ -45,11 +59,20 @@ export interface SwingHit {
 
 /** The attacker's effective reach, including anything the run has earned. */
 export function reachOf(world: World): number {
-  return SWING_REACH + world.mods.reachBonus;
+  return statsOf(world).reach;
 }
 
-/** Whether `target` is inside `attacker`'s swing wedge. */
-export function inSwingArc(attacker: Entity, target: Entity, reach = SWING_REACH): boolean {
+/**
+ * Whether `target` is inside `attacker`'s swing wedge.
+ *
+ * `reach` and `arc` both come from the caller rather than defaulting to
+ * `SWING_REACH`/`SWING_ARC` here, for the same reason `inSwingRange` above
+ * takes `reach` explicitly: re-deriving either locally would contradict
+ * `statsOf` being the single source of truth, and becomes a live bug the
+ * moment a future weapon (phase 2's gear shelf) sets a per-weapon arc — a
+ * hardcoded `SWING_ARC / 2` here would silently ignore it.
+ */
+export function inSwingArc(attacker: Entity, target: Entity, reach: number, arc: number): boolean {
   const dx = target.pos.x - attacker.pos.x;
   const dy = target.pos.y - attacker.pos.y;
   const dist = Math.hypot(dx, dy);
@@ -59,7 +82,7 @@ export function inSwingArc(attacker: Entity, target: Entity, reach = SWING_REACH
 
   const dot = (dx / dist) * attacker.facing.x + (dy / dist) * attacker.facing.y;
   // Clamp guards against a floating-point |dot| slightly over 1.
-  return Math.acos(Math.max(-1, Math.min(1, dot))) <= SWING_ARC / 2;
+  return Math.acos(Math.max(-1, Math.min(1, dot))) <= arc / 2;
 }
 
 /**
@@ -146,6 +169,7 @@ export function updateAttack(world: World, e: Entity): SwingHit[] {
 
   const elapsed = world.tick - e.attack.startedAtTick;
   const hits: SwingHit[] = [];
+  const s = statsOf(world);
 
   switch (e.attack.phase) {
     case "idle": {
@@ -177,7 +201,7 @@ export function updateAttack(world: World, e: Entity): SwingHit[] {
     }
 
     case "windup":
-      if (elapsed >= WINDUP_TICKS) {
+      if (elapsed >= s.windupTicks) {
         e.attack.phase = "active";
         e.attack.startedAtTick = world.tick;
 
@@ -192,11 +216,11 @@ export function updateAttack(world: World, e: Entity): SwingHit[] {
           // dangerous.
           const reach = reachOf(world);
           const locked = e.attack.targetId === target.id && inSwingRange(e, target, reach);
-          if (!locked && !inSwingArc(e, target, reach)) continue;
-          if (!damageEntity(world, target, SWING_DAMAGE, e.pos.x, e.pos.y)) continue;
+          if (!locked && !inSwingArc(e, target, reach, s.arc)) continue;
+          if (!damageEntity(world, target, s.damage, e.pos.x, e.pos.y, s.knockback)) continue;
           hits.push({
             targetId: target.id,
-            damage: SWING_DAMAGE,
+            damage: s.damage,
             killed: target.deadAtTick >= 0,
           });
         }
@@ -204,14 +228,14 @@ export function updateAttack(world: World, e: Entity): SwingHit[] {
       break;
 
     case "active":
-      if (elapsed >= ACTIVE_TICKS) {
+      if (elapsed >= s.activeTicks) {
         e.attack.phase = "recover";
         e.attack.startedAtTick = world.tick;
       }
       break;
 
     case "recover":
-      if (elapsed >= RECOVER_TICKS) {
+      if (elapsed >= s.recoverTicks) {
         e.attack.phase = "idle";
         e.attack.startedAtTick = world.tick;
         e.attack.targetId = -1;
