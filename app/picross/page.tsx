@@ -43,6 +43,7 @@ export default function PicrossPage() {
   const [misses, setMisses] = useState(0);
   const [won, setWon] = useState(false);
   const [showLevels, setShowLevels] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
 
   const boardRef = useRef(board);
   boardRef.current = board;
@@ -99,6 +100,14 @@ export default function PicrossPage() {
 
     setSave(restored);
     setLoaded(true);
+
+    // First-ever visit — nothing played, nothing cleared, nothing in
+    // progress — gets the rules unprompted. Anyone who has touched the game
+    // before, even without clearing a level, has earned the right not to be
+    // lectured again.
+    if (restored.level === 1 && restored.cleared.length === 0 && restored.progress === null) {
+      setShowHelp(true);
+    }
   }, [install]);
 
   useEffect(() => {
@@ -185,7 +194,7 @@ export default function PicrossPage() {
 
   const onPointerDown = useCallback(
     (event: React.PointerEvent<HTMLCanvasElement>) => {
-      if (wonRef.current || showLevels) return;
+      if (wonRef.current || showLevels || showHelp) return;
       const point = pointFrom(event);
       const layout = currentLayout();
       if (point === null || layout === null) return;
@@ -201,7 +210,7 @@ export default function PicrossPage() {
       lastCellRef.current = null;
       paint(cell.row, cell.col);
     },
-    [paint, pointFrom, currentLayout, showLevels],
+    [paint, pointFrom, currentLayout, showLevels, showHelp],
   );
 
   const onPointerMove = useCallback(
@@ -314,9 +323,21 @@ export default function PicrossPage() {
             &larr; Arcade
           </Link>
           <h1 className="text-sm font-bold uppercase tracking-[0.3em]">Picross</h1>
-          <span className="w-14 text-right text-[10px] uppercase tracking-widest opacity-40">
-            {misses === 0 ? "clean" : `${misses} miss`}
-          </span>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                if (!wonRef.current && !showLevels) setShowHelp(true);
+              }}
+              aria-label="How to play"
+              className="flex h-4 w-4 items-center justify-center rounded-full border border-[#f8f0e0]/60 text-[9px] font-bold leading-none opacity-70"
+            >
+              ?
+            </button>
+            <span className="w-14 text-right text-[10px] uppercase tracking-widest opacity-40">
+              {misses === 0 ? "clean" : `${misses} miss`}
+            </span>
+          </div>
         </div>
 
         <PixelPanel className="!p-2">
@@ -409,6 +430,62 @@ export default function PicrossPage() {
                 </PixelButton>
               </div>
             </PixelPanel>
+          </div>
+        )}
+
+        {showHelp && (
+          <div
+            className="absolute inset-0 z-20 flex items-center justify-center bg-black/70 p-4"
+            onClick={() => setShowHelp(false)}
+          >
+            {/* Stops a click inside the panel from bubbling to the backdrop
+                and closing it out from under the reader. */}
+            <div className="w-full max-w-xs" onClick={(event) => event.stopPropagation()}>
+              <PixelPanel className="text-left">
+                <h2 className="mb-2 text-center text-sm font-bold uppercase tracking-widest">
+                  How to play
+                </h2>
+                <p className="mb-3 text-[11px] leading-relaxed opacity-90">
+                  The numbers count runs of shaded cells — a row&apos;s from left to
+                  right, a column&apos;s from top to bottom.
+                </p>
+                <ul className="mb-3 space-y-1.5 text-[11px]">
+                  <li className="flex items-baseline gap-2">
+                    <span className="w-10 shrink-0 text-right font-mono text-xs">3</span>
+                    <span className="opacity-80">three shaded in a row</span>
+                  </li>
+                  <li className="flex items-baseline gap-2">
+                    <span className="w-10 shrink-0 text-right font-mono text-xs">1 1</span>
+                    <span className="opacity-80">
+                      one, a gap, then one more. <strong>Not eleven.</strong>
+                    </span>
+                  </li>
+                  <li className="flex items-baseline gap-2">
+                    <span className="w-10 shrink-0 text-right font-mono text-xs">0</span>
+                    <span className="opacity-80">this line stays empty</span>
+                  </li>
+                </ul>
+                <p className="mb-3 text-[11px] leading-relaxed opacity-90">
+                  Two numbers always mean two separate runs with at least one blank
+                  between them.
+                </p>
+                <p className="mb-3 text-[11px] leading-relaxed opacity-90">
+                  <strong>Fill</strong> shades a cell. <strong>Mark</strong> pencils
+                  an X where you have worked out a cell is blank. Drag to do a whole
+                  run at once.
+                </p>
+                <p className="mb-4 text-[11px] leading-relaxed opacity-90">
+                  Every puzzle can be solved by logic alone, so you never have to
+                  guess — and a wrong tap is simply refused. You cannot lose.
+                </p>
+                <PixelButton
+                  onClick={() => setShowHelp(false)}
+                  className="w-full !px-2 !py-2 text-[10px]"
+                >
+                  Got it
+                </PixelButton>
+              </PixelPanel>
+            </div>
           </div>
         )}
       </div>
