@@ -110,4 +110,13 @@ export const GAMES: readonly ArcadeGame[] = [
       },
     },
   },
+  {
+    slug: "picross",
+    title: "PICROSS",
+    tagline: "Read the numbers. Find the picture.",
+    href: "/picross",
+    accent: "#3B7DD8",
+    available: true,
+    progress: levelProgress("game:picross"),
+  },
 ];

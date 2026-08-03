@@ -173,6 +173,25 @@ const SUDOKU: PixelSprite = {
   ],
 };
 
+/** A part-solved grid: clue ticks down the side, a diamond forming inside. */
+const PICROSS: PixelSprite = {
+  palette: { K: OUTLINE, F: "#3B7DD8", G: "#CFC7B0" },
+  grid: [
+    "............",
+    "............",
+    "...KKKKKKKK.",
+    ".G.K......K.",
+    "GG.K..FF..K.",
+    ".G.K.FFFF.K.",
+    "GG.KFFFFFFK.",
+    ".G.K.FFFF.K.",
+    "GG.K..FF..K.",
+    "...KKKKKKKK.",
+    "............",
+    "............",
+  ],
+};
+
 /** Keyed by the registry slug, so a cabinet finds its own badge. */
 export const GAME_ICONS: Record<string, PixelSprite> = {
   bouncedex: BOUNCEDEX,
@@ -183,4 +202,5 @@ export const GAME_ICONS: Record<string, PixelSprite> = {
   chronicle: CHRONICLE,
   "critter-knight": CRITTER_KNIGHT,
   sudoku: SUDOKU,
+  picross: PICROSS,
 };
