@@ -1,8 +1,8 @@
 {
-  "name": "Arcade",
+  "name": "Bill Huang Arcade",
   "short_name": "Arcade",
-  "start_url": "/bounce",
-  "scope": "/bounce",
+  "start_url": "/game/",
+  "scope": "/",
   "display": "fullscreen",
   "orientation": "portrait",
   "background_color": "#0d0a15",

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ThemeProvider } from "next-themes";
+import { RegisterServiceWorker } from "./game/_shared/RegisterServiceWorker";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -34,6 +35,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body>
+        <RegisterServiceWorker />
         <ThemeProvider
           attribute="class"
           defaultTheme="light"

@@ -18,13 +18,6 @@ export default function ArcadePage() {
   const [status, setStatus] = useState<Record<string, string | null>>({});
 
   useEffect(() => {
-    if (!("serviceWorker" in navigator)) return;
-    navigator.serviceWorker.register("/sw.js").catch(() => {
-      // Offline caching is a bonus; a failed registration must not break the page.
-    });
-  }, []);
-
-  useEffect(() => {
     const next: Record<string, string | null> = {};
     for (const game of GAMES) {
       next[game.slug] = readProgress(window.localStorage, game.progress);

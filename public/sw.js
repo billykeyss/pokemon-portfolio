@@ -1,10 +1,13 @@
 // Arcade offline cache. Bump CACHE_NAME to force clients onto new assets.
 //
-// Next.js emits hashed asset filenames that are unknown when this file is
-// written, so this caches at runtime (cache-first for same-origin GETs) rather
-// than precaching a hardcoded list.
-const CACHE_NAME = "arcade-v6";
-const CORE = [
+// Next.js emits content-hashed asset filenames that are unknown when this file
+// is written, so nothing here precaches a build's chunks by name — routes are
+// precached, and everything under them is cached as it is fetched.
+const CACHE_NAME = "arcade-v7";
+
+// Every route the arcade can land on. Precached together so a player who has
+// only ever opened one game can still reach the others with no connection.
+const ROUTES = [
   "/game/",
   "/bounce/",
   "/bounce/bouncedex/",
@@ -13,9 +16,58 @@ const CORE = [
   "/shelf/",
   "/arrows/",
   "/knight/",
-  "/manifest.webmanifest",
-  "/icon.svg",
+  "/picross/",
+  "/sudoku/",
 ];
+
+const CORE = [...ROUTES, "/manifest.webmanifest", "/icon.svg"];
+
+// Runtime assets live under these. Traffic and Shelf fetch their sprites from
+// /game/traffic/ and /game/shelf/ at play time, so those must be intercepted
+// too — a route that loads but cannot draw is not offline support.
+const ASSET_PREFIXES = ["/_next/", "/game/", "/bounce/"];
+
+const isHashedBuildAsset = (pathname) => pathname.startsWith("/_next/static/");
+
+async function cacheFirst(request) {
+  const cached = await caches.match(request);
+  if (cached) return cached;
+
+  const response = await fetch(request);
+  if (response.ok) {
+    const cache = await caches.open(CACHE_NAME);
+    cache.put(request, response.clone());
+  }
+  return response;
+}
+
+/**
+ * Fresh when there is a network, cached when there is not.
+ *
+ * This is the strategy for HTML specifically. Serving a page cache-first is
+ * what produced the failure this replaces: a cached document paired with a
+ * newer build's chunks, so React hydrates against markup it did not produce
+ * and the page dies on load. The document is the one thing that must not lag
+ * behind the assets it references.
+ */
+async function networkFirst(request) {
+  try {
+    const response = await fetch(request);
+    if (response.ok) {
+      const cache = await caches.open(CACHE_NAME);
+      cache.put(request, response.clone());
+    }
+    return response;
+  } catch {
+    const cached = await caches.match(request);
+    if (cached) return cached;
+    // An uncached route with no network. The arcade index is precached and
+    // links to everything, so it is a better landing place than a browser
+    // error page.
+    const fallback = await caches.match("/game/");
+    return fallback ?? Response.error();
+  }
+}
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -47,38 +99,27 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
 
-  // Every arcade route, plus the shared assets. A path that is precached but
-  // not intercepted still 404s offline, which is exactly what happened to
-  // /game, /sort, /traffic and /shelf.
-  const ROUTE_PREFIXES = [
-    "/game",
-    "/bounce",
-    "/sort",
-    "/traffic",
-    "/shelf",
-    "/arrows",
-    "/knight",
-  ];
+  // A page load, however it was reached. Always tried against the network
+  // first — see networkFirst for why the document is the one thing that must
+  // not be served stale.
+  if (request.mode === "navigate") {
+    event.respondWith(networkFirst(request));
+    return;
+  }
 
-  const handled =
-    url.pathname.startsWith("/_next") ||
+  // Content-hashed build output. The filename changes whenever the bytes do,
+  // so a cached copy can never be stale, which makes cache-first both correct
+  // and the fastest path available.
+  if (isHashedBuildAsset(url.pathname)) {
+    event.respondWith(cacheFirst(request));
+    return;
+  }
+
+  if (
     url.pathname === "/manifest.webmanifest" ||
     url.pathname === "/icon.svg" ||
-    ROUTE_PREFIXES.some((p) => url.pathname.startsWith(p));
-  if (!handled) return;
-
-  event.respondWith(
-    caches.match(request).then((cached) => {
-      if (cached) return cached;
-      return fetch(request)
-        .then((response) => {
-          if (response.ok) {
-            const copy = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
-          }
-          return response;
-        })
-        .catch(() => cached ?? Response.error());
-    }),
-  );
+    ASSET_PREFIXES.some((p) => url.pathname.startsWith(p))
+  ) {
+    event.respondWith(cacheFirst(request));
+  }
 });
