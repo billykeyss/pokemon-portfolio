@@ -184,8 +184,8 @@ One function computes every run-modifiable number. Nothing else re-derives one.
 
 **Interfaces:**
 - Consumes: `World` (type-only) from `./world`; `RunMods` from `../data/upgrades`
-  (created in Task 3 — for this task, import it from `./world` where it still
-  lives, and Task 3 moves the import).
+  (created in Task 4 — for this task, import it from `./world` where it still
+  lives, and Task 4 moves the import).
 - Produces:
   - `export interface Stats { reach, arc, damage, maxHp, moveSpeed, knockback, windupTicks, activeTicks, recoverTicks, iframeTicks, coinMult: number }` — `arc` in radians, `reach`/`knockback`/`moveSpeed` in px or px/s, tick fields integers.
   - `export const BASE_STATS: Stats`
@@ -355,7 +355,7 @@ duplicate it into `constants.ts`, and do not change hero speed in this task.
 In `app/knight/engine/world.ts`, delete the local `HERO_RADIUS`, `HERO_HP` and
 `ENEMY_RADIUS` consts and import them from `./constants` instead.
 
-Extend `RunMods` in `app/knight/engine/world.ts` to the nine fields (Task 3
+Extend `RunMods` in `app/knight/engine/world.ts` to the nine fields (Task 4
 moves this whole block to `data/upgrades.ts`):
 
 ```ts
@@ -1225,7 +1225,7 @@ between rooms.
 - Create: `app/knight/ui/Shop.tsx`
 - Modify: `app/knight/page.tsx`
 - Modify: `app/knight/ui/Hud.tsx`
-- Test: `app/knight/ui/Shop.test.tsx`
+- Test: `app/knight/ui/Shop.affordability.test.ts`
 
 **Interfaces:**
 - Consumes: `ShopState`, `Offer`, `rerollCost` from `../engine/shop`;
@@ -1234,71 +1234,65 @@ between rooms.
 
 - [ ] **Step 1: Write the failing test**
 
-Create `app/knight/ui/Shop.test.tsx`:
+**This project has no DOM test setup** — no `@testing-library/react`, vitest
+runs `environment: "node"`, and there is not a single `.test.tsx` in the repo.
+Do NOT add one: changing the project's test infrastructure is out of scope for
+this task, and the Global Constraints say follow existing patterns.
 
-```tsx
-import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
-import { openShop } from "../engine/shop";
-import { Shop } from "./Shop";
+The component is presentation over `shop.ts`, and `shop.ts` is already covered
+by Task 6's engine tests. What is left untested by machine — that the right
+thing is on screen and tappable — is covered by the mandatory hand-play in
+Step 6, which is not optional and not a formality.
 
-describe("<Shop>", () => {
-  const setup = (purse: number) => {
-    const onBuy = vi.fn();
-    const onReroll = vi.fn();
-    const onNext = vi.fn();
-    const shop = openShop(3);
-    render(
-      <Shop
-        shop={shop}
-        purse={purse}
-        level={3}
-        onBuy={onBuy}
-        onReroll={onReroll}
-        onNext={onNext}
-      />,
-    );
-    return { shop, onBuy, onReroll, onNext };
-  };
+So this task's test is a guard that the presentation logic the component
+depends on is real. Create `app/knight/ui/Shop.affordability.test.ts`:
 
-  it("shows the purse and every offer's name and price", () => {
-    const { shop } = setup(500);
-    expect(screen.getByText(/500/)).toBeTruthy();
-    for (const offer of shop.offers) {
-      expect(screen.getByText(offer.upgrade.name)).toBeTruthy();
-      expect(screen.getAllByText(new RegExp(String(offer.price))).length).toBeGreaterThan(0);
+```ts
+import { describe, it, expect } from "vitest";
+import { createWorld } from "../engine/world";
+import { openShop, purchase, rerollCost } from "../engine/shop";
+
+const arena = { width: 360, height: 560 };
+
+describe("what the shop screen has to render", () => {
+  it("gives every offer a name, a description and a price to show", () => {
+    for (const offer of openShop(3).offers) {
+      expect(offer.upgrade.name.length).toBeGreaterThan(0);
+      expect(offer.upgrade.description.length).toBeGreaterThan(0);
+      expect(offer.price).toBeGreaterThan(0);
     }
   });
 
-  it("buys the card that was tapped", () => {
-    const { onBuy, shop } = setup(500);
-    fireEvent.click(screen.getByText(shop.offers[1].upgrade.name));
-    expect(onBuy).toHaveBeenCalledWith(1);
+  it("leaves a hole where a bought card was, so the row does not reshuffle", () => {
+    const w = createWorld({ arena, seed: 1 });
+    w.purse = 1000;
+    const shop = openShop(3);
+    const idsBefore = shop.offers.map((o) => o.upgrade.id);
+
+    purchase(w, shop, 1);
+
+    expect(shop.offers[0]?.upgrade.id).toBe(idsBefore[0]);
+    expect(shop.offers[1]).toBeUndefined();
+    expect(shop.offers[2]?.upgrade.id).toBe(idsBefore[2]);
   });
 
-  it("disables a card the player cannot afford and does not call onBuy", () => {
-    const { onBuy, shop } = setup(0);
-    fireEvent.click(screen.getByText(shop.offers[0].upgrade.name));
-    expect(onBuy).not.toHaveBeenCalled();
-  });
-
-  it("always lets the player leave, however empty the purse", () => {
-    const { onNext } = setup(0);
-    fireEvent.click(screen.getByRole("button", { name: /next room/i }));
-    expect(onNext).toHaveBeenCalled();
+  it("always leaves the player able to walk away broke", () => {
+    const w = createWorld({ arena, seed: 1 });
+    w.purse = 0;
+    const shop = openShop(3);
+    // Nothing is affordable and rerolling is out of reach, but leaving is not
+    // gated on either — the Next room button has no purse condition.
+    expect(shop.offers.every((o) => w.purse < o.price)).toBe(true);
+    expect(w.purse).toBeLessThan(rerollCost(shop.rerolls));
   });
 });
 ```
 
-Check `app/game/_shared` for an existing component test to copy the render
-setup from. If `@testing-library/react` is not already a dependency, do NOT add
-it — instead assert against `openShop`/`rerollCost` in a plain `.test.ts` and
-mark the DOM assertions as covered by the manual check in Step 6.
-
 - [ ] **Step 2: Run it and watch it fail**
 
 Run: `pnpm test app/knight/ui/Shop`
-Expected: FAIL — cannot resolve `./Shop`.
+Expected: FAIL — the hole-not-reshuffle case fails if `purchase` splices
+instead of deleting.
 
 - [ ] **Step 3: Build the component**
 
