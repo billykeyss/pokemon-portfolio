@@ -3,15 +3,18 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PixelButton, PixelPanel } from "@/app/game/_shared/pixel-ui";
-import { allCandidates, mergedGrid } from "./engine/candidates";
+import { allCandidates, mergedGrid, valueAt } from "./engine/candidates";
 import { explain, type Explanation } from "./engine/explain";
 import { CELLS } from "./engine/grid";
-import { emptyHistory, record, redo, undo, type History } from "./engine/history";
+import { emptyHistory, record, redo, undo, type Change, type History } from "./engine/history";
 import { puzzleFor } from "./engine/generate";
+import { clearStrikesAt, emptyMarks, setStrike, toggleStrike, visibleMarks, type Marks } from "./engine/marks";
 import {
   decodeGrid,
+  decodeMarks,
   defaultSudokuSave,
   encodeGrid,
+  encodeMarks,
   loadSudokuSave,
   recordSolve,
   writeSudokuSave,
@@ -38,6 +41,13 @@ export default function SudokuPage() {
   const [history, setHistory] = useState<History>(emptyHistory);
   const [selected, setSelected] = useState<Idx | null>(null);
   const [armed, setArmed] = useState<Digit | null>(null);
+  // A per-cell bitmask of digits the player has struck by hand — a display
+  // annotation layer, never fed to the engine. Nothing under app/sudoku/engine
+  // besides marks.ts and save.ts even has a parameter a Marks value could
+  // travel through, so "the engine never sees a strike" is structural here,
+  // not a discipline this file has to remember to keep.
+  const [marks, setMarks] = useState<Marks>(emptyMarks);
+  const [markMode, setMarkMode] = useState(false);
   const [mistakes, setMistakes] = useState(0);
   const [elapsedMs, setElapsedMs] = useState(0);
   const [running, setRunning] = useState(true);
@@ -78,6 +88,8 @@ export default function SudokuPage() {
     setHistory(emptyHistory());
     setSelected(null);
     setArmed(null);
+    setMarks(emptyMarks());
+    setMarkMode(false);
     setMistakes(0);
     setElapsedMs(0);
     setRunning(true);
@@ -152,6 +164,7 @@ export default function SudokuPage() {
         },
         entries: decodeGrid(p.entries),
       });
+      setMarks(decodeMarks(p.marks));
       setElapsedMs(p.elapsedMs);
       setMistakes(p.mistakes);
     } else {
@@ -243,6 +256,7 @@ export default function SudokuPage() {
             givens: encodeGrid(board.puzzle.givens),
             solution: encodeGrid(board.puzzle.solution),
             entries: encodeGrid(board.entries),
+            marks: encodeMarks(marks),
             elapsedMs,
             mistakes,
           },
@@ -254,7 +268,7 @@ export default function SudokuPage() {
     // never re-runs this effect and the solve it just recorded is never
     // written to storage. This does not create a write loop — the body only
     // calls `writeSudokuSave`, never `setSave`.
-  }, [board, elapsedMs, mistakes, solved, loaded, save]);
+  }, [board, elapsedMs, mistakes, solved, loaded, save, marks]);
 
   // Record the solve exactly once, on the transition into solved. `solved` is
   // not a terminal state — undoing the winning placement and redoing it flips
@@ -269,6 +283,14 @@ export default function SudokuPage() {
   }, [solved]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const candidates = useMemo(() => (board === null ? [] : allCandidates(board)), [board]);
+
+  // What actually gets drawn: a stored strike on a digit the board no longer
+  // offers is moot rather than deleted (see marks.ts), so this filters once
+  // here rather than asking Cell to know that rule.
+  const struck = useMemo(
+    () => (board === null ? [] : marks.map((m, i) => visibleMarks(m, candidates[i]))),
+    [board, marks, candidates],
+  );
 
   const highlights = useMemo(
     () =>
@@ -312,13 +334,41 @@ export default function SudokuPage() {
       const entries = [...board.entries] as Cell[];
       entries[index] = digit;
       setBoard({ ...board, entries });
-      setHistory((h) => record(h, { index, before, after: digit }));
+      // Filling a cell — with a digit, or back to empty — retires whatever
+      // was struck there. A strike is an opinion about which digits *could*
+      // still go here; once the cell holds an answer (right or wrong) or is
+      // cleared back to blank, that opinion has nothing left to be about.
+      // This is not itself an undo step, the same way the mistake count below
+      // is not: undoing the placement brings the digit back to `before`, not
+      // the marks back to what they were — one asymmetry the codebase already
+      // accepts elsewhere rather than a new one.
+      setMarks((m) => clearStrikesAt(m, index));
+      setHistory((h) => record(h, { kind: "place", index, before, after: digit }));
       setEngaged(true);
       if (digit !== 0 && digit !== board.puzzle.solution[index]) {
         setMistakes((m) => m + 1);
       }
     },
     [board],
+  );
+
+  const strike = useCallback(
+    (index: Idx, digit: Digit) => {
+      if (board === null) return;
+      // valueAt covers both "given" and "already filled" in one check: a
+      // filled cell shows no candidate grid, so there is nothing on screen
+      // here to strike either way.
+      if (valueAt(board, index) !== 0) return;
+
+      const result = toggleStrike(marks, index, digit, candidates[index]);
+      if (result === null) return; // not a live candidate — nothing to toggle
+      setMarks(result.marks);
+      setHistory((h) =>
+        record(h, { kind: "strike", index, digit, before: result.before, after: result.after }),
+      );
+      setEngaged(true);
+    },
+    [board, marks, candidates],
   );
 
   const onPick = useCallback(
@@ -333,23 +383,34 @@ export default function SudokuPage() {
     [armed, place],
   );
 
-  const applyChange = useCallback(
-    (index: Idx, value: Cell) => {
+  // Replays one Change in either direction. Undo and redo differ only in
+  // which side of the Change they read, so both funnel through here rather
+  // than duplicating the place/strike dispatch twice.
+  const applyChange = useCallback((change: Change, dir: "before" | "after") => {
+    if (change.kind === "place") {
+      const value = dir === "before" ? change.before : change.after;
       setBoard((b) => {
         if (b === null) return b;
         const entries = [...b.entries] as Cell[];
-        entries[index] = value;
+        entries[change.index] = value;
         return { ...b, entries };
       });
-    },
-    [],
-  );
+      // A placement always retires that cell's strikes on the live path
+      // (see `place` above); replaying one has to match, or a redo could
+      // leave a struck mark stranded under a digit that was filled in a
+      // different session's undo/redo dance than the one that struck it.
+      setMarks((m) => clearStrikesAt(m, change.index));
+      return;
+    }
+    const on = dir === "before" ? change.before : change.after;
+    setMarks((m) => setStrike(m, change.index, change.digit, on));
+  }, []);
 
   const doUndo = useCallback(() => {
     setHistory((h) => {
       const step = undo(h);
       if (step === null) return h;
-      applyChange(step.change.index, step.change.before);
+      applyChange(step.change, "before");
       return step.history;
     });
   }, [applyChange]);
@@ -358,7 +419,7 @@ export default function SudokuPage() {
     setHistory((h) => {
       const step = redo(h);
       if (step === null) return h;
-      applyChange(step.change.index, step.change.after);
+      applyChange(step.change, "after");
       return step.history;
     });
   }, [applyChange]);
@@ -410,8 +471,20 @@ export default function SudokuPage() {
 
       switch (action.kind) {
         case "digit":
-          if (selected !== null) place(selected, action.digit);
-          else setArmed(action.digit);
+          // Plain digit keys follow whichever mode the keypad is in — a
+          // player who has turned mark mode on should not have it silently
+          // stop applying just because they reached for the keyboard instead
+          // of tapping. Shift+digit (the "strike" case below) is the
+          // separate shortcut that works regardless of mode.
+          if (selected !== null) {
+            if (markMode) strike(selected, action.digit);
+            else place(selected, action.digit);
+          } else if (!markMode) {
+            setArmed(action.digit);
+          }
+          return;
+        case "strike":
+          if (selected !== null) strike(selected, action.digit);
           return;
         case "erase":
           if (selected !== null) place(selected, 0);
@@ -443,7 +516,7 @@ export default function SudokuPage() {
 
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [board, busy, selected, place, doUndo, doRedo]);
+  }, [board, busy, selected, markMode, place, strike, doUndo, doRedo]);
 
   if (board === null) {
     return (
@@ -482,6 +555,7 @@ export default function SudokuPage() {
         <SudokuBoard
           board={board}
           candidates={candidates}
+          struck={struck}
           highlights={highlights}
           onPick={onPick}
         />
@@ -489,16 +563,32 @@ export default function SudokuPage() {
         <Keypad
           remaining={remaining}
           armed={armed}
+          markMode={markMode}
+          struckAtSelected={selected !== null ? struck[selected] : 0}
           onArm={(d) => {
-            const action = keypadAction(d, selected);
+            const action = keypadAction(d, selected, markMode);
             if (action.kind === "place") {
               place(action.cell, action.digit);
+              return;
+            }
+            if (action.kind === "strike") {
+              // Keep the selection: striking is meant to repeat on one cell
+              // for several digits in a row, the way place already does for
+              // the same reason.
+              strike(action.cell, action.digit);
               return;
             }
             setArmed(action.kind === "arm" ? action.digit : null);
             setSelected(null);
           }}
           onErase={() => selected !== null && place(selected, 0)}
+          onToggleMarkMode={() => {
+            setMarkMode((m) => !m);
+            // Digit-first arming and pencil marking are two different
+            // gestures for the same keypad tap; leaving a digit armed across
+            // the switch would let one bleed into the other.
+            setArmed(null);
+          }}
         />
 
         <div className="flex items-center justify-between text-xs uppercase tracking-widest">

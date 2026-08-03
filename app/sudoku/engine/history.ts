@@ -1,10 +1,16 @@
-import type { Cell, Idx } from "./types";
+import type { Cell, Digit, Idx } from "./types";
 
-export interface Change {
-  index: Idx;
-  before: Cell;
-  after: Cell;
-}
+/**
+ * A single undoable step. Placements and strike toggles are different shapes
+ * of change — a Cell value versus one digit's struck flag in a cell's mark
+ * mask — so this is a discriminated union rather than one shape wide enough
+ * for both. `record`, `undo` and `redo` below never look inside a `Change`;
+ * they move whichever one they are given, so a new kind only ever costs a
+ * variant here, never a rewrite of the stack mechanics.
+ */
+export type Change =
+  | { kind: "place"; index: Idx; before: Cell; after: Cell }
+  | { kind: "strike"; index: Idx; digit: Digit; before: boolean; after: boolean };
 
 export interface History {
   past: Change[];

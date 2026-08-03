@@ -1,5 +1,7 @@
 import { readJson, writeJson, type StorageLike } from "@/app/game/_shared/storage";
+import { ALL_DIGITS, type Mask } from "./candidates";
 import { CELLS } from "./grid";
+import { emptyMarks, type Marks } from "./marks";
 import { TIERS, type Cell, type Grid, type Tier } from "./types";
 
 export const SUDOKU_SAVE_VERSION = 1;
@@ -23,6 +25,8 @@ export interface InProgress {
   givens: string;
   solution: string;
   entries: string;
+  /** Struck-candidate marks, encoded the same way as the grids below. */
+  marks: string;
   elapsedMs: number;
   mistakes: number;
 }
@@ -42,6 +46,48 @@ export function decodeGrid(text: string): Cell[] {
   for (let i = 0; i < CELLS; i++) {
     const n = Number(text[i]);
     out[i] = Number.isInteger(n) && n >= 0 && n <= 9 ? (n as Cell) : 0;
+  }
+  return out;
+}
+
+/**
+ * Marks are stored as three hex digits per cell — 0x000 to 0x1ff covers the
+ * nine-bit range a Mask can hold, and a fixed width keeps the string the same
+ * shape `isMarksText` below can validate in one regex, the same discipline
+ * `isGridText` uses for the grids. 243 characters for 81 masks is a fair
+ * price next to the 243 the three grids already cost, and mirroring their
+ * encoding rather than reaching for something denser (base64, say) keeps this
+ * file with one idiom instead of two.
+ */
+const MARK_HEX_DIGITS = 3;
+
+export const encodeMarks = (marks: Marks): string =>
+  marks.map((m) => m.toString(16).padStart(MARK_HEX_DIGITS, "0")).join("");
+
+const isMarksText = (v: unknown): v is string =>
+  typeof v === "string" &&
+  v.length === CELLS * MARK_HEX_DIGITS &&
+  /^[0-9a-f]+$/i.test(v);
+
+const EMPTY_MARKS_TEXT = encodeMarks(emptyMarks());
+
+/**
+ * Decoding is a trust boundary exactly like `decodeGrid`: any shape or
+ * character that fails validation collapses the whole payload to no strikes,
+ * rather than parsing what it can and guessing at the rest.
+ */
+export function decodeMarks(text: string): Marks {
+  const out = new Array(CELLS).fill(0) as Mask[];
+  if (!isMarksText(text)) return out;
+  for (let i = 0; i < CELLS; i++) {
+    const chunk = text.slice(i * MARK_HEX_DIGITS, i * MARK_HEX_DIGITS + MARK_HEX_DIGITS);
+    // Three hex digits reach 0xfff, wider than a Mask's nine live bits
+    // (0x1ff). A hand-edited or bit-rotted save could carry a value outside
+    // that range; masking it down is cheap insurance against garbage bits
+    // ever reaching a bit-counting consumer, the same margin decodeGrid keeps
+    // by bounding each digit to 0..9 despite the regex already doing most of
+    // the work.
+    out[i] = Number.parseInt(chunk, 16) & ALL_DIGITS;
   }
   return out;
 }
@@ -116,6 +162,10 @@ function coerceInProgress(raw: unknown): InProgress | null {
     givens: r.givens,
     solution: r.solution,
     entries: r.entries,
+    // Marks are an annotation layer, not the puzzle itself — a corrupt marks
+    // field falls back to no strikes rather than discarding an otherwise
+    // perfectly resumable board the way a bad givens/solution/entries does.
+    marks: isMarksText(r.marks) ? r.marks : EMPTY_MARKS_TEXT,
     elapsedMs: nonNegative(r.elapsedMs),
     mistakes: nonNegative(r.mistakes),
   };

@@ -12,12 +12,20 @@ export function SudokuCell({
   value,
   given,
   candidates,
+  struck,
   highlight,
   onPick,
 }: {
   value: Cell;
   given: boolean;
   candidates: Mask;
+  /**
+   * Digits the player has crossed off by hand, already filtered to the ones
+   * still offered as real candidates — a struck digit that has fallen out of
+   * the candidate set entirely (a peer claimed it) renders as nothing at all
+   * here, same as any other digit the board no longer offers.
+   */
+  struck: Mask;
   highlight: CellHighlight;
   onPick: () => void;
 }) {
@@ -70,12 +78,22 @@ export function SudokuCell({
             // A hint that eliminates this mark strikes it out where it sits.
             // Tinting the whole cell would say "something here changes"; the
             // argument is about specific digits, so the board says which.
-            const struck = hasDigit(highlight.eliminated, d);
+            const hintStruck = hasDigit(highlight.eliminated, d);
+            // The player's own strike reads differently on purpose — dimmed
+            // rather than lit, so it never competes with an open hint's
+            // amber for attention. Whichever hint eliminations are showing
+            // win outright: that panel is talking about specific digits
+            // right now, and a hand-struck mark under it can wait.
+            const playerStruck = !hintStruck && hasDigit(struck, d);
             return (
               <span
                 key={d}
                 className={`flex items-center justify-center ${
-                  struck ? "font-bold text-[#F0A44C] line-through decoration-[#F0A44C]" : ""
+                  hintStruck
+                    ? "font-bold text-[#F0A44C] line-through decoration-[#F0A44C]"
+                    : playerStruck
+                      ? "text-[#5c5480] line-through decoration-[#5c5480]"
+                      : ""
                 }`}
               >
                 {hasDigit(candidates, d) ? d : ""}

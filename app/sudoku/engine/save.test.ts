@@ -1,10 +1,15 @@
 import { describe, expect, it } from "vitest";
 import type { StorageLike } from "@/app/game/_shared/storage";
+import { ALL_DIGITS, bit } from "./candidates";
+import { CELLS } from "./grid";
+import { emptyMarks, setStrike, type Marks } from "./marks";
 import {
   SUDOKU_SAVE_KEY,
   decodeGrid,
+  decodeMarks,
   defaultSudokuSave,
   encodeGrid,
+  encodeMarks,
   loadSudokuSave,
   migrateSudokuSave,
   recordSolve,
@@ -32,6 +37,54 @@ describe("grid coding", () => {
   it("returns an empty grid for junk", () => {
     expect(decodeGrid("nonsense")).toHaveLength(81);
     expect(decodeGrid("nonsense").every((c) => c === 0)).toBe(true);
+  });
+});
+
+describe("mark coding", () => {
+  it("round-trips a marks array, including cells with several digits struck", () => {
+    let marks: Marks = setStrike(emptyMarks(), 0, 1, true);
+    marks = setStrike(marks, 0, 9, true);
+    marks = setStrike(marks, 40, 5, true);
+    marks = setStrike(marks, 80, 4, true);
+    expect(decodeMarks(encodeMarks(marks))).toEqual(marks);
+  });
+
+  it("round-trips every mask value a cell can hold, not just a sample", () => {
+    // The three-hex-digit width has to survive the full 0..0x1ff range, not
+    // just the small masks a hand-written fixture happens to exercise.
+    for (let m = 0; m <= ALL_DIGITS; m++) {
+      const marks = [...emptyMarks()];
+      marks[0] = m;
+      expect(decodeMarks(encodeMarks(marks))[0]).toBe(m);
+    }
+  });
+
+  it("returns no strikes for junk of the wrong length", () => {
+    expect(decodeMarks("nonsense")).toEqual(emptyMarks());
+    expect(decodeMarks("")).toEqual(emptyMarks());
+    expect(decodeMarks("0".repeat(CELLS * 3 - 1))).toEqual(emptyMarks());
+    expect(decodeMarks("0".repeat(CELLS * 3 + 1))).toEqual(emptyMarks());
+  });
+
+  it("returns no strikes when the right-length text has a non-hex character", () => {
+    // Right shape, wrong alphabet — the length check alone would let this
+    // through and Number.parseInt would silently read only the valid prefix
+    // of each chunk, which is exactly the kind of partial parse this guards.
+    const almostValid = "g".repeat(CELLS * 3);
+    expect(decodeMarks(almostValid)).toEqual(emptyMarks());
+  });
+
+  it("clamps a mask value beyond the nine live bits rather than carrying garbage bits through", () => {
+    // "fff" is a valid three-hex-digit chunk (0xfff = 4095) but wider than
+    // any real Mask (max 0x1ff = 511). A hand-edited or bit-rotted save
+    // should not be able to smuggle a bit pattern no live Mask ever has.
+    const text = "fff" + "0".repeat((CELLS - 1) * 3);
+    expect(decodeMarks(text)[0]).toBe(ALL_DIGITS);
+  });
+
+  it("rejects a non-string value the same way decodeGrid does", () => {
+    expect(decodeMarks(null as unknown as string)).toEqual(emptyMarks());
+    expect(decodeMarks(42 as unknown as string)).toEqual(emptyMarks());
   });
 });
 
@@ -65,10 +118,11 @@ describe("migrateSudokuSave", () => {
     expect(migrateSudokuSave({ inProgress: { givens: "1".repeat(81), solution: "2".repeat(81), tier: "easy", entries: "12" } }).inProgress).toBeNull();
   });
 
-  it("accepts and maps all fields of a well-formed in-progress board", () => {
+  it("accepts and maps all fields of a well-formed in-progress board, marks included", () => {
     const givens = "1".repeat(81);
     const solution = "2".repeat(81);
     const entries = "3".repeat(81);
+    const marks = encodeMarks(setStrike(emptyMarks(), 5, 7, true));
     const save = migrateSudokuSave({
       inProgress: {
         tier: "hard",
@@ -76,6 +130,7 @@ describe("migrateSudokuSave", () => {
         givens,
         solution,
         entries,
+        marks,
         elapsedMs: 45000,
         mistakes: 3,
       },
@@ -86,8 +141,37 @@ describe("migrateSudokuSave", () => {
     expect(save.inProgress!.givens).toBe(givens);
     expect(save.inProgress!.solution).toBe(solution);
     expect(save.inProgress!.entries).toBe(entries);
+    expect(save.inProgress!.marks).toBe(marks);
     expect(save.inProgress!.elapsedMs).toBe(45000);
     expect(save.inProgress!.mistakes).toBe(3);
+  });
+
+  it("defaults to no strikes, without dropping the resumable board, when marks is missing or corrupt", () => {
+    // Marks are an annotation layer, not the puzzle — losing them on a
+    // corrupt payload should cost the player their strikes, not the whole
+    // in-progress board the way a bad givens/solution/entries does.
+    const base = {
+      tier: "easy" as const,
+      seed: 1,
+      givens: "1".repeat(81),
+      solution: "2".repeat(81),
+      entries: "3".repeat(81),
+      elapsedMs: 0,
+      mistakes: 0,
+    };
+    const empty = encodeMarks(emptyMarks());
+
+    const missing = migrateSudokuSave({ inProgress: base });
+    expect(missing.inProgress).not.toBeNull();
+    expect(missing.inProgress!.marks).toBe(empty);
+
+    const wrongShape = migrateSudokuSave({ inProgress: { ...base, marks: "12" } });
+    expect(wrongShape.inProgress).not.toBeNull();
+    expect(wrongShape.inProgress!.marks).toBe(empty);
+
+    const wrongType = migrateSudokuSave({ inProgress: { ...base, marks: 12345 } });
+    expect(wrongType.inProgress).not.toBeNull();
+    expect(wrongType.inProgress!.marks).toBe(empty);
   });
 });
 

@@ -27,7 +27,24 @@ describe("actionForKey", () => {
 
   it("does not redo when shift is held on some other key", () => {
     expect(actionForKey("Escape", true)).toEqual({ kind: "dismiss" });
-    expect(actionForKey("5", true)).toEqual({ kind: "digit", digit: 5 });
+    // Shift+5 is the strike shortcut (see the "strikes" block below), not a
+    // plain digit placement and not redo — this pins it away from both.
+    expect(actionForKey("5", true)).toEqual({ kind: "strike", digit: 5 });
+  });
+
+  it("maps every Shift+digit to a strike action", () => {
+    for (let d = 1; d <= 9; d++) {
+      expect(actionForKey(String(d), true)).toEqual({ kind: "strike", digit: d });
+    }
+  });
+
+  it("keeps the strike shortcut and redo on entirely different keys, so neither can shadow the other", () => {
+    // actionForKey's digit branch only ever matches "1".."9"; "u" never
+    // reaches it, and the digit branch never produces a "redo". This test
+    // exists so a future refactor that merged the two branches would have to
+    // break one of these two assertions to compile-and-pass.
+    expect(actionForKey("u", true)).toEqual({ kind: "redo" });
+    expect(actionForKey("9", true)).not.toEqual({ kind: "redo" });
   });
 
   it("dismisses on Escape", () => {
@@ -92,25 +109,39 @@ describe("keypadAction", () => {
     // The bug this exists to prevent: arming unconditionally meant a player who
     // had already picked a cell watched their selection vanish, and had to pick
     // it a second time.
-    expect(keypadAction(5, 40)).toEqual({ kind: "place", cell: 40, digit: 5 });
-    expect(keypadAction(1, 0)).toEqual({ kind: "place", cell: 0, digit: 1 });
-    expect(keypadAction(9, 80)).toEqual({ kind: "place", cell: 80, digit: 9 });
+    expect(keypadAction(5, 40, false)).toEqual({ kind: "place", cell: 40, digit: 5 });
+    expect(keypadAction(1, 0, false)).toEqual({ kind: "place", cell: 0, digit: 1 });
+    expect(keypadAction(9, 80, false)).toEqual({ kind: "place", cell: 80, digit: 9 });
   });
 
   it("arms the digit when no cell is selected", () => {
-    expect(keypadAction(5, null)).toEqual({ kind: "arm", digit: 5 });
+    expect(keypadAction(5, null, false)).toEqual({ kind: "arm", digit: 5 });
   });
 
   it("disarms when the keypad reports a null digit", () => {
     // Keypad passes null when the armed digit is tapped a second time, and it
-    // must disarm whether or not a cell happens to be selected.
-    expect(keypadAction(null, null)).toEqual({ kind: "disarm" });
-    expect(keypadAction(null, 40)).toEqual({ kind: "disarm" });
+    // must disarm whether or not a cell happens to be selected, in either mode.
+    expect(keypadAction(null, null, false)).toEqual({ kind: "disarm" });
+    expect(keypadAction(null, 40, false)).toEqual({ kind: "disarm" });
+    expect(keypadAction(null, 40, true)).toEqual({ kind: "disarm" });
+  });
+
+  it("strikes the selected cell instead of placing, when mark mode is on", () => {
+    expect(keypadAction(5, 40, true)).toEqual({ kind: "strike", cell: 40, digit: 5 });
+    expect(keypadAction(3, 0, true)).toEqual({ kind: "strike", cell: 0, digit: 3 });
+  });
+
+  it("disarms rather than arming a digit for painting, when mark mode is on with nothing selected", () => {
+    // Mark mode has no digit-first equivalent — there is nothing to "arm" a
+    // strike onto — so a tap with no selection must not fall through to the
+    // ordinary arm behaviour.
+    expect(keypadAction(5, null, true)).toEqual({ kind: "disarm" });
   });
 
   it("treats cell 0 as a real selection, not as absent", () => {
     // A plain truthiness check here would make the top-left cell the one square
     // on the board that cannot be filled this way.
-    expect(keypadAction(3, 0).kind).toBe("place");
+    expect(keypadAction(3, 0, false).kind).toBe("place");
+    expect(keypadAction(3, 0, true).kind).toBe("strike");
   });
 });

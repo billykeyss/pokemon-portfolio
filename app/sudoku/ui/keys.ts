@@ -11,6 +11,7 @@ import type { Digit, Idx } from "../engine/types";
  */
 export type KeyAction =
   | { kind: "digit"; digit: Digit }
+  | { kind: "strike"; digit: Digit }
   | { kind: "erase" }
   | { kind: "undo" }
   | { kind: "redo" }
@@ -25,7 +26,15 @@ const STEP: Record<string, number> = {
 };
 
 export function actionForKey(key: string, shiftKey: boolean): KeyAction | null {
-  if (key >= "1" && key <= "9") return { kind: "digit", digit: Number(key) as Digit };
+  if (key >= "1" && key <= "9") {
+    const digit = Number(key) as Digit;
+    // Shift+digit strikes a candidate without leaving whatever mode the
+    // keypad is in — the shortcut the design calls for "without switching
+    // modes". It shares no key with Shift+u (redo): digits and the letter u
+    // are different keys entirely, so there is nothing here for that guard
+    // to collide with.
+    return shiftKey ? { kind: "strike", digit } : { kind: "digit", digit };
+  }
   if (key === "Backspace" || key === "Delete") return { kind: "erase" };
 
   // `KeyboardEvent.key` reports the shifted character, so Shift+U arrives as
@@ -43,11 +52,13 @@ export function actionForKey(key: string, shiftKey: boolean): KeyAction | null {
 
 export type KeypadAction =
   | { kind: "place"; cell: Idx; digit: Digit }
+  | { kind: "strike"; cell: Idx; digit: Digit }
   | { kind: "arm"; digit: Digit }
   | { kind: "disarm" };
 
 /**
- * What tapping a keypad digit means, given what is already selected.
+ * What tapping a keypad digit means, given what is already selected and
+ * whether mark mode is on.
  *
  * A selected cell is a stated target, so the tap fills it rather than arming
  * the digit. Arming unconditionally is what made cell-first input — the
@@ -55,10 +66,20 @@ export type KeypadAction =
  * cell, tap the digit and watch the selection vanish, then pick the cell
  * again. The keyboard never had this problem because it always placed into
  * the selection; the keypad is now the same input, not a different one.
+ *
+ * Mark mode redirects a tap to a strike instead of a placement, but only
+ * when there is a cell to strike in — there is no digit-first equivalent of
+ * arming that paints strikes across the board, so a tap with nothing
+ * selected disarms rather than silently doing nothing productive.
  */
-export function keypadAction(digit: Digit | null, selected: Idx | null): KeypadAction {
+export function keypadAction(
+  digit: Digit | null,
+  selected: Idx | null,
+  markMode: boolean,
+): KeypadAction {
   // The Keypad passes null when the armed digit is tapped a second time.
   if (digit === null) return { kind: "disarm" };
+  if (markMode) return selected === null ? { kind: "disarm" } : { kind: "strike", cell: selected, digit };
   if (selected !== null) return { kind: "place", cell: selected, digit };
   return { kind: "arm", digit };
 }

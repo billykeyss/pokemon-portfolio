@@ -9,11 +9,14 @@ import type { CellHighlight } from "./highlight";
 export function SudokuBoard({
   board,
   candidates,
+  struck,
   highlights,
   onPick,
 }: {
   board: Board;
   candidates: Mask[];
+  /** Player-struck marks, already filtered to what each cell still offers. */
+  struck: Mask[];
   highlights: CellHighlight[];
   onPick: (index: number) => void;
 }) {
@@ -34,6 +37,7 @@ export function SudokuBoard({
             value={valueAt(board, i)}
             given={board.puzzle.givens[i] !== 0}
             candidates={candidates[i]}
+            struck={struck[i]}
             highlight={highlights[i]}
             onPick={() => onPick(i)}
           />
