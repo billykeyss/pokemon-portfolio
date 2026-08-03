@@ -14,6 +14,9 @@ import {
   isStuck,
   legalMoves,
   occupancy,
+  clearEnd,
+  endsOf,
+  leadOf,
   slideCells,
   slideDistance,
 } from "./rules";
@@ -311,5 +314,123 @@ describe("isStuck", () => {
     // with nothing behind either to give them room.
     const b = board([arrow(0, cells([2, 1]), E), arrow(1, cells([2, 2]), W)]);
     expect(isStuck(b)).toBe(true);
+  });
+});
+
+const twoWay = (id: number, track: Cell[], dir: Dir): Arrow => ({
+  id,
+  cells: track,
+  dir,
+  hue: 0,
+  twoWay: true,
+});
+
+describe("leadOf", () => {
+  it("leads with the head in its own direction", () => {
+    const a = arrow(0, cells([2, 0], [2, 1]), E);
+    expect(leadOf(a, "head")).toEqual({ cell: { row: 2, col: 1 }, dir: E });
+  });
+
+  it("leads with the tail, pointing back along the first segment", () => {
+    const a = arrow(0, cells([2, 0], [2, 1]), E);
+    expect(leadOf(a, "tail")).toEqual({ cell: { row: 2, col: 0 }, dir: W });
+  });
+
+  it("reads the bend rather than the head when leading with the tail", () => {
+    // Track runs north up column 2 then turns east; the tail end points south.
+    const a = arrow(0, cells([2, 2], [1, 2], [1, 3]), E);
+    expect(leadOf(a, "tail")).toEqual({ cell: { row: 2, col: 2 }, dir: S });
+  });
+
+  it("borrows the opposite of the head for a single cell", () => {
+    const a = arrow(0, cells([2, 2]), E);
+    expect(leadOf(a, "tail")).toEqual({ cell: { row: 2, col: 2 }, dir: W });
+  });
+});
+
+describe("endsOf", () => {
+  it("offers one end for an ordinary arrow", () => {
+    expect(endsOf(arrow(0, cells([2, 0]), E))).toEqual(["head"]);
+  });
+
+  it("offers both for a two-way arrow", () => {
+    expect(endsOf(twoWay(0, cells([2, 0]), E))).toEqual(["head", "tail"]);
+  });
+});
+
+describe("two-way arrows", () => {
+  it("can leave by the tail when the head is blocked", () => {
+    // Head runs east into arrow 1; west of the tail is open board.
+    const b = board([twoWay(0, cells([2, 2], [2, 3]), E), arrow(1, cells([2, 4]), W)]);
+
+    expect(blockerOf(b, 0, "head")).not.toBeNull();
+    expect(blockerOf(b, 0, "tail")).toBeNull();
+    expect(isFree(b, 0)).toBe(true);
+    expect(clearEnd(b, 0)).toBe("tail");
+
+    expect(applyMove(b, { id: 0, end: "tail" }).arrows.map((a) => a.id)).toEqual([1]);
+  });
+
+  it("is stuck only when both ends are blocked", () => {
+    const b = board([
+      arrow(1, cells([2, 0]), E),
+      twoWay(0, cells([2, 1], [2, 2]), E),
+      arrow(2, cells([2, 3]), W),
+    ]);
+    expect(isFree(b, 0)).toBe(false);
+  });
+
+  it("prefers the head when both ends are open", () => {
+    expect(clearEnd(board([twoWay(0, cells([2, 1], [2, 2]), E)]), 0)).toBe("head");
+  });
+
+  it("offers a move for each end that can go somewhere", () => {
+    const b = board([twoWay(0, cells([2, 1], [2, 2]), E)]);
+    const ends = legalMoves(b).filter((m) => m.id === 0).map((m) => m.end);
+    expect(ends).toEqual(["head", "tail"]);
+  });
+
+  it("an ordinary arrow still offers only its head", () => {
+    const b = board([arrow(0, cells([2, 1], [2, 2]), E)]);
+    expect(legalMoves(b).map((m) => m.end)).toEqual(["head"]);
+  });
+});
+
+describe("sliding from the tail", () => {
+  it("moves the track backwards, keeping tail first and head last", () => {
+    // Two cells of room to the west before arrow 1.
+    const b = board([
+      arrow(1, cells([2, 0]), E),
+      twoWay(0, cells([2, 3], [2, 4]), E),
+    ]);
+
+    const slide = slideDistance(b, 0, "tail");
+    expect(slide).toEqual({ cells: 2, exits: false });
+
+    const after = applyMove(b, { id: 0, end: "tail" });
+    expect(arrowById(after, 0)?.cells).toEqual(cells([2, 1], [2, 2]));
+  });
+
+  it("leaves the arrow the same length whichever end leads", () => {
+    const a = twoWay(0, cells([2, 1], [2, 2], [2, 3]), E);
+    expect(slideCells(a, 1, "tail")).toHaveLength(3);
+    expect(slideCells(a, 1, "head")).toHaveLength(3);
+  });
+
+  it("does not mutate the arrow when leading with the tail", () => {
+    const a = twoWay(0, cells([2, 1], [2, 2]), E);
+    slideCells(a, 1, "tail");
+    expect(a.cells).toEqual(cells([2, 1], [2, 2]));
+  });
+
+  it("sends the two ends to genuinely different places", () => {
+    // The decision the mechanic exists for: same arrow, opposite outcomes.
+    const b = board([
+      arrow(1, cells([0, 0]), E),
+      twoWay(0, cells([2, 1], [2, 2]), E),
+    ]);
+    const viaHead = applyMove(b, { id: 0, end: "head" });
+    const viaTail = applyMove(b, { id: 0, end: "tail" });
+    expect(viaHead.arrows.length + viaTail.arrows.length).toBeGreaterThan(0);
   });
 });

@@ -6,7 +6,8 @@ import { applyMove, isSolved } from "./rules";
 import { freeRatio, isSolvable, trace } from "./solve";
 import { DIRS as DIRS_FOR_TEST, DIR_COUNT, headOf, type Board, type LevelParams } from "./types";
 
-const params: LevelParams = { size: 9, maxLength: 4, fillTarget: 0.6, maxFreeRatio: 0.6 };
+const params: LevelParams = { size: 9, maxLength: 4, fillTarget: 0.6, maxFreeRatio: 0.6,
+  twoWayShare: 0, };
 
 /** Structural invariants every board must satisfy to be playable. */
 function expectWellFormed(board: Board) {
@@ -74,7 +75,8 @@ describe("scatter", () => {
   });
 
   it("cannot cover more cells than the board has", () => {
-    const tiny = scatter({ size: 2, maxLength: 3, fillTarget: 1, maxFreeRatio: 1 }, makeRng(1));
+    const tiny = scatter({ size: 2, maxLength: 3, fillTarget: 1, maxFreeRatio: 1,
+  twoWayShare: 0, }, makeRng(1));
     const covered = tiny.arrows.reduce((n, a) => n + a.cells.length, 0);
     expect(covered).toBeLessThanOrEqual(4);
     expectWellFormed(tiny);
@@ -159,7 +161,8 @@ describe("generate", () => {
   });
 
   it("still returns a playable board when the bar is impossible", () => {
-    const cruel: LevelParams = { size: 4, maxLength: 3, fillTarget: 0.7, maxFreeRatio: 0.0001 };
+    const cruel: LevelParams = { size: 4, maxLength: 3, fillTarget: 0.7, maxFreeRatio: 0.0001,
+  twoWayShare: 0, };
     const board = generate(cruel, 3);
     expectWellFormed(board);
     expect(isSolvable(board)).toBe(true);

@@ -36,6 +36,15 @@ export interface Arrow {
   cells: Cell[];
   /** Where the head points, which is the direction of its final segment. */
   dir: Dir;
+  /**
+   * A head on the tail as well, so the arrow can leave either way.
+   *
+   * Two exits is not simply two chances — with sliding, the direction you send
+   * it is a decision, because the two choices leave it blocking different
+   * cells. An arrow that could have gone either way and went the wrong way is
+   * the mistake this makes available.
+   */
+  twoWay?: boolean;
   /** Palette index, purely cosmetic. */
   hue: number;
 }
@@ -45,9 +54,13 @@ export interface Board {
   arrows: Arrow[];
 }
 
-/** Release the arrow with this id. */
+/** Which end of a two-way arrow leads. Single-ended arrows always lead "head". */
+export type End = "head" | "tail";
+
+/** Move the arrow with this id, leading with the given end. */
 export interface Move {
   id: number;
+  end?: End;
 }
 
 export interface LevelParams {
@@ -69,6 +82,14 @@ export interface LevelParams {
    * candidates to spot, which is the whole of the difficulty here.
    */
   maxFreeRatio: number;
+  /**
+   * Share of arrows given a second head.
+   *
+   * Applied before the tightness bar is measured, not after: a two-way arrow
+   * has two chances to be releasable, so promoting a board after gating it
+   * would hand the player something looser than the bar it passed.
+   */
+  twoWayShare: number;
 }
 
 export function headOf(arrow: Arrow): Cell {

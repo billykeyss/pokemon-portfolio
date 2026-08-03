@@ -1,5 +1,5 @@
 import { ease, timelineAt, timelineDuration, type Phase } from "@/app/game/_shared/phases";
-import { DIRS, type Arrow } from "./types";
+import { DIRS, type Arrow, type End } from "./types";
 
 export type FlightPhase = "wind" | "fly";
 
@@ -15,6 +15,8 @@ export interface Flight {
    * other is an arrival and has to settle onto the cell it stops at.
    */
   exits: boolean;
+  /** Which end leads. A tail-led move runs the same track the other way. */
+  end: End;
   t: number;
 }
 
@@ -47,8 +49,13 @@ export function flightDuration(distance: number): number {
   return timelineDuration(flightPhases(distance));
 }
 
-export function startFlight(arrow: Arrow, distance: number, exits = true): Flight {
-  return { arrow, distance, exits, t: 0 };
+export function startFlight(
+  arrow: Arrow,
+  distance: number,
+  exits = true,
+  end: End = "head",
+): Flight {
+  return { arrow, distance, exits, end, t: 0 };
 }
 
 /** Returns a new Flight; the caller's copy is untouched. */
@@ -162,31 +169,50 @@ export const TRACK_PAD = 2;
  * Padded behind the tail so the recoil has somewhere to go, and well past the
  * head so the whole body can clear the board.
  */
-export function flightTrack(arrow: Arrow, ahead: number): TrackPoint[] {
-  const cells = arrow.cells;
-  const track: TrackPoint[] = [];
+export interface FlightRoute {
+  track: TrackPoint[];
+  /** Index of the arrow's own cells[0] within the track. */
+  base: number;
+  /** Which way along the track a positive offset travels. */
+  sign: 1 | -1;
+}
 
-  // Behind the tail, continuing the first segment backwards. A single-cell
-  // arrow has no segment, so it borrows the head's direction.
-  const back =
+/**
+ * The arrow's own route, padded at both ends, plus how to index into it.
+ *
+ * A tail-led move is the same track walked the other way, so rather than
+ * building a second reversed track the route reports a `sign` and the caller
+ * subtracts instead of adds. Keeping one orientation means `cells[i]` still
+ * means the same thing to everyone.
+ */
+export function flightRoute(arrow: Arrow, ahead: number, end: End = "head"): FlightRoute {
+  const cells = arrow.cells;
+  const reach = Math.max(1, Math.ceil(ahead));
+
+  // Direction off each end of the track.
+  const past = DIRS[arrow.dir];
+  const behind =
     cells.length > 1
       ? { dy: cells[0].row - cells[1].row, dx: cells[0].col - cells[1].col }
-      : { dy: -DIRS[arrow.dir].dy, dx: -DIRS[arrow.dir].dx };
+      : { dy: -past.dy, dx: -past.dx };
 
-  for (let i = TRACK_PAD; i >= 1; i--) {
-    track.push({ row: cells[0].row + back.dy * i, col: cells[0].col + back.dx * i });
+  // The leading end gets the long run-out; the trailing end only needs enough
+  // room for the wind-up recoil.
+  const beforeCount = end === "head" ? TRACK_PAD : reach;
+  const afterCount = end === "head" ? reach : TRACK_PAD;
+
+  const track: TrackPoint[] = [];
+  for (let i = beforeCount; i >= 1; i--) {
+    track.push({ row: cells[0].row + behind.dy * i, col: cells[0].col + behind.dx * i });
   }
-
   for (const cell of cells) track.push({ row: cell.row, col: cell.col });
 
-  // Past the head, straight out along the direction it points.
   const head = cells[cells.length - 1];
-  const { dx, dy } = DIRS[arrow.dir];
-  for (let i = 1; i <= Math.max(1, Math.ceil(ahead)); i++) {
-    track.push({ row: head.row + dy * i, col: head.col + dx * i });
+  for (let i = 1; i <= afterCount; i++) {
+    track.push({ row: head.row + past.dy * i, col: head.col + past.dx * i });
   }
 
-  return track;
+  return { track, base: beforeCount, sign: end === "head" ? 1 : -1 };
 }
 
 /**

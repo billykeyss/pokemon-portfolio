@@ -34,7 +34,7 @@ import {
   type ArrowsSave,
 } from "./engine/save";
 import { hint as solveHint } from "./engine/solve";
-import type { Board } from "./engine/types";
+import type { Board, End } from "./engine/types";
 import { drawScene, type DrawState } from "./render/draw";
 import { cellAt, layoutBoard } from "./render/layout";
 
@@ -133,12 +133,27 @@ export default function ArrowsPage() {
       const arrow = arrowAt(current, cell.row, cell.col);
       if (arrow === null) return;
 
-      const slide = slideDistance(current, arrow.id);
+      /**
+       * Which end the player asked for: the one nearer the half they tapped.
+       *
+       * Tapping the tail half sends it out by the tail. The alternative — always
+       * taking whichever end happens to be clear — would quietly make the choice
+       * for them, and the choice is the reason two-way arrows exist.
+       */
+      const tappedAt = arrow.cells.findIndex(
+        (c) => c.row === cell.row && c.col === cell.col,
+      );
+      const end: End =
+        arrow.twoWay === true && tappedAt >= 0 && tappedAt < arrow.cells.length / 2
+          ? "tail"
+          : "head";
+
+      const slide = slideDistance(current, arrow.id, end);
 
       // Only an arrow with nowhere at all to go is refused. Anything with room
       // moves, even if it cannot leave — that is the whole mechanic.
       if (!slide.exits && slide.cells === 0) {
-        const blocker = blockerOf(current, arrow.id);
+        const blocker = blockerOf(current, arrow.id, end);
         // A refused arrow calls out what stopped it. Telling the player only
         // that they were wrong teaches nothing; showing them the blocker is
         // what turns a lost heart into something they learn from.
@@ -148,11 +163,11 @@ export default function ArrowsPage() {
       }
 
       // Logic commits now; the flight is presentation catching up.
-      const travel = slide.exits ? exitPath(current, arrow).length : slide.cells;
-      flightRef.current = startFlight(arrow, travel, slide.exits);
+      const travel = slide.exits ? exitPath(current, arrow, end).length : slide.cells;
+      flightRef.current = startFlight(arrow, travel, slide.exits, end);
       rebuffRef.current = null;
       setHistory((h) => [...h, cloneBoard(current)]);
-      setBoard(applyMove(current, { id: arrow.id }));
+      setBoard(applyMove(current, { id: arrow.id, end }));
       if (slide.exits) setCleared((c) => c + 1);
     },
     [showLevels, won],

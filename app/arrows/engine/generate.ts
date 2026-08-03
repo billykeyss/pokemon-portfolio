@@ -212,6 +212,28 @@ export function build(params: LevelParams, rng: Rng): Board {
  * board at all is a broken one — and solvability is re-checked as a cheap guard
  * against the construction ever being wrong.
  */
+/**
+ * Give a share of the arrows a second head.
+ *
+ * Safe to do after the board is laid out, and safe for solvability, because a
+ * two-way arrow can still do everything it could before — the extra end only
+ * adds moves. That is the same argument that lets sliding coexist with a
+ * generator that never modelled it.
+ *
+ * Single-cell arrows are skipped. Both their ends sit on the same cell, so a
+ * second head reads as decoration while doubling the ways out.
+ */
+export function promoteTwoWay(board: Board, share: number, rng: Rng): Board {
+  if (share <= 0) return board;
+
+  return {
+    ...board,
+    arrows: board.arrows.map((a) =>
+      a.cells.length > 1 && rng.next() < share ? { ...a, twoWay: true } : a,
+    ),
+  };
+}
+
 export function generate(params: LevelParams, seed: number): Board {
   const rng = makeRng(seed);
 
@@ -225,7 +247,7 @@ export function generate(params: LevelParams, seed: number): Board {
 
   for (let target = params.maxFreeRatio; target <= 1.01; target += 0.06) {
     for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
-      const candidate = build(params, rng);
+      const candidate = promoteTwoWay(build(params, rng), params.twoWayShare, rng);
       if (candidate.arrows.length === 0) continue;
 
       const covered = candidate.arrows.reduce((n, a) => n + a.cells.length, 0);

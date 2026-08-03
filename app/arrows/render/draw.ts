@@ -1,15 +1,15 @@
 import {
   flightAlpha,
   flightOffset,
-  flightTrack,
+  flightRoute,
   rebuffGlow,
   rebuffShake,
   sampleTrack,
-  TRACK_PAD,
   type Flight,
   type Rebuff,
 } from "../engine/anim";
-import { DIRS, headOf, type Arrow, type Board } from "../engine/types";
+import { leadOf } from "../engine/rules";
+import { DIRS, headOf, type Arrow, type Board, type End } from "../engine/types";
 import { cellRect, type Layout } from "./layout";
 
 export interface DrawState {
@@ -55,6 +55,7 @@ function drawTrack(
   alpha: number,
   shakeCells: number,
   glow: number,
+  leadEnd: End = "head",
 ): void {
   const { dx, dy } = DIRS[arrow.dir];
   // Shake runs across the arrow's axis, so a refused arrow rocks sideways
@@ -69,10 +70,14 @@ function drawTrack(
    * takes the tail round the same corner the head turned, while a shared
    * vector drags the whole shape sideways out of its corridor.
    */
-  const track = flightTrack(arrow, Math.abs(offsetCells) + arrow.cells.length + 2);
+  const route = flightRoute(
+    arrow,
+    Math.abs(offsetCells) + arrow.cells.length + 2,
+    leadEnd,
+  );
 
   const centre = (index: number) => {
-    const at = sampleTrack(track, TRACK_PAD + index + offsetCells);
+    const at = sampleTrack(route.track, route.base + index + route.sign * offsetCells);
     // cellRect wants whole cells; take cell (0,0) and shift by the fractional
     // position, so a sample between two cells lands between them on screen.
     const origin = cellRect(layout, 0, 0);
@@ -123,24 +128,37 @@ function drawTrack(
     ctx.stroke();
   }
 
-  // Head: a triangle sitting just past the last cell's centre, pointing along
-  // the final segment.
+  // Head: a triangle sitting just past a cell's centre, pointing outward.
   // The wings have to overhang the body, or a head as wide as this one reads as
   // a blunt end rather than a point.
-  const head = centre(arrow.cells.length - 1);
   const nose = layout.cell * 0.5;
   const wing = layout.cell * 0.46;
-  const angle = Math.atan2(dy, dx);
 
   ctx.shadowBlur = glow > 0 ? layout.cell * 0.7 * glow : 0;
-  ctx.translate(head.x, head.y);
-  ctx.rotate(angle);
-  ctx.beginPath();
-  ctx.moveTo(nose, 0);
-  ctx.lineTo(nose - wing, -wing * 0.86);
-  ctx.lineTo(nose - wing, wing * 0.86);
-  ctx.closePath();
-  ctx.fill();
+
+  const tip = (at: { x: number; y: number }, angle: number) => {
+    ctx.save();
+    ctx.translate(at.x, at.y);
+    ctx.rotate(angle);
+    ctx.beginPath();
+    ctx.moveTo(nose, 0);
+    ctx.lineTo(nose - wing, -wing * 0.86);
+    ctx.lineTo(nose - wing, wing * 0.86);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  };
+
+  tip(centre(arrow.cells.length - 1), Math.atan2(dy, dx));
+
+  // A two-way arrow carries a second head on its tail, pointing back the way
+  // the track came. Drawn identically to the first, because the two ends are
+  // equally usable and one drawn as lesser would read as decoration.
+  if (arrow.twoWay === true) {
+    const back = leadOf(arrow, "tail");
+    const step = DIRS[back.dir];
+    tip(centre(0), Math.atan2(step.dy, step.dx));
+  }
 
   ctx.restore();
   void headOf;
@@ -211,6 +229,7 @@ export function drawScene(
       flightAlpha(state.flight),
       0,
       0,
+      state.flight.end,
     );
   }
 }

@@ -1,4 +1,41 @@
-import { DIRS, headOf, type Arrow, type Board, type Cell, type Move } from "./types";
+import {
+  DIRS,
+  headOf,
+  type Arrow,
+  type Board,
+  type Cell,
+  type Dir,
+  type End,
+  type Move,
+} from "./types";
+
+/**
+ * The cell that leads when moving from this end, and the way it points.
+ *
+ * Leading with the tail is the same motion mirrored: the track runs backwards
+ * along itself, so the direction is whatever the first segment points *away*
+ * from. A single-cell arrow has no segment to read, so it borrows the opposite
+ * of its head.
+ */
+export function leadOf(arrow: Arrow, end: End): { cell: Cell; dir: Dir } {
+  if (end === "head") return { cell: headOf(arrow), dir: arrow.dir };
+
+  const [first, second] = arrow.cells;
+  if (second === undefined) {
+    const back = (arrow.dir + 2) % 4;
+    return { cell: first, dir: back as Dir };
+  }
+
+  const dy = first.row - second.row;
+  const dx = first.col - second.col;
+  const dir = DIRS.findIndex((d) => d.dx === dx && d.dy === dy);
+  return { cell: first, dir: (dir < 0 ? arrow.dir : dir) as Dir };
+}
+
+/** Ends this arrow may be sent from. */
+export function endsOf(arrow: Arrow): End[] {
+  return arrow.twoWay === true ? ["head", "tail"] : ["head"];
+}
 
 export function cloneBoard(board: Board): Board {
   return {
@@ -31,13 +68,13 @@ export function occupancy(board: Board): Int16Array {
  * Its own track is not included. The body slides along the route the head has
  * already taken, so the only thing that can stop it is what lies past the head.
  */
-export function exitPath(board: Board, arrow: Arrow): Cell[] {
-  const { dx, dy } = DIRS[arrow.dir];
-  const head = headOf(arrow);
+export function exitPath(board: Board, arrow: Arrow, end: End = "head"): Cell[] {
+  const lead = leadOf(arrow, end);
+  const { dx, dy } = DIRS[lead.dir];
   const cells: Cell[] = [];
 
-  let row = head.row + dy;
-  let col = head.col + dx;
+  let row = lead.cell.row + dy;
+  let col = lead.cell.col + dx;
   while (row >= 0 && col >= 0 && row < board.size && col < board.size) {
     cells.push({ row, col });
     row += dy;
@@ -53,12 +90,12 @@ export function exitPath(board: Board, arrow: Arrow): Cell[] {
  * Returning the blocker rather than a boolean is what lets a misjudged tap
  * point at *why* it failed instead of only saying that it did.
  */
-export function blockerOf(board: Board, id: number): Arrow | null {
+export function blockerOf(board: Board, id: number, end: End = "head"): Arrow | null {
   const arrow = arrowById(board, id);
   if (arrow === undefined) return null;
 
   const grid = occupancy(board);
-  for (const { row, col } of exitPath(board, arrow)) {
+  for (const { row, col } of exitPath(board, arrow, end)) {
     const hit = grid[row * board.size + col];
     if (hit !== -1 && hit !== id) return arrowById(board, hit) ?? null;
   }
@@ -66,8 +103,16 @@ export function blockerOf(board: Board, id: number): Arrow | null {
   return null;
 }
 
+/** The end with a clear run, preferring the head when both are open. */
+export function clearEnd(board: Board, id: number): End | null {
+  const arrow = arrowById(board, id);
+  if (arrow === undefined) return null;
+  return endsOf(arrow).find((e) => blockerOf(board, id, e) === null) ?? null;
+}
+
+/** Can this arrow leave the board right now, by either of its ends? */
 export function isFree(board: Board, id: number): boolean {
-  return arrowById(board, id) !== undefined && blockerOf(board, id) === null;
+  return arrowById(board, id) !== undefined && clearEnd(board, id) !== null;
 }
 
 /**
@@ -79,7 +124,7 @@ export function isFree(board: Board, id: number): boolean {
  * sliding only ever adds moves on top of those.
  */
 export function freeArrows(board: Board): Arrow[] {
-  return board.arrows.filter((a) => blockerOf(board, a.id) === null);
+  return board.arrows.filter((a) => clearEnd(board, a.id) !== null);
 }
 
 /**
@@ -96,12 +141,13 @@ export function freeArrows(board: Board): Arrow[] {
 export function slideDistance(
   board: Board,
   id: number,
+  end: End = "head",
 ): { cells: number; exits: boolean } {
   const arrow = arrowById(board, id);
   if (arrow === undefined) return { cells: 0, exits: false };
 
   const grid = occupancy(board);
-  const path = exitPath(board, arrow);
+  const path = exitPath(board, arrow, end);
 
   for (let i = 0; i < path.length; i++) {
     const { row, col } = path[i];
@@ -119,17 +165,25 @@ export function slideDistance(
  * straightens as it goes: cells that pass the last corner continue in the
  * direction the head points rather than repeating the bend.
  */
-export function slideCells(arrow: Arrow, steps: number): Cell[] {
+export function slideCells(arrow: Arrow, steps: number, end: End = "head"): Cell[] {
   if (steps <= 0) return arrow.cells.map((c) => ({ ...c }));
 
-  const { dx, dy } = DIRS[arrow.dir];
-  const head = headOf(arrow);
+  const lead = leadOf(arrow, end);
+  const { dx, dy } = DIRS[lead.dir];
   const track: Cell[] = arrow.cells.map((c) => ({ ...c }));
+
+  // Leading with the tail runs the same construction along a reversed track,
+  // so the body still follows the route the leading cell has taken.
+  if (end === "tail") track.reverse();
+
   for (let i = 1; i <= steps; i++) {
-    track.push({ row: head.row + dy * i, col: head.col + dx * i });
+    track.push({ row: lead.cell.row + dy * i, col: lead.cell.col + dx * i });
   }
 
-  return track.slice(steps, steps + arrow.cells.length);
+  const moved = track.slice(steps, steps + arrow.cells.length);
+  // Put the track back the way round the arrow stores it, so cells[0] stays
+  // the tail and the head stays last.
+  return end === "tail" ? moved.reverse() : moved;
 }
 
 /**
@@ -141,7 +195,7 @@ export function slideCells(arrow: Arrow, steps: number): Cell[] {
  * blocks whatever it landed across, and the player can wedge themselves.
  */
 export function canMove(board: Board, move: Move): boolean {
-  const slide = slideDistance(board, move.id);
+  const slide = slideDistance(board, move.id, move.end ?? "head");
   return slide.exits || slide.cells > 0;
 }
 
@@ -150,9 +204,10 @@ export function canMove(board: Board, move: Move): boolean {
  * because a move can make the board worse.
  */
 export function applyMove(board: Board, move: Move): Board {
-  const slide = slideDistance(board, move.id);
+  const end = move.end ?? "head";
+  const slide = slideDistance(board, move.id, end);
   if (!slide.exits && slide.cells <= 0) {
-    throw new Error(`arrow ${move.id} cannot move`);
+    throw new Error(`arrow ${move.id} cannot move from its ${end}`);
   }
 
   if (slide.exits) {
@@ -162,7 +217,7 @@ export function applyMove(board: Board, move: Move): Board {
   return {
     ...board,
     arrows: board.arrows.map((a) =>
-      a.id === move.id ? { ...a, cells: slideCells(a, slide.cells) } : a,
+      a.id === move.id ? { ...a, cells: slideCells(a, slide.cells, end) } : a,
     ),
   };
 }
@@ -173,12 +228,14 @@ export function isSolved(board: Board): boolean {
 
 /** Every arrow that would move if tapped, whether it leaves or merely slides. */
 export function legalMoves(board: Board): Move[] {
-  return board.arrows
-    .filter((a) => {
-      const slide = slideDistance(board, a.id);
-      return slide.exits || slide.cells > 0;
-    })
-    .map((a) => ({ id: a.id }));
+  const moves: Move[] = [];
+  for (const a of board.arrows) {
+    for (const end of endsOf(a)) {
+      const slide = slideDistance(board, a.id, end);
+      if (slide.exits || slide.cells > 0) moves.push({ id: a.id, end });
+    }
+  }
+  return moves;
 }
 
 /**

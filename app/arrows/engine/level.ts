@@ -16,6 +16,12 @@ import type { Board, LevelParams } from "./types";
  * does not make a harder level, it just makes generation exhaust its whole
  * relaxation ladder and hand back the same board seconds later.
  *
+ * Two-way arrows arrive from level four. They read as easier — two ways out
+ * instead of one — but the tightness bar is measured after they are added, so
+ * the generator compensates and the board stays as demanding. What they
+ * actually add is a decision: with sliding, the end you send one from decides
+ * which cells it leaves blocked.
+ *
  * Track length climbs too, and it does double duty: longer bodies cover more
  * cells, so they block more of the board, and a winding route is harder to
  * trace by eye than a single square is.
@@ -38,7 +44,11 @@ export function paramsForLevel(level: number): LevelParams {
   const fillTarget = Math.min(0.74, 0.62 + n * 0.008);
   const maxFreeRatio = Math.max(0.58, 0.73 - n * 0.005);
 
-  return { size, maxLength, fillTarget, maxFreeRatio };
+  // Held back for the first few levels so the plain rule is learned before the
+  // exception to it, then climbing to about a quarter of the board.
+  const twoWayShare = n < 4 ? 0 : Math.min(0.26, (n - 3) * 0.02);
+
+  return { size, maxLength, fillTarget, maxFreeRatio, twoWayShare };
 }
 
 /** Spread consecutive levels across the seed space so 8 and 9 share nothing. */
