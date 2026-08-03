@@ -105,11 +105,21 @@ export function drawScene(
       const rect = cellRect(layout, row, col);
 
       if (cell === FILLED) {
-        // Ink while solving, the picture's own colour once it is finished.
-        ctx.fillStyle = state.reveal > 0 ? puzzle.colour : INK;
-        ctx.globalAlpha = state.reveal > 0 ? 0.35 + 0.65 * state.reveal : 1;
+        // Ink underneath, the picture's colour fading in on top.
+        //
+        // Swapping the fill from ink to colour instead would make reveal 0 and
+        // reveal 0.001 render differently — the cell would jump to a pale tint
+        // in a single frame, so the moment of winning reads as a flash rather
+        // than the fade it is meant to be.
+        ctx.fillStyle = INK;
         ctx.fillRect(rect.x + 1, rect.y + 1, rect.w - 1, rect.h - 1);
-        ctx.globalAlpha = 1;
+
+        if (state.reveal > 0) {
+          ctx.globalAlpha = state.reveal;
+          ctx.fillStyle = puzzle.colour;
+          ctx.fillRect(rect.x + 1, rect.y + 1, rect.w - 1, rect.h - 1);
+          ctx.globalAlpha = 1;
+        }
         continue;
       }
 
