@@ -107,11 +107,16 @@ describe("puzzleFor", () => {
     }
   });
 
+  // Four generations plus four uniqueness sweeps, against vitest's 5s default.
+  // It fits alone and does not once the rest of the suite is running beside it,
+  // which made it a flake that only ever appeared in a full run — the exact
+  // shape that gets dismissed as noise. Its siblings below already declare
+  // their own budgets for the same reason.
   it("has exactly one solution", () => {
     for (const tier of TIERS) {
       expect(countSolutions(puzzleFor(tier, 11).givens, 2)).toBe(1);
     }
-  });
+  }, 30_000);
 
   it("is reproducible from its seed", () => {
     expect(puzzleFor("medium", 42)).toEqual(puzzleFor("medium", 42));
