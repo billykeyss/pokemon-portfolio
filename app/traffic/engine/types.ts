@@ -30,6 +30,15 @@ export interface LevelParams {
   vehicles: number;
   /** Shortest solution a generated board must require, so levels stay puzzles. */
   minMoves: number;
+  /**
+   * How many candidate boards to draw before settling for the best one seen.
+   *
+   * Density tops out at twelve vehicles on a 6x6 — past that the generator
+   * cannot place them — so once that cap is reached this is the only dial left
+   * that still makes boards harder. Generation keeps the hardest draw it finds,
+   * so more draws means a higher expected par, at linear cost.
+   */
+  attempts?: number;
 }
 
 export const PLAYER_ID = 0;

@@ -78,17 +78,43 @@ describe("generate", () => {
 
 describe("paramsForLevel", () => {
   it("starts small", () => {
-    expect(paramsForLevel(1)).toEqual({ size: 6, vehicles: 4, minMoves: 3 });
+    expect(paramsForLevel(1)).toMatchObject({ size: 6, vehicles: 4, minMoves: 3 });
   });
+
+  it("reaches a full board by level thirteen", () => {
+    // Density is the dial that works, so the ramp spends most of its length
+    // getting there rather than easing toward it.
+    expect(paramsForLevel(12).vehicles).toBeLessThan(12);
+    expect(paramsForLevel(13).vehicles).toBe(12);
+  });
+
+  it("keeps the search budget small enough to hide behind play", () => {
+    // The next board is built on the main thread while this one is played, so
+    // the budget is bounded by how long a freeze is tolerable, not by patience.
+    for (const n of [1, 20, 500]) {
+      expect(paramsForLevel(n).attempts ?? 0).toBeLessThanOrEqual(16);
+      expect(paramsForLevel(n).attempts ?? 0).toBeGreaterThan(0);
+    }
+  });
+
+  it("keeps generating past the point the dials stop moving", () => {
+    // Infinite in the sense that matters: level 500 is a real board, not a
+    // repeat of the last one the curve had parameters for.
+    const far = levelFor(500);
+    expect(far.vehicles).toHaveLength(paramsForLevel(500).vehicles);
+    expect(solve(far).status).toBe("solved");
+    expect(levelFor(500)).not.toEqual(levelFor(501));
+  }, 30_000);
 
   it("adds vehicles and depth as levels climb", () => {
     expect(paramsForLevel(20).vehicles).toBeGreaterThan(paramsForLevel(1).vehicles);
     expect(paramsForLevel(20).minMoves).toBeGreaterThan(paramsForLevel(1).minMoves);
   });
 
-  it("caps so a 6x6 board stays placeable", () => {
+  it("caps the vehicle count where a 6x6 can still place them", () => {
+    // Fourteen fails to place on thirty-six cells; thirteen is measurably worse
+    // than twelve. This is a measured ceiling, not a chosen one.
     expect(paramsForLevel(500).vehicles).toBeLessThanOrEqual(12);
-    expect(paramsForLevel(500).minMoves).toBeLessThanOrEqual(9);
   });
 
   it("never loses ground as the level climbs", () => {

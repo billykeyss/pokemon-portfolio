@@ -179,7 +179,8 @@ export function generate(params: LevelParams, seed: number): Board {
   let best: Board | null = null;
   let bestPar = 1;
 
-  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+  const budget = Math.max(1, params.attempts ?? MAX_ATTEMPTS);
+  for (let attempt = 0; attempt < budget; attempt++) {
     const board = layout(params, exitRow, rng);
     if (board === null) continue;
 
