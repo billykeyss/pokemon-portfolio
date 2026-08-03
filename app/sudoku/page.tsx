@@ -24,7 +24,7 @@ import { HintPanel } from "./ui/HintPanel";
 import { Keypad } from "./ui/Keypad";
 import { TierSelect } from "./ui/TierSelect";
 import { highlightMap } from "./ui/highlight";
-import { actionForKey, movedIndex } from "./ui/keys";
+import { actionForKey, keypadAction, movedIndex } from "./ui/keys";
 
 const clock = (ms: number): string => {
   const total = Math.floor(ms / 1000);
@@ -490,7 +490,12 @@ export default function SudokuPage() {
           remaining={remaining}
           armed={armed}
           onArm={(d) => {
-            setArmed(d);
+            const action = keypadAction(d, selected);
+            if (action.kind === "place") {
+              place(action.cell, action.digit);
+              return;
+            }
+            setArmed(action.kind === "arm" ? action.digit : null);
             setSelected(null);
           }}
           onErase={() => selected !== null && place(selected, 0)}

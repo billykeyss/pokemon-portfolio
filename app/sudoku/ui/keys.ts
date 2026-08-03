@@ -41,6 +41,28 @@ export function actionForKey(key: string, shiftKey: boolean): KeyAction | null {
   return delta === undefined ? null : { kind: "move", delta };
 }
 
+export type KeypadAction =
+  | { kind: "place"; cell: Idx; digit: Digit }
+  | { kind: "arm"; digit: Digit }
+  | { kind: "disarm" };
+
+/**
+ * What tapping a keypad digit means, given what is already selected.
+ *
+ * A selected cell is a stated target, so the tap fills it rather than arming
+ * the digit. Arming unconditionally is what made cell-first input — the
+ * default the design calls for — cost three taps on a touch screen: pick the
+ * cell, tap the digit and watch the selection vanish, then pick the cell
+ * again. The keyboard never had this problem because it always placed into
+ * the selection; the keypad is now the same input, not a different one.
+ */
+export function keypadAction(digit: Digit | null, selected: Idx | null): KeypadAction {
+  // The Keypad passes null when the armed digit is tapped a second time.
+  if (digit === null) return { kind: "disarm" };
+  if (selected !== null) return { kind: "place", cell: selected, digit };
+  return { kind: "arm", digit };
+}
+
 /** Where an arrow step lands, or null when it would leave the grid. */
 export function movedIndex(from: Idx, delta: number): Idx | null {
   const next = from + delta;

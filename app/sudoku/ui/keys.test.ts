@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { colOf, rowOf } from "../engine/grid";
-import { actionForKey, movedIndex } from "./keys";
+import { actionForKey, keypadAction, movedIndex } from "./keys";
 
 describe("actionForKey", () => {
   it("maps every digit key to its digit", () => {
@@ -84,5 +84,33 @@ describe("movedIndex", () => {
         if (next !== null) expect(colOf(next)).toBe(colOf(i));
       }
     }
+  });
+});
+
+describe("keypadAction", () => {
+  it("fills the selected cell rather than arming the digit", () => {
+    // The bug this exists to prevent: arming unconditionally meant a player who
+    // had already picked a cell watched their selection vanish, and had to pick
+    // it a second time.
+    expect(keypadAction(5, 40)).toEqual({ kind: "place", cell: 40, digit: 5 });
+    expect(keypadAction(1, 0)).toEqual({ kind: "place", cell: 0, digit: 1 });
+    expect(keypadAction(9, 80)).toEqual({ kind: "place", cell: 80, digit: 9 });
+  });
+
+  it("arms the digit when no cell is selected", () => {
+    expect(keypadAction(5, null)).toEqual({ kind: "arm", digit: 5 });
+  });
+
+  it("disarms when the keypad reports a null digit", () => {
+    // Keypad passes null when the armed digit is tapped a second time, and it
+    // must disarm whether or not a cell happens to be selected.
+    expect(keypadAction(null, null)).toEqual({ kind: "disarm" });
+    expect(keypadAction(null, 40)).toEqual({ kind: "disarm" });
+  });
+
+  it("treats cell 0 as a real selection, not as absent", () => {
+    // A plain truthiness check here would make the top-left cell the one square
+    // on the board that cannot be filled this way.
+    expect(keypadAction(3, 0).kind).toBe("place");
   });
 });
