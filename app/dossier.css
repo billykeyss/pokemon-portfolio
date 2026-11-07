@@ -3257,8 +3257,8 @@ footer .footer-ball {
     width: 100%;
     margin-left: 0;
     display: flex;
-    /* Seven links do not fit one row on a phone; the overflow used to slide
-       the off-page links (Palette, Arcade) out of reach. */
+    /* On the narrowest phones the links do not fit one row; wrapping keeps
+       the last of them on screen. */
     flex-wrap: wrap;
     gap: 6px;
     justify-content: space-between;
@@ -3809,13 +3809,3 @@ footer .footer-ball {
   .dossier-root { padding-left: 132px; }
 }
 */
-
-/* The arcade is the one nav item that leaves the dossier. It used to say so by
-   restyling the pill — a thinner border, tighter padding and its own hover —
-   which just made it look like a different component that had wandered into
-   the row. It now inherits the pill exactly; the ▸ in the label is what marks
-   it as a destination, and one glyph carries that better than a shape nobody
-   can compare against without the others beside it. */
-.strip-links .strip-arcade {
-  white-space: nowrap;
-}
