@@ -3,7 +3,7 @@
 // Next.js emits content-hashed asset filenames that are unknown when this file
 // is written, so nothing here precaches a build's chunks by name — routes are
 // precached, and everything under them is cached as it is fetched.
-const CACHE_NAME = "arcade-v9";
+const CACHE_NAME = "arcade-v10";
 
 // Every route the arcade can land on. Precached together so a player who has
 // only ever opened one game can still reach the others with no connection.
@@ -18,6 +18,7 @@ const ROUTES = [
   "/knight/",
   "/picross/",
   "/sudoku/",
+  "/palette/",
 ];
 
 const CORE = [...ROUTES, "/manifest.webmanifest", "/icon.svg", "/asset-manifest.json"];

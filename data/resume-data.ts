@@ -772,7 +772,7 @@ export const resumeData: ResumeData = {
       category: "mobile",
       details:
         "Analyzes an image/camera feed and extracts a custom color palette from it using advanced computer vision algorithms. Developed using Kotlin on Android, implementing modern best practices for MVVM Architecture and using Room database to cache data and maintain history.",
-      link: "https://github.com/billykeyss/color-picker-android",
+      link: "/palette/",
       image: "/placeholder.svg?height=200&width=300",
       techStack: [
         "Kotlin",
