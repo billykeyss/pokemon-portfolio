@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { GAMES, type ArcadeGame } from "./_shared/registry";
 import { GameIcon } from "./_shared/GameIcon";
 import { readProgress } from "./_shared/progress";
+import "./arcade.css";
 
 /** Does this cabinet live somewhere other than this app? */
 const isExternal = (href: string) => /^https?:\/\//.test(href);
@@ -37,15 +38,15 @@ export default function ArcadePage() {
         }}
       />
 
-      <div className="mx-auto max-w-md px-4 py-6 font-mono">
-        <header className="mb-4 flex items-center justify-between border border-[#2e2647] px-3 py-2">
+      <div className="mx-auto max-w-md px-4 py-6 font-mono sm:max-w-2xl">
+        <header className="mb-5 flex items-center justify-between border border-[#2e2647] px-3 py-2">
           <h1 className="text-[15px] font-bold uppercase tracking-[0.3em]">Arcade</h1>
-          <span className="text-[10px] uppercase tracking-[0.18em] text-[#6d6188]">
+          <span className="text-[10px] uppercase tracking-[0.18em] text-[#8f84ad]">
             {GAMES.length} cabinets
           </span>
         </header>
 
-        <ul>
+        <ul className="grid grid-cols-2 gap-x-5 gap-y-7 px-1 sm:grid-cols-3">
           {GAMES.map((game, i) => (
             <li key={game.slug}>
               <Cabinet game={game} no={dexNo(i)} status={status[game.slug] ?? null} />
@@ -53,7 +54,7 @@ export default function ArcadePage() {
           ))}
         </ul>
 
-        <p className="mt-6 text-center text-[10px] uppercase tracking-[0.2em] text-[#4b4266]">
+        <p className="mt-8 text-center text-[10px] uppercase tracking-[0.2em] text-[#6d6188]">
           Every cabinet plays with no connection
         </p>
       </div>
@@ -74,40 +75,51 @@ function Cabinet({
 
   const body = (
     <>
-      <span className="w-7 shrink-0 text-[10px] tabular-nums text-[#574d75]">{no}</span>
+      <span className="cab-marquee">
+        <span className="cab-title">{game.title}</span>
+      </span>
 
-      <GameIcon slug={game.slug} accent={game.accent} />
-
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-[13px] font-bold uppercase tracking-[0.04em]">
-          {game.title}
+      <span className="cab-body">
+        <span className="cab-bezel">
+          <span className="cab-screen">
+            <span className="cab-number">{no}</span>
+            <span className="cab-art">
+              <GameIcon slug={game.slug} accent={game.accent} size={52} framed={false} />
+            </span>
+          </span>
         </span>
-        <span className="mt-[2px] block truncate text-[10px] text-[#6d6188]">
-          {game.tagline}
+
+        <span className="cab-deck" aria-hidden="true">
+          <span className="cab-stick" />
+          <span className="cab-buttons">
+            <span />
+            <span />
+            <span />
+          </span>
+        </span>
+
+        <span className="cab-lower">
+          <span className="cab-tagline">{game.tagline}</span>
+          {/* Status earns its place: where you left off, or what to do next. */}
+          <span className="cab-door">
+            <span className="cab-status">{status ?? (external ? "open" : "play")}</span>
+            <span className="cab-slots" aria-hidden="true">
+              <span />
+              <span />
+            </span>
+          </span>
         </span>
       </span>
 
-      {/* Status earns its place: where you left off, or what to do next. */}
-      <span
-        className="flex shrink-0 items-center gap-[5px] text-[9px] uppercase tracking-[0.12em]"
-        style={{ color: game.accent }}
-      >
-        <span
-          aria-hidden="true"
-          className="inline-block h-[6px] w-[6px]"
-          style={{ background: game.accent }}
-        />
-        {status ?? (external ? "open" : "play")}
-      </span>
+      <span className="cab-kick" aria-hidden="true" />
     </>
   );
 
-  const shared =
-    "flex items-center gap-[10px] border-b border-[#1d1730] px-1 py-3 transition-colors hover:bg-[#130f1e] focus-visible:bg-[#130f1e] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px]";
+  const style = { "--cab": game.accent } as CSSProperties;
 
   if (!game.available) {
     return (
-      <div className={`${shared} opacity-40`} aria-disabled="true">
+      <div className="cab" style={style} aria-disabled="true">
         {body}
       </div>
     );
@@ -119,15 +131,15 @@ function Cabinet({
   return external ? (
     <a
       href={game.href}
-      className={shared}
-      style={{ outlineColor: game.accent }}
+      className="cab"
+      style={style}
       target="_blank"
       rel="noreferrer"
     >
       {body}
     </a>
   ) : (
-    <Link href={game.href} className={shared} style={{ outlineColor: game.accent }}>
+    <Link href={game.href} className="cab" style={style}>
       {body}
     </Link>
   );

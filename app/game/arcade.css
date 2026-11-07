@@ -1,0 +1,298 @@
+/*
+ * An arcade cabinet, seen from the front: a lit marquee, a curved screen set
+ * in its bezel, a control deck that juts out wider than the body, a coin door
+ * and a kick plate. Each cabinet's accent arrives as --cab and colours the
+ * marquee, the side molding, the deck hardware and the screen's glow, so the
+ * floor reads as a row of different machines rather than one repeated card.
+ */
+
+.cab {
+  --cab: #8fa8f0;
+  --cab-body: #1b1529;
+  --cab-body-dark: #120e1c;
+  --cab-ink: #141018;
+
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  height: 100%;
+  color: #ede6d6;
+  outline-color: var(--cab);
+  transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.cab:hover {
+  transform: translateY(-3px);
+}
+
+.cab:active {
+  transform: translateY(1px);
+}
+
+.cab:focus-visible {
+  outline: 2px solid var(--cab);
+  outline-offset: 4px;
+}
+
+/* Marquee: the backlit sign. Slightly wider than the body, like the real
+   header box, with a light tube's bright band across the middle. */
+.cab-marquee {
+  position: relative;
+  z-index: 1;
+  margin: 0 -3px;
+  padding: 7px 8px 6px;
+  border: 2px solid #05040a;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.35) 48%, rgba(255, 255, 255, 0) 100%),
+    var(--cab);
+  color: var(--cab-ink);
+  box-shadow: 0 0 18px -4px var(--cab);
+  transition: box-shadow 300ms ease, filter 300ms ease;
+}
+
+.cab:hover .cab-marquee,
+.cab:focus-visible .cab-marquee {
+  filter: brightness(1.12);
+  box-shadow: 0 0 28px -2px var(--cab);
+}
+
+.cab-title {
+  display: block;
+  overflow: hidden;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Body: the cabinet's front, with T-molding in the accent down both sides. */
+.cab-body {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  border-inline: 3px solid var(--cab);
+  background: linear-gradient(90deg, var(--cab-body-dark), var(--cab-body) 18%, var(--cab-body) 82%, var(--cab-body-dark));
+}
+
+.cab-bezel {
+  margin: 8px 8px 0;
+  padding: 7px;
+  background: #0b0811;
+  box-shadow:
+    inset 0 2px 6px rgba(0, 0, 0, 0.8),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.06);
+}
+
+/* The CRT: rounded like curved glass, glowing in the game's colour, with
+   scanlines and a reflection across its upper corner. */
+.cab-screen {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border-radius: 14% / 18%;
+  background: #07050c;
+  box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.9);
+}
+
+.cab-screen::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 55%, var(--cab) 0%, transparent 65%);
+  opacity: 0.32;
+  transition: opacity 300ms ease;
+}
+
+.cab:hover .cab-screen::before,
+.cab:focus-visible .cab-screen::before {
+  opacity: 0.6;
+}
+
+.cab-screen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(155deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0) 32%),
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.35) 0 1px, transparent 1px 3px);
+  pointer-events: none;
+}
+
+.cab-art {
+  position: relative;
+  transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.cab:hover .cab-art {
+  transform: translateY(-3px) scale(1.08);
+}
+
+.cab-number {
+  position: absolute;
+  top: 6px;
+  right: 9px;
+  z-index: 1;
+  font-size: 8px;
+  letter-spacing: 0.1em;
+  color: #8f84ad;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Control deck: a ledge wider than the body, its top face drawn as a
+   trapezoid so it reads as sloping toward the player. */
+.cab-deck {
+  position: relative;
+  margin: 10px -9px 0;
+  height: 34px;
+}
+
+.cab-deck::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, #2c2342, #231b36);
+  clip-path: polygon(7% 0, 93% 0, 100% 72%, 100% 100%, 0 100%, 0 72%);
+}
+
+.cab-deck::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 26%;
+  background: var(--cab);
+  opacity: 0.85;
+}
+
+.cab-stick {
+  position: absolute;
+  left: 22%;
+  bottom: 42%;
+  width: 3px;
+  height: 13px;
+  background: #0b0811;
+  transform-origin: 50% 100%;
+  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.cab-stick::before {
+  content: "";
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  margin-left: -5px;
+  border-radius: 999px;
+  background: radial-gradient(circle at 35% 35%, #ffffff 0 12%, var(--cab) 34%);
+  box-shadow: 0 1px 0 #05040a;
+}
+
+.cab:hover .cab-stick {
+  transform: rotate(-14deg);
+}
+
+.cab-buttons {
+  position: absolute;
+  right: 18%;
+  bottom: 40%;
+  display: flex;
+  gap: 5px;
+}
+
+.cab-buttons span {
+  width: 8px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--cab);
+  box-shadow:
+    inset 0 -2px 0 rgba(0, 0, 0, 0.35),
+    0 1px 0 #05040a;
+}
+
+.cab-buttons span:nth-child(2) {
+  background: #ede6d6;
+}
+
+/* Lower cabinet: the coin door, which doubles as the status plate. */
+.cab-lower {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 10px 8px;
+}
+
+.cab-tagline {
+  font-size: 10px;
+  line-height: 1.4;
+  color: #b3aacb;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.cab-door {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-top: auto;
+  padding: 6px 7px;
+  border: 1px solid #2f2647;
+  background: var(--cab-body-dark);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+
+.cab-status {
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--cab);
+}
+
+.cab-slots {
+  display: flex;
+  gap: 4px;
+}
+
+/* Coin slots, lit from inside the way the real ones are. */
+.cab-slots span {
+  width: 5px;
+  height: 11px;
+  border: 1px solid #05040a;
+  background: linear-gradient(180deg, #ff9b3d, #c2410c);
+  box-shadow: 0 0 6px rgba(255, 140, 50, 0.55);
+}
+
+/* Kick plate: the scuffed base the cabinet stands on, a step wider than
+   the body and lit faintly by the accent from above. */
+.cab-kick {
+  height: 12px;
+  margin: 0 -3px;
+  border-top: 2px solid #05040a;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--cab) 28%, #2a2140), #1a1428);
+  box-shadow: 0 6px 12px -6px rgba(0, 0, 0, 0.9);
+}
+
+.cab[aria-disabled="true"] {
+  opacity: 0.4;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cab,
+  .cab * {
+    transition: none !important;
+  }
+  .cab:hover,
+  .cab:hover .cab-art,
+  .cab:hover .cab-stick {
+    transform: none;
+  }
+}

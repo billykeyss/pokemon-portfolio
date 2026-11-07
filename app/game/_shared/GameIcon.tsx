@@ -15,10 +15,13 @@ export function GameIcon({
   slug,
   accent,
   size = 44,
+  framed = true,
 }: {
   slug: string;
   accent: string;
   size?: number;
+  /** Draw the badge's own border and field. Off when the host already frames it. */
+  framed?: boolean;
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const sprite = GAME_ICONS[slug];
@@ -41,26 +44,19 @@ export function GameIcon({
   // Accent on the border, art on a dark field. Filling the badge with the
   // accent instead puts a saturated colour directly behind the sprite, and the
   // outlines stop reading.
-  const frame = {
-    width: size,
-    height: size,
-    background: "#161022",
-    borderColor: accent,
-  } as const;
+  const frame = framed
+    ? ({ width: size, height: size, background: "#161022", borderColor: accent } as const)
+    : ({ width: size, height: size } as const);
+  const border = framed ? "border-4" : "";
+  const art = framed ? size - 8 : size;
 
   if (sprite === undefined) {
-    return <span className="shrink-0 border-4" style={frame} />;
+    return <span className={`shrink-0 ${border}`} style={framed ? frame : { ...frame, background: accent }} />;
   }
 
   return (
-    <span
-      className="grid shrink-0 place-items-center border-4"
-      style={frame}
-    >
-      <canvas
-        ref={canvasRef}
-        style={{ width: size - 8, height: size - 8, imageRendering: "pixelated" }}
-      />
+    <span className={`grid shrink-0 place-items-center ${border}`} style={frame}>
+      <canvas ref={canvasRef} style={{ width: art, height: art, imageRendering: "pixelated" }} />
     </span>
   );
 }
