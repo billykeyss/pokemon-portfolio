@@ -3257,6 +3257,9 @@ footer .footer-ball {
     width: 100%;
     margin-left: 0;
     display: flex;
+    /* Seven links do not fit one row on a phone; the overflow used to slide
+       the off-page links (Palette, Arcade) out of reach. */
+    flex-wrap: wrap;
     gap: 6px;
     justify-content: space-between;
     padding-top: 8px;
