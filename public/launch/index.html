@@ -1,0 +1,1473 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bill Huang</title>
+<meta name="description" content="Bill Huang: engineer, founder, and operator. Co-Founder and Chief AI Officer at Capsule.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #f3f5fa;
+    --tint: #8fb4ff;
+    --ink-2: color-mix(in oklab, var(--ink) 95%, var(--tint));
+    --ink-3: color-mix(in oklab, var(--ink) 84%, var(--tint));
+    --panel: rgba(16, 14, 44, .72);
+    --rule: color-mix(in oklab, var(--ink) 18%, transparent);
+    --ease: cubic-bezier(.16, 1, .3, 1);
+    --gutter: clamp(20px, 7vw, 120px);
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  html { background: #2c3f7a; scrollbar-color: color-mix(in oklab, var(--tint) 50%, transparent) transparent; }
+  body {
+    font-family: "M PLUS Rounded 1c", ui-rounded, ui-sans-serif, sans-serif;
+    font-weight: 500;
+    color: var(--ink);
+    background: #2c3f7a;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overflow-x: hidden;
+  }
+  ::selection { background: color-mix(in oklab, var(--tint) 55%, transparent); color: #fff; }
+  a { color: inherit; text-decoration-color: color-mix(in oklab, var(--tint) 70%, transparent); text-underline-offset: .22em; text-decoration-thickness: 1px; transition: text-decoration-color .3s var(--ease), color .3s var(--ease); }
+  a:hover { color: #fff; text-decoration-color: var(--tint); }
+  :focus-visible { outline: 2px solid var(--tint); outline-offset: 4px; border-radius: 4px; }
+
+  /* Scene */
+  .grain { position: fixed; inset: 0; z-index: 1; pointer-events: none; opacity: .9; }
+  #scene { position: fixed; inset: 0; width: 100%; height: 100%; display: block; z-index: 0; }
+  .ship {
+    position: fixed; z-index: 1; pointer-events: none;
+    left: 0; top: 0; width: clamp(68px, 7.4vw, 110px); aspect-ratio: 1 / 2;
+    will-change: transform;
+    --heat: 0;
+  }
+  .ship .rig { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+  .ship .flame { transform-box: fill-box; transform-origin: 50% 100%; animation: flicker .09s infinite alternate; }
+  .ship .heat { opacity: var(--heat); }
+  .ship .prop { transform-box: fill-box; transform-origin: center; animation: whirl .12s linear infinite; }
+  .ship .bit { animation: bore .35s linear infinite; }
+  .ship .puff { transform-box: fill-box; transform-origin: center; animation: puff 1.4s ease-out infinite; }
+  @keyframes whirl { 50% { transform: scaleX(.12); } }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes bore { to { transform: translateY(-16px); } }
+  @keyframes puff { from { transform: scale(.6); opacity: .8; } to { transform: translateY(-14px) scale(1.4); opacity: 0; } }
+  @keyframes flicker { from { transform: scaleY(1); } to { transform: scaleY(.86) scaleX(.94); } }
+
+  /* Depth gauge */
+  .gauge {
+    position: fixed; z-index: 2; right: clamp(14px, 2.4vw, 36px); top: 50%;
+    transform: translateY(-50%); height: min(62vh, 520px);
+    display: grid; grid-template-columns: auto 1px; gap: 14px;
+    font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 11.5px; letter-spacing: .06em;
+    color: var(--ink-2); text-shadow: 0 1px 6px rgba(0, 0, 0, .5);
+  }
+  .gauge ol { list-style: none; padding: 0; display: flex; flex-direction: column; justify-content: space-between; text-align: right; }
+  .gauge li { transition: color .5s var(--ease); line-height: 1; }
+  .gauge li.on { color: var(--ink); }
+  .gauge a { color: inherit; text-decoration: none; display: block; padding: 4px 0; }
+  .gauge small { display: block; margin-top: 3px; font-size: 11px; letter-spacing: .02em; color: var(--ink-3); opacity: 0; transform: translateY(-2px); transition: opacity .3s var(--ease), transform .3s var(--ease); }
+  .gauge li.on small, .gauge ol:hover small, .gauge a:focus-visible small { opacity: 1; transform: none; }
+  .gauge a:hover, .gauge a:focus-visible { color: var(--ink); }
+  .gauge .track { position: relative; background: var(--rule); }
+  .gauge .dot { position: absolute; left: 50%; width: 7px; height: 7px; margin: -3.5px 0 0 -3.5px; border-radius: 50%; background: var(--ink); box-shadow: 0 0 0 4px color-mix(in oklab, var(--tint) 30%, transparent); }
+  .readout {
+    position: fixed; z-index: 2; right: clamp(14px, 2.4vw, 36px); bottom: clamp(14px, 3vh, 32px);
+    font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 12px; letter-spacing: .04em;
+    color: var(--ink-2); font-variant-numeric: tabular-nums; text-align: right; text-shadow: 0 1px 6px rgba(0, 0, 0, .5);
+  }
+  .readout b { font-weight: 500; color: var(--ink); }
+
+  @media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+  /* Content */
+  main { position: relative; z-index: 3; }
+  section {
+    min-height: 78vh; padding: 5vh var(--gutter);
+    display: flex; flex-direction: column; justify-content: center;
+  }
+  .col {
+    max-width: min(52rem, 60vw); padding: clamp(24px, 3vw, 48px); border-radius: 28px;
+    background: var(--panel); -webkit-backdrop-filter: blur(18px) saturate(1.15); backdrop-filter: blur(18px) saturate(1.15);
+    box-shadow: 0 30px 70px -30px rgba(0, 0, 0, .55), inset 0 0 0 1px rgba(255, 255, 255, .08);
+    transition: background-color .6s var(--ease);
+  }
+  /* Panels rise into place as they arrive, then their rows follow one by one */
+  .js section:not(.hero) .col { opacity: 0; translate: 0 48px; scale: .97; transition: background-color .6s var(--ease), opacity .8s var(--ease), translate .9s var(--ease), scale .9s var(--ease); }
+  .js section:not(.hero) .col.in { opacity: 1; translate: 0 0; scale: 1; }
+  .js section:not(.hero) .col li { opacity: 0; translate: 0 12px; transition: opacity .6s var(--ease), translate .6s var(--ease); transition-delay: calc(var(--i, 0) * 60ms + 200ms); }
+  .js section:not(.hero) .col.in li { opacity: 1; translate: 0 0; }
+  .hero .col { background: none; backdrop-filter: none; -webkit-backdrop-filter: none; box-shadow: none; padding: 0; }
+  .hero { position: relative; }
+  /* Liftoff happens with the name held in place; then the rocket turns and the page scrolls on */
+  .hero { min-height: 0; height: 190vh; padding-top: 0; padding-bottom: 0; justify-content: flex-start; }
+  .hero .pin { isolation: isolate; position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; justify-content: center; }
+  .hero .col { text-shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 2px 14px rgba(0, 0, 0, .4); }
+  .hero .pin::before { content: ""; position: absolute; inset: 0 auto 0 calc(-1 * var(--gutter)); width: min(980px, 100vw); z-index: -1; pointer-events: none;
+    background: radial-gradient(ellipse 62% 50% at 34% 50%, rgba(10, 12, 34, .55), rgba(10, 12, 34, 0) 80%); }
+  .hero .lede, .hero .role { color: var(--ink); }
+  .hero .cue { position: static; margin-top: 2rem; color: var(--ink-2); text-shadow: 0 2px 10px rgba(0, 0, 0, .35); }
+  .hero h1 {
+    font-size: clamp(3.4rem, 10vw, 6rem); font-weight: 800; letter-spacing: -0.035em; line-height: .95;
+  }
+  .hero .lede { margin-top: 1.4rem; font-size: clamp(1.25rem, 2.4vw, 1.65rem); line-height: 1.3; font-weight: 400; color: var(--ink-2); max-width: 26ch; text-wrap: balance; }
+  .hero .role { margin-top: 2.2rem; font-size: 17px; line-height: 1.6; color: var(--ink-3); }
+  .cue { position: absolute; left: var(--gutter); bottom: 6vh; display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--ink-3); }
+
+  .tagline { font-size: 14px; font-weight: 500; color: var(--ink-3); margin-bottom: 1rem; }
+  .lede em { font-style: normal; color: var(--ink); }
+  .org { display: flex; flex-wrap: wrap; align-items: baseline; gap: .4rem 1rem; margin-bottom: 1.2rem; font-size: 1.15rem; font-weight: 700; }
+  .org .when { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 13.5px; font-weight: 400; color: var(--ink-3); }
+  .feature h2 { font-size: clamp(2.6rem, 6.6vw, 4.8rem); }
+  .pillars { list-style: none; padding: 0; margin-top: 2.2rem; display: flex; flex-wrap: wrap; gap: .6rem; }
+  .pillars li { padding: .55rem 1rem; border-radius: 14px; background: color-mix(in oklab, var(--tint) 16%, transparent); box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--tint) 30%, transparent); }
+  .pillars h3 { font-size: 15px; font-weight: 500; }
+  h2 {
+    font-size: clamp(2.4rem, 5.8vw, 4.4rem); font-weight: 800; letter-spacing: -0.03em; line-height: 1.02;
+    text-wrap: balance; margin-bottom: 1.6rem;
+  }
+  .body { font-size: clamp(1.05rem, 1.4vw, 1.2rem); line-height: 1.6; color: var(--ink-2); max-width: 62ch; }
+  .body + .body { margin-top: 1rem; }
+  .meta { margin-top: 2rem; font-size: 16px; color: var(--ink-3); line-height: 1.7; }
+
+  .roles { list-style: none; padding: 0; margin-top: 2.6rem; border-top: 1px solid var(--rule); }
+  .roles li { padding: 1.4rem 0; border-bottom: 1px solid var(--rule); display: grid; grid-template-columns: 1fr auto; gap: .3rem 1.5rem; }
+  @media (min-width: 1100px) { .roles.two { display: grid; grid-template-columns: 1fr 1fr; column-gap: 3rem; } }
+  .roles h3 { font-size: 1.35rem; font-weight: 600; letter-spacing: -0.01em; }
+  .roles .when { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 13.5px; color: var(--ink-3); font-variant-numeric: tabular-nums; align-self: baseline; white-space: nowrap; }
+  .roles .what { grid-column: 1 / -1; font-size: 16px; color: var(--ink-3); }
+  .roles p { grid-column: 1 / -1; font-size: 17px; line-height: 1.55; color: var(--ink-2); margin-top: .35rem; max-width: 60ch; }
+
+  .projects { list-style: none; padding: 0; margin-top: 2.6rem; columns: 2 16rem; column-gap: 2.5rem; }
+  .projects li { break-inside: avoid; padding: 0 0 1.5rem; }
+  .projects h3 { font-size: 1.2rem; font-weight: 600; letter-spacing: -0.01em; display: flex; gap: .6rem; align-items: baseline; }
+  .projects h3 span { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 12px; font-weight: 400; color: var(--ink-3); }
+  .projects p { font-size: 16.5px; line-height: 1.5; color: var(--ink-2); margin-top: .25rem; }
+  .projects .stack { font-size: 14px; color: var(--ink-3); margin-top: .2rem; }
+
+  .contact h2 { font-size: clamp(2.6rem, 7vw, 5.2rem); }
+  .links { list-style: none; padding: 0; margin-top: 2.4rem; display: flex; flex-wrap: wrap; gap: 1.2rem 2.2rem; }
+  .links a { display: inline-flex; align-items: center; gap: .55rem; font-size: clamp(1.1rem, 1.6vw, 1.3rem); font-weight: 500; text-decoration: underline; text-decoration-color: color-mix(in oklab, var(--ink) 35%, transparent); }
+  .links a:hover { text-decoration-color: var(--ink); }
+  .links svg { width: 18px; height: 18px; }
+  footer { margin-top: 3rem; font-size: 14px; color: var(--ink-3); }
+
+  /* Reveal: visible by default, hidden only once JS is confirmed */
+  .js .reveal { opacity: 0; transform: translateY(14px); transition: opacity .9s var(--ease), transform .9s var(--ease); }
+  .js .reveal.in { opacity: 1; transform: none; }
+
+  /* Vehicle name tag and fact card */
+  .craft {
+    position: fixed; left: 0; top: 0; z-index: 4; display: inline-flex; align-items: center; gap: 7px;
+    padding: 5px 11px 5px 6px; border: 0; border-radius: 999px; cursor: pointer; white-space: nowrap;
+    font: 500 12px/1 "IBM Plex Mono", ui-monospace, monospace; letter-spacing: .02em; color: var(--ink);
+    background: rgba(12, 12, 30, .58); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .14);
+    transition: background-color .2s;
+  }
+  .craft:hover, .craft[aria-expanded="true"] { background: rgba(12, 12, 30, .8); }
+  .craft:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+  .craft-dot { display: grid; place-items: center; width: 17px; height: 17px; border-radius: 50%; background: var(--ink); color: #15142c; font: 600 11px/1 "IBM Plex Mono", ui-monospace, monospace; }
+  @media (hover: hover) {
+    .craft::before { content: ""; position: absolute; left: var(--hx); top: var(--hy); width: var(--hw); height: var(--hh); border-radius: 40px; }
+  }
+  .craft-card {
+    position: fixed; left: 0; top: 0; z-index: 5; width: min(300px, calc(100vw - 24px));
+    padding: 18px 20px 16px; border-radius: 18px; color: var(--ink);
+    background: rgba(14, 13, 34, .92); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .12), 0 18px 40px rgba(0, 0, 0, .35);
+  }
+  .craft-card[hidden], .craft[hidden] { display: none; }
+  .dock { display: contents; }
+  .craft-card { transform-origin: 50% 0; animation: pop .34s cubic-bezier(.16, 1, .3, 1); }
+  .craft.aux { animation: pop .4s cubic-bezier(.16, 1, .3, 1); }
+  @keyframes pop { from { opacity: 0; scale: .9; } }
+  .craft-card { max-height: calc(100vh - 24px); overflow-y: auto; }
+  .craft-card.wide { width: min(360px, calc(100vw - 24px)); }
+  .cc-list { margin-top: .9rem; }
+  .cc-list h5 { font: 500 11px/1.2 "IBM Plex Mono", ui-monospace, monospace; letter-spacing: .04em; color: var(--ink-3); margin-bottom: .35rem; }
+  .cc-list ul { list-style: none; padding: 0; display: grid; gap: .3rem; }
+  .cc-list li { display: grid; grid-template-columns: 4.2rem 1fr; gap: .6rem; font-size: 13.5px; line-height: 1.4; color: var(--ink-2); }
+  .cc-list b { font: 500 12px/1.5 "IBM Plex Mono", ui-monospace, monospace; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .cc-kick { font: 500 11.5px/1.2 "IBM Plex Mono", ui-monospace, monospace; letter-spacing: .04em; color: var(--ink-2); }
+  .cc-name { margin-top: .45rem; font-size: 1.35rem; line-height: 1.1; font-weight: 700; }
+  .cc-body { margin-top: .6rem; font-size: 15px; line-height: 1.5; color: var(--ink-2); }
+  .cc-spec { margin-top: .9rem; padding-top: .8rem; border-top: 1px solid var(--rule); display: grid; grid-template-columns: repeat(2, auto); justify-content: start; gap: .7rem 1.6rem; }
+  .cc-spec dt { font: 500 11px/1.2 "IBM Plex Mono", ui-monospace, monospace; letter-spacing: .04em; color: var(--ink-3); }
+  .cc-spec dd { margin: .25rem 0 0; font-size: 15px; font-weight: 500; font-variant-numeric: tabular-nums; }
+
+  @media (max-width: 760px) {
+    .ship { width: 52px; z-index: 4; }
+    .gauge { display: none; }
+    /* Phones: the text fills the width, so the tags sit in a dock along the bottom and the card opens above it */
+    .dock {
+      position: fixed; z-index: 4; left: 0; right: 0; bottom: 0; display: flex; gap: 8px; overflow-x: auto;
+      padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); pointer-events: none; scrollbar-width: none;
+    }
+    .dock::-webkit-scrollbar { display: none; }
+    .dock .craft { position: static; flex: none; transform: none !important; pointer-events: auto; min-height: 36px; font-size: 13px; box-shadow: 0 6px 18px rgba(0, 0, 0, .35); }
+    .dock .craft::before { display: none; }
+    .readout { bottom: calc(62px + env(safe-area-inset-bottom)); }
+    .craft-card, .craft-card.wide { width: calc(100vw - 24px); max-height: calc(100vh - 100px); }
+    section { min-height: 70vh; padding: 4vh 12px; }
+    .col { max-width: none; padding: 22px; }
+    /* Thinner glass on phones so the ship stays visible behind the text */
+    section:not(.hero) .col { background: color-mix(in srgb, var(--panel) 62%, transparent); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); text-shadow: 0 1px 3px rgba(0, 0, 0, .55); }
+    .cue { left: 20px; }
+    .roles li { grid-template-columns: 1fr; }
+    .roles .when { order: -1; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ship .flame, .ship .prop, .ship .bit, .ship .puff { animation: none; }
+    .js .reveal { transition: opacity .4s linear; transform: none; }
+    .js section:not(.hero) .col, .js section:not(.hero) .col li { translate: 0 0; scale: 1; transition: opacity .4s linear; transition-delay: 0s; }
+    .craft-card, .craft.aux { animation: none; }
+  }
+</style>
+</head>
+<body>
+<script>document.documentElement.classList.add('js')</script>
+<canvas id="scene" aria-hidden="true"></canvas>
+<div class="grain" aria-hidden="true"></div>
+
+<div class="ship" aria-hidden="true">
+  <svg class="rig" viewBox="0 0 100 200">
+    <defs>
+      <linearGradient id="shade" x1="0" x2="1"><stop offset="0" stop-color="#000" stop-opacity=".22"/><stop offset=".42" stop-color="#fff" stop-opacity=".38"/><stop offset=".6" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".26"/></linearGradient>
+      <linearGradient id="flameG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff3c9"/><stop offset=".4" stop-color="#ffb35c"/><stop offset="1" stop-color="#ff7a4a" stop-opacity="0"/></linearGradient>
+      <linearGradient id="blueG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4f6ff"/><stop offset=".4" stop-color="#a9b8ff"/><stop offset="1" stop-color="#6a5cff" stop-opacity="0"/></linearGradient>
+    </defs>
+    <!-- One machine, many parts: the script rebuilds it as Mercury-Redstone, Mercury-Atlas, Gemini-Titan II, Saturn V, the Space Shuttle, Falcon 9, SLS and Starship, then the probes Juno, Cassini and Voyager 2. -->
+    <g id="p-flame"><path class="flame" d="M-10 0 C-12 16, -5 30, 0 46 C5 30, 12 16, 10 0 Z" fill="url(#flameG)"/></g>
+    <g id="p-flameL"><path class="flame" d="M-10 0 C-12 16, -5 30, 0 46 C5 30, 12 16, 10 0 Z" fill="url(#flameG)"/></g>
+    <g id="p-flameR"><path class="flame" d="M-10 0 C-12 16, -5 30, 0 46 C5 30, 12 16, 10 0 Z" fill="url(#flameG)"/></g>
+    <g id="p-blue"><path class="flame" d="M-10 0 C-12 16, -5 30, 0 46 C5 30, 12 16, 10 0 Z" fill="url(#blueG)"/></g>
+    <g id="p-finL"><path class="fillable" d="M0 -12 L-8 4 L-8 10 L0 8 Z"/></g>
+    <g id="p-finR"><path class="fillable" d="M0 -12 L-8 4 L-8 10 L0 8 Z"/></g>
+    <g id="p-boostL"><path class="fillable" d="M-4 40 L-4 -46 C-4 -52 -2 -56 0 -58 C2 -56 4 -52 4 -46 L4 40 L5.5 46 L-5.5 46 Z"/><path d="M-4 40 L-4 -46 C-4 -52 -2 -56 0 -58 C2 -56 4 -52 4 -46 L4 40 L5.5 46 L-5.5 46 Z" fill="url(#shade)"/></g>
+    <g id="p-boostR"><path class="fillable" d="M-4 40 L-4 -46 C-4 -52 -2 -56 0 -58 C2 -56 4 -52 4 -46 L4 40 L5.5 46 L-5.5 46 Z"/><path d="M-4 40 L-4 -46 C-4 -52 -2 -56 0 -58 C2 -56 4 -52 4 -46 L4 40 L5.5 46 L-5.5 46 Z" fill="url(#shade)"/></g>
+    <g id="p-panel1"><rect x="-5" y="-52" width="10" height="42" rx="1" fill="#2c3d78"/><path d="M-5 -42 h10 M-5 -31 h10 M-5 -20 h10 M0 -52 v42" stroke="#7d93d6" stroke-width=".5"/></g>
+    <g id="p-panel2"><rect x="-5" y="-52" width="10" height="42" rx="1" fill="#2c3d78"/><path d="M-5 -42 h10 M-5 -31 h10 M-5 -20 h10 M0 -52 v42" stroke="#7d93d6" stroke-width=".5"/></g>
+    <g id="p-panel3"><rect x="-5" y="-52" width="10" height="42" rx="1" fill="#2c3d78"/><path d="M-5 -42 h10 M-5 -31 h10 M-5 -20 h10 M0 -52 v42" stroke="#7d93d6" stroke-width=".5"/></g>
+    <g id="p-boomA"><path d="M0 0 V-70" stroke="#b9bec6" stroke-width="1"/><circle cy="-70" r="1.8" fill="#b9bec6"/><circle cy="-42" r="1.3" fill="#b9bec6"/></g>
+    <g id="p-boomB"><path d="M0 0 V-24" stroke="#9aa0ab" stroke-width="1.4"/><path d="M-2.6 -25 h5.2 v3.4 h-5.2 Z M-2.6 -29.5 h5.2 v3.4 h-5.2 Z M-2.6 -34 h5.2 v3.4 h-5.2 Z" fill="#6d727c"/></g>
+    <g id="p-boomC"><path d="M0 0 V-26" stroke="#9aa0ab" stroke-width="1.4"/><rect x="-5" y="-34" width="10" height="8" rx="1" fill="#5a5f69"/><rect x="2" y="-38" width="3" height="4" fill="#3b3f49"/></g>
+    <g id="p-body"><rect class="fillable" x="-10" y="-50" width="20" height="100" rx="1.5"/><rect x="-10" y="-50" width="20" height="100" rx="1.5" fill="url(#shade)"/></g>
+    <g id="p-ogive"><path class="fillable" d="M-10 0 C-10 -14 -6 -26 0 -32 C6 -26 10 -14 10 0 Z"/><path d="M-10 0 C-10 -14 -6 -26 0 -32 C6 -26 10 -14 10 0 Z" fill="url(#shade)"/></g>
+    <g id="p-tile"><path d="M-10 50 L-10 -50 C-10 -67.5 -6 -82.5 0 -90 L0 50 Z" fill="#2b2e36" opacity=".88"/></g>
+    <g id="p-band1"><rect class="fillable" x="-10.4" y="-2.5" width="20.8" height="5"/></g>
+    <g id="p-band2"><rect class="fillable" x="-10.4" y="-2.5" width="20.8" height="5"/></g>
+    <g id="p-cap"><path class="fillable" d="M-10 0 L-4.5 -12 L-2.5 -12 L-2.5 -16 L2.5 -16 L2.5 -12 L4.5 -12 L10 0 Z"/><path d="M-10 0 L-4.5 -12 L-2.5 -12 L-2.5 -16 L2.5 -16 L2.5 -12 L4.5 -12 L10 0 Z" fill="url(#shade)"/></g>
+    <g id="p-tower"><path d="M-3 0 L0 -18 L3 0 M-2 -6 L2 -6 M-1 -12 L1 -12" fill="none" stroke="#e0533c" stroke-width="1.4" stroke-linejoin="round"/><path d="M-1.6 -18 h3.2 v-5 l-1.6 -2.4 l-1.6 2.4 Z" fill="#e0533c"/></g>
+    <g id="p-dish"><path d="M-20 0 L0 12 L20 0" fill="none" stroke="#9aa0ab" stroke-width="1"/><circle cy="12" r="1.8" fill="#9aa0ab"/><path class="fillable" d="M-28 0 Q0 -16 28 0 Q0 4 -28 0 Z"/><path d="M-28 0 Q0 4 28 0" fill="none" stroke="#b7b2a6" stroke-width="1.2"/></g>
+    <g id="p-legL"><path d="M-1.5 -24 h3 v24 l-1.5 3.5 l-1.5 -3.5 Z" fill="#1f2128"/></g>
+    <g id="p-legR"><path d="M-1.5 -24 h3 v24 l-1.5 3.5 l-1.5 -3.5 Z" fill="#1f2128"/></g>
+    <g id="p-gridL"><rect x="-3.5" y="-3.5" width="7" height="7" rx=".6" fill="#3b3f49"/><path d="M-1.2 -3.5 v7 M1.2 -3.5 v7 M-3.5 -1.2 h7 M-3.5 1.2 h7" stroke="#9aa0ab" stroke-width=".5"/></g>
+    <g id="p-gridR"><rect x="-3.5" y="-3.5" width="7" height="7" rx=".6" fill="#3b3f49"/><path d="M-1.2 -3.5 v7 M1.2 -3.5 v7 M-3.5 -1.2 h7 M-3.5 1.2 h7" stroke="#9aa0ab" stroke-width=".5"/></g>
+    <g id="p-fwdL"><path class="fillable" d="M0 -8 L-7 -2 L-7 6 L0 6 Z"/></g>
+    <g id="p-fwdR"><path class="fillable" d="M0 -8 L-7 -2 L-7 6 L0 6 Z"/></g>
+    <g id="p-wingL"><path class="fillable" d="M0 -24 L-22 18 L-22 24 L0 24 Z"/><path d="M0 -24 L-22 18" stroke="#23262f" stroke-width="2.4" stroke-linecap="round"/></g>
+    <g id="p-wingR"><path class="fillable" d="M0 -24 L-22 18 L-22 24 L0 24 Z"/><path d="M0 -24 L-22 18" stroke="#23262f" stroke-width="2.4" stroke-linecap="round"/></g>
+    <g id="p-orbiter"><path class="fillable" d="M-7 34 L-7 -22 C-7 -32 -3 -38 0 -38 C3 -38 7 -32 7 -22 L7 34 Z"/><path d="M-7 34 L-7 -22 C-7 -32 -3 -38 0 -38 C3 -38 7 -32 7 -22 L7 34 Z" fill="url(#shade)"/><path d="M-5.6 -29 C-4 -35 -2 -38 0 -38 C2 -38 4 -35 5.6 -29 Q0 -27 -5.6 -29 Z" fill="#23262f"/><path d="M-3.6 -24 h7.2 l-1 2.6 h-5.2 Z" fill="#23262f"/><path d="M-4.5 34 h3 l.6 4 h-4.2 Z M1.5 34 h3 l.6 4 h-4.2 Z M-1.5 31 h3 l.5 3.5 h-4 Z" fill="#5d626d"/></g>
+  </svg>
+</div>
+<div class="dock">
+<button class="craft" type="button" aria-expanded="false" aria-controls="craft-card"><span class="craft-dot" aria-hidden="true">i</span><span class="craft-name">Mercury-Redstone</span></button>
+</div>
+<div class="craft-card" id="craft-card" role="tooltip" hidden>
+  <p class="cc-kick"></p>
+  <h4 class="cc-name"></h4>
+  <p class="cc-body"></p>
+  <dl class="cc-spec"></dl>
+  <div class="cc-lists"></div>
+</div>
+
+<nav class="gauge" aria-label="Contents">
+  <ol>
+    <li><a href="#top">Pad<small>Hello</small></a></li>
+    <li><a href="#capsule">Sky<small>Capsule</small></a></li>
+    <li><a href="#building">Orbit<small>Also building</small></a></li>
+    <li><a href="#work">Moon<small>Amazon &amp; Meta</small></a></li>
+    <li><a href="#projects">Mars<small>Side projects</small></a></li>
+    <li><a href="#school">Jupiter<small>Waterloo</small></a></li>
+    <li><a href="#contact">Beyond<small>Say hi</small></a></li>
+  </ol>
+  <div class="track"><div class="dot"></div></div>
+</nav>
+<div class="readout" aria-hidden="true"><span class="lbl">ALT</span> <b class="val">2 m</b></div>
+
+<main>
+  <section id="top" class="hero" data-zone="0">
+    <div class="pin">
+    <div class="col">
+      <h1 class="reveal">Bill Huang</h1>
+      <p class="lede">Ten years building things that <em>didn&rsquo;t exist yet.</em></p>
+      <p class="role">Engineer &middot; Founder &middot; Operator<br>Co-Founder &amp; Chief AI Officer at <a href="https://gocapsule.ai/" target="_blank" rel="noopener">Capsule</a><br>Selected for <a href="https://www.betaworks.com/" target="_blank" rel="noopener">Betaworks</a> Spring 2026: Agent Systems</p>
+    </div>
+    <div class="cue"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5l4 4 4-4"/></svg>Scroll to launch</div>
+    </div>
+  </section>
+
+  <section id="capsule" class="feature" data-zone="1">
+    <div class="col">
+      <p class="org"><a href="https://gocapsule.ai/" target="_blank" rel="noopener">Capsule</a> <span class="when">Chief AI Officer, Co-Founder &middot; 2025 &ndash; now</span></p>
+      <h2 class="reveal">Agentic strategy for life sciences.</h2>
+      <p class="body">Capsule is the context system of record for pharma and biotech, deployed across a Global Top 10 pharma company. I co-founded it and lead its AI strategy.</p>
+      <ul class="pillars">
+        <li><h3>Voice agents</h3></li>
+        <li><h3>Scientific OCR</h3></li>
+        <li><h3>Domain embeddings</h3></li>
+        <li><h3>Multi-agent orchestration</h3></li>
+      </ul>
+      <p class="meta">Selected for <a href="https://www.betaworks.com/" target="_blank" rel="noopener">Betaworks</a> Spring 2026: Agent Systems.</p>
+    </div>
+  </section>
+
+  <section id="building" data-zone="2">
+    <div class="col">
+      <h2 class="reveal">Also building.</h2>
+      <ul class="roles">
+        <li><h3><a href="https://www.v12resole.com/" target="_blank" rel="noopener">V12 Resole</a></h3><span class="when">2023 &ndash; now</span><span class="what">CTO, consultant then full-time</span>
+          <p>Mail-in and drop-off climbing shoe resoling with standardized pricing. I&rsquo;m leading its tech transformation: a smart IoT drop-box, an AI training portal, and a platform with 3x throughput.</p></li>
+        <li><h3><a href="https://climbingsesh.com/" target="_blank" rel="noopener">Sesh</a></h3><span class="when">2022 &ndash; now</span><span class="what">Founder</span>
+          <p>A climber-owned brand for chalk buckets, brushes, and training gear, sold direct. 4.8-star rating, 14% conversion rate, 500+ followers.</p></li>
+        <li><h3><a href="https://www.keplar.io/" target="_blank" rel="noopener">Keplar</a></h3><span class="when">2024 &ndash; 2025</span><span class="what">Founding Engineer</span>
+          <p>AI audience simulation built on LLMs and RAG that cut enterprise product feedback cycles by 95%.</p></li>
+      </ul>
+      <p class="meta">Off the clock: V8 boulder sends, 30+ crags climbed, skiing, 3D printing, gardening, and mushroom foraging.</p>
+    </div>
+  </section>
+
+  <section id="work" data-zone="3">
+    <div class="col">
+      <h2 class="reveal">Learning to ship at Amazon and Meta.</h2>
+      <ul class="roles two">
+        <li><h3>Amazon, Senior SDE</h3><span class="when">2022 &ndash; 2024</span>
+          <p>Led autonomous navigation, mapping, and computer vision for Astro, with 95%+ person recognition accuracy.</p></li>
+        <li><h3>Amazon, SDE II</h3><span class="when">2020 &ndash; 2022</span>
+          <p>Built Astro&rsquo;s core platform and the phone battery notification feature.</p></li>
+        <li><h3>Amazon, SDE I</h3><span class="when">2018 &ndash; 2020</span>
+          <p>Shipped a news app across 11 FireTV platforms at 3,000 TPS with 60% lower latency.</p></li>
+        <li><h3>Meta, Research Engineer</h3><span class="when">2017</span>
+          <p>Prototyped applied AI and AR products at Building 8, now Reality Labs.</p></li>
+        <li><h3>Amazon, SDE Intern</h3><span class="when">2017</span>
+          <p>Built a video app for Echo devices.</p></li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="projects" data-zone="4">
+    <div class="col">
+      <h2 class="reveal">Side projects.</h2>
+      <ul class="projects">
+        <li><h3><a href="https://chronicle.billhuang.me" target="_blank" rel="noopener">Chronicles</a><span>2026</span></h3><p>A historical events trivia game.</p><p class="stack">Next.js, TypeScript, Wikipedia API</p></li>
+        <li><h3><a href="https://sno.billhuang.me" target="_blank" rel="noopener">Tahoe Snow</a><span>2024</span></h3><p>Ski resort conditions, at a glance.</p><p class="stack">React, Node.js</p></li>
+        <li><h3><a href="https://mushroom.billhuang.me" target="_blank" rel="noopener">Mushroom Weather</a><span>2024</span></h3><p>When and where to forage, on a map.</p><p class="stack">React, AWS S3, Mapbox</p></li>
+        <li><h3>Unreal Sensor Sim<span>2018</span></h3><p>Sensor simulation for autonomous vehicles. Best Presentation Award.</p><p class="stack">Unreal Engine, C++, Python, CUDA</p></li>
+        <li><h3><a href="https://github.com/billykeyss/home.ly" target="_blank" rel="noopener">Home.ly</a><span>2017</span></h3><p>A smart home IoT network.</p><p class="stack">Node.js, Azure IoT, DynamoDB, React</p></li>
+        <li><h3>Palette<span>2019</span></h3><p>Pull a color palette from your camera.</p><p class="stack">Kotlin, Android, Room</p></li>
+        <li><h3>RapBot<span>2017</span></h3><p>Rap battle Alexa. Hackathon winner.</p><p class="stack">AWS Lambda, Node.js</p></li>
+        <li><h3>Pong Neural Net<span>2016</span></h3><p>Teaching a paddle to play.</p><p class="stack">Unity, C#, ML-Agents</p></li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="school" data-zone="5">
+    <div class="col">
+      <h2 class="reveal">Where it started.</h2>
+      <p class="body">Computer Engineering at the University of Waterloo, 2013 to 2018, with an exchange semester at Lund University in Sweden. Five co-op terms took me from oil-sands job sites to React and Android.</p>
+      <ul class="roles two">
+        <li><h3>Connected Lab</h3><span class="when">2016, 2017</span><p>A React/Redux resource tool, a Jenkins CI pipeline, integration test infrastructure, and a Watson chatbot.</p></li>
+        <li><h3>nanoPay</h3><span class="when">2015</span><p>An Android app and an AngularJS merchant site.</p></li>
+        <li><h3>PCL</h3><span class="when">2014</span><p>Project coordination for the Surmont and Kearl oil-sands builds.</p></li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="contact" class="contact" data-zone="6">
+    <div class="col">
+      <h2 class="reveal">You&rsquo;ve reached the stars.</h2>
+      <ul class="links">
+        <li><a href="https://www.linkedin.com/in/yichenbillhuang/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4.98 3.5a2.5 2.5 0 11-.02 5 2.5 2.5 0 01.02-5zM3 9.75h4v11H3v-11zm6.5 0h3.8v1.5h.06c.53-1 1.83-1.8 3.77-1.8 4 0 4.87 2.5 4.87 5.8v5.5h-4v-4.9c0-1.2-.02-2.7-1.66-2.7-1.66 0-1.92 1.3-1.92 2.6v5h-4v-11z"/></svg>LinkedIn</a></li>
+        <li><a href="https://github.com/billykeyss" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 00-3.16 19.49c.5.09.68-.22.68-.48v-1.7c-2.78.6-3.37-1.34-3.37-1.34-.45-1.16-1.11-1.47-1.11-1.47-.9-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.9 1.52 2.34 1.08 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.94 0-1.1.39-1.99 1.03-2.69-.1-.25-.45-1.27.1-2.65 0 0 .84-.27 2.75 1.02a9.5 9.5 0 015 0c1.91-1.3 2.75-1.02 2.75-1.02.55 1.38.2 2.4.1 2.65.64.7 1.03 1.6 1.03 2.69 0 3.84-2.34 4.68-4.57 4.93.36.31.68.92.68 1.85v2.74c0 .27.18.58.69.48A10 10 0 0012 2z"/></svg>GitHub</a></li>
+        <li><a href="https://billhuang.me" target="_blank" rel="noopener">billhuang.me</a></li>
+      </ul>
+      <footer>Bill Huang &middot; 4.2 light years out &middot; <a href="/" target="_blank" rel="noopener">billhuang.me</a></footer>
+    </div>
+  </section>
+</main>
+
+<script>
+(() => {
+  const cvs = document.getElementById('scene');
+  const ctx = cvs.getContext('2d');
+  const ship = document.querySelector('.ship');
+  // Vehicle parts, and where each one sits in every rocket: [x, y, rotate, scaleX, scaleY, opacity, color]
+  const PARTS = ['body', 'ogive', 'tile', 'band1', 'band2', 'cap', 'tower', 'finL', 'finR', 'fwdL', 'fwdR', 'boostL', 'boostR', 'wingL', 'wingR', 'orbiter', 'legL', 'legR', 'gridL', 'gridR', 'flame', 'flameL', 'flameR', 'blue', 'panel1', 'panel2', 'panel3', 'boomA', 'boomB', 'boomC', 'dish'];
+  const rig = {};
+  PARTS.forEach(id => { const g = ship.querySelector('#p-' + id); rig[id] = { g, fill: [...g.querySelectorAll('.fillable')] }; });
+  const HIDE = (x, y, c) => [x, y, 0, .3, .3, 0, c];
+  const INK = '#24262d';
+  const off = (o = {}) => Object.assign({
+    ogive: HIDE(50, 60, '#f4f1ea'), tile: HIDE(50, 110), band1: HIDE(50, 90, INK), band2: HIDE(50, 140, INK),
+    cap: HIDE(50, 60, '#f4f1ea'), tower: HIDE(50, 50), finL: HIDE(44, 160, INK), finR: HIDE(56, 160, INK),
+    fwdL: HIDE(44, 80, INK), fwdR: HIDE(56, 80, INK), boostL: HIDE(40, 120, '#f2f0ea'), boostR: HIDE(60, 120, '#f2f0ea'),
+    wingL: HIDE(46, 132, '#f5f4f0'), wingR: HIDE(54, 132, '#f5f4f0'), orbiter: HIDE(50, 128, '#f5f4f0'),
+    legL: HIDE(46, 156), legR: HIDE(54, 156), gridL: HIDE(46, 90), gridR: HIDE(54, 90),
+    flame: HIDE(50, 172), flameL: HIDE(40, 170), flameR: HIDE(60, 170), blue: HIDE(50, 170),
+    panel1: HIDE(50, 100), panel2: HIDE(50, 100), panel3: HIDE(50, 100), boomA: HIDE(50, 100), boomB: HIDE(50, 100), boomC: HIDE(50, 100), dish: HIDE(50, 96, '#f2f0ea'),
+  }, o);
+  const RIG = [
+    off({ // Mercury-Redstone: slim white rocket, black capsule, escape tower
+      body: [50, 118, 0, .72, 1, 1, '#f4f1ea'], cap: [50, 68, 0, .72, .9, 1, INK], tower: [50, 54, 0, .8, .8, 1],
+      band1: [50, 80, 0, .72, .8, 1, INK], band2: [50, 156, 0, .72, .8, 1, INK],
+      finL: [43, 162, 0, .8, .8, 1, INK], finR: [57, 162, 0, -.8, .8, 1, INK], flame: [50, 170, 0, .8, 1, 1],
+    }),
+    off({ // Mercury-Atlas: silver balloon-tank rocket, booster pods flaring at the base, black capsule and tower
+      body: [50, 116, 0, .86, 1, 1, '#d6dae0'], cap: [50, 66, 0, .72, .9, 1, INK], tower: [50, 52, 0, .8, .8, 1],
+      band1: [50, 72, 0, .8, .7, 1, '#d6dae0'], boostL: [42, 156, 0, .9, .3, 1, '#c4c9d1'], boostR: [58, 156, 0, .9, .3, 1, '#c4c9d1'],
+      flame: [50, 172, 0, .9, 1.1, 1],
+    }),
+    off({ // Gemini-Titan II: plain cylinder, dark capsule on a white adapter, twin engines, no tower
+      body: [50, 118, 0, .92, 1.06, 1, '#ece9e2'], cap: [50, 65, 0, .92, 1.15, 1, '#2f3138'], band1: [50, 106, 0, .92, .6, 1, INK],
+      band2: [50, 69, 0, .92, 1.2, 1, '#f7f5f0'], flameL: [45, 170, 0, .55, 1.1, 1], flameR: [55, 170, 0, .55, 1.1, 1],
+    }),
+    off({ // Saturn V: tall white stack, black interstage rings, Apollo spacecraft on top
+      body: [50, 110, 0, 1, 1.24, 1, '#f6f4ee'], cap: [50, 48, 0, .8, 1.1, 1, '#e7e4dc'], tower: [50, 31, 0, .85, .85, 1],
+      band1: [50, 140, 0, 1, 1.2, 1, INK], band2: [50, 96, 0, 1, 1, 1, INK],
+      finL: [40, 166, 0, 1, 1, 1, INK], finR: [60, 166, 0, -1, 1, 1, INK], flame: [50, 174, 0, 1.4, 1.3, 1],
+    }),
+    off({ // Space Shuttle: orange tank, two white boosters, delta-wing orbiter
+      body: [50, 112, 0, 1.05, 1, 1, '#d9832f'], ogive: [50, 62, 0, 1.05, 1, 1, '#d9832f'],
+      boostL: [31, 118, 0, 1, 1, 1, '#f2f0ea'], boostR: [69, 118, 0, 1, 1, 1, '#f2f0ea'],
+      orbiter: [50, 128, 0, 1, 1, 1, '#f5f4f0'], wingL: [50, 132, 0, 1, 1, 1, '#f5f4f0'], wingR: [50, 132, 0, -1, 1, 1, '#f5f4f0'],
+      flame: [50, 168, 0, .9, 1, 1], flameL: [31, 166, 0, .7, 1.3, 1], flameR: [69, 166, 0, .7, 1.3, 1],
+    }),
+    off({ // Falcon 9: slender white booster, black interstage, grid fins, folded legs, wide fairing
+      body: [50, 106, 0, .62, 1.36, 1, '#f7f7f5'], ogive: [50, 38, 0, .85, .85, 1, '#f7f7f5'],
+      band1: [50, 92, 0, .62, 1.2, 1, INK], gridL: [42, 96, 0, .8, .8, 1], gridR: [58, 96, 0, .8, .8, 1],
+      legL: [44.6, 160, 0, 1, 1, 1], legR: [55.4, 160, 0, 1, 1, 1], flame: [50, 178, 0, .8, 1.2, 1],
+    }),
+    off({ // SLS: orange core stage, white boosters, Orion under its launch abort fairing
+      body: [50, 118, 0, 1, 1, 1, '#d9832f'], band1: [50, 66, 0, .8, 1.4, 1, '#f2f0ea'], ogive: [50, 63, 0, .8, 1.25, 1, '#f2f0ea'], tower: [50, 23, 0, .7, .7, 1],
+      boostL: [33, 122, 0, 1, 1, 1, '#f2f0ea'], boostR: [67, 122, 0, 1, 1, 1, '#f2f0ea'],
+      flame: [50, 172, 0, 1, 1.1, 1], flameL: [33, 170, 0, .7, 1.3, 1], flameR: [67, 170, 0, .7, 1.3, 1],
+    }),
+    off({ // Starship: stainless steel, black heat shield on one side, four flaps, methane-blue exhaust
+      body: [50, 114, 0, 1.1, 1, 1, '#eef1f5'], ogive: [50, 64, 0, 1.1, 1.25, 1, '#eef1f5'], tile: [50, 114, 0, 1.1, 1, .45],
+      fwdL: [39, 76, 0, 1, 1, 1, '#6b717d'], fwdR: [61, 76, 0, -1, 1, 1, '#6b717d'],
+      finL: [39, 156, 0, 1.1, 1.1, 1, '#6b717d'], finR: [61, 156, 0, -1.1, 1.1, 1, '#6b717d'], blue: [50, 168, 0, 1.1, 1.3, 1],
+    }),
+    off({ // Juno: three long solar wings around a dark hexagonal bus, small dish on top
+      body: [50, 100, 0, .8, .13, 1, '#4a4d55'], dish: [50, 93, 0, .38, .6, 1, '#f2f0ea'],
+      panel1: [50, 100, 0, 1, 1, 1], panel2: [50, 100, 120, 1, 1, 1], panel3: [50, 100, 240, 1, 1, 1], boomA: [50, 100, 60, .5, .5, 1],
+    }),
+    off({ // Cassini: tall gold-foil body under a big white dish, Huygens probe on the side, magnetometer boom
+      body: [50, 114, 0, .75, .44, 1, '#c9a24a'], dish: [50, 90, 0, .7, -1, 1, '#f2f0ea'], cap: [60, 118, 90, .5, .55, 1, '#d8c08a'],
+      boomA: [50, 98, -75, 1, 1, 1], boomB: [50, 136, 180, .7, .7, 1],
+    }),
+    off({ // Voyager 2: a 3.7 m dish pointed home, a small bus behind it, booms for the instruments and power
+      body: [50, 84, 0, .9, .14, 1, '#c9a24a'], dish: [50, 96, 0, 1, 1, 1, '#f2f0ea'],
+      boomA: [50, 84, 30, 1, 1.2, 1], boomB: [50, 90, -110, 1, .8, 1], boomC: [50, 90, 110, 1, .8, 1],
+    }),
+  ];
+  const VEHICLES = [
+    { name: 'Mercury-Redstone', kick: 'NASA · 1960–61', body: 'Flew Alan Shepard on Freedom 7 in 1961, the first American in space: a 15-minute arc to 187 km and back.', spec: [['Height', '25.4 m'], ['Flights', '6']] },
+    { name: 'Mercury-Atlas', kick: 'NASA · 1962–63', body: 'Carried John Glenn on Friendship 7, the first American to orbit Earth: three laps in just under five hours.', spec: [['Height', '28.7 m'], ['Crewed flights', '4']] },
+    { name: 'Gemini-Titan II', kick: 'NASA · 1964–66', body: 'Launched the two-person Gemini crews who flew the first American spacewalk, rendezvous, and docking, all rehearsal for Apollo.', spec: [['Height', '33.2 m'], ['Crewed flights', '10']] },
+    { name: 'Saturn V', kick: 'NASA · 1967–73', body: 'The Apollo Moon rocket. It carried 24 astronauts to the Moon, starting with Apollo 8, and put Skylab in orbit.', spec: [['Height', '110.6 m'], ['Launches', '13']] },
+    { name: 'Space Shuttle', kick: 'NASA · 1981–2011', body: 'The first reusable crewed spacecraft. It launched Hubble, helped build the Space Station, and flew 355 people.', spec: [['Height', '56.1 m'], ['Missions', '135']] },
+    { name: 'Falcon 9', kick: 'SpaceX · 2010–', body: 'The first orbital booster to land (2015) and fly again (2017). Reflown boosters now carry most of its launches.', spec: [['Height', '70 m'], ['Launches', '500+']] },
+    { name: 'SLS', kick: 'NASA · 2022–', body: 'The Space Launch System, built to take astronauts back to the Moon. Artemis I sent an uncrewed Orion capsule around it in 2022.', spec: [['Height', '98 m'], ['First flight', '2022']] },
+    { name: 'Starship', kick: 'SpaceX · 2023–', body: 'The largest rocket ever flown, built to be fully reusable. Stainless steel, methane-fuelled, and designed with Mars in mind.', spec: [['Height', '~121 m stacked'], ['First flight', '2023']] },
+    { name: 'Juno', kick: 'NASA · 2011–', body: 'A spinning, solar-powered probe in a polar orbit around Jupiter since 2016, mapping its storms, gravity, and magnetic field.', spec: [['Arrived', '2016'], ['Wingspan', '~20 m']] },
+    { name: 'Cassini', kick: 'NASA · ESA · ASI · 1997–2017', body: 'Spent 13 years at Saturn, landed the Huygens probe on Titan, and ended with a dive into Saturn itself.', spec: [['At Saturn', '2004–17'], ['Height', '6.8 m']] },
+    { name: 'Voyager 2', kick: 'NASA · 1977–', body: 'The only spacecraft to visit Uranus and Neptune. Now past the edge of the heliosphere, still calling home on its 3.7 m dish.', spec: [['Launched', '1977'], ['Planets', '4']] },
+  ];
+  // Extra turns each part makes on its way, so the change reads as a rebuild, not a fade
+  const SPIN = { panel1: 360, panel2: 360, panel3: 360, dish: 180, finL: 360, finR: -360, wingL: -360, wingR: 360, fwdL: 180, fwdR: -180, boostL: -180, boostR: 180, gridL: 360, gridR: -360, tower: 180 };
+  const MORPH = [[.55, .75], [1.05, 1.25], [1.55, 1.75], [2.05, 2.25], [2.55, 2.75], [3.0, 3.2], [3.45, 3.65], [4.3, 4.5], [4.88, 5.06], [5.24, 5.4]];
+  // Rivals flying the same years, drawn alongside on the canvas: [phases, shape, card]
+  const RIVALS = [
+    { ph: [0], k: { c: '#dfe3e6', d: .11, core: .74, straps: { len: .42, d: .07, cone: true, c: '#cfd4d8' } },
+      name: 'Vostok-K', kick: 'USSR · 1960–64', body: 'Launched Yuri Gagarin on Vostok 1 on 12 April 1961, the first human in space, 23 days before Alan Shepard.', spec: [['Height', '30.8 m'], ['Crewed flights', '6']] },
+    { ph: [1, 2], k: { c: '#dfe3e6', d: .1, core: .78, straps: { len: .4, d: .065, cone: true, c: '#cfd4d8' } },
+      name: 'Voskhod', kick: 'USSR · 1964–65', body: 'Voskhod 2 carried Alexei Leonov, who made the first spacewalk in March 1965: about 12 minutes outside, tethered.', spec: [['Height', '30.6 m'], ['Crewed flights', '2']] },
+    { ph: [3], k: { c: '#d7dcd6', d: .1, core: .76, straps: { len: .38, d: .065, cone: true, c: '#c9cfc8' }, tower: true },
+      name: 'Soyuz', kick: 'USSR · Russia · 1966–', body: 'The most-flown rocket family ever, from the same R-7 lineage as Sputnik. Still carries crews to the Space Station.', spec: [['Height', '~46 m'], ['Family launches', '1,900+']] },
+    { ph: [4], k: { c: '#ece7da', d: .15, core: .9, straps: { len: .62, d: .08, c: '#e2ddd0' }, orbiter: true },
+      name: 'Energia-Buran', kick: 'USSR · 1988', body: 'The Soviet answer to the Shuttle. Buran flew once, uncrewed: two orbits, then landed itself on autopilot.', spec: [['Height', '58.8 m'], ['Flights', '1']] },
+    { ph: [5], k: { c: '#f1f1ee', d: .1, core: .78, straps: { len: .4, d: .06, c: '#ecebe6' }, tower: true },
+      name: 'Long March 2F', kick: 'China · 1999–', body: 'Launches the Shenzhou crews. Yang Liwei became China’s first astronaut aboard it in 2003; today it flies crews to Tiangong.', spec: [['First crew', '2003'], ['Station', 'Tiangong']] },
+    { ph: [6, 7], k: { c: '#f3f4f6', d: .09, core: .74, fairD: 1.45, bands: [.32], bandC: '#20365f' },
+      name: 'New Glenn', kick: 'Blue Origin · 2025–', body: 'Blue Origin’s heavy orbital rocket, named for John Glenn. It first flew in January 2025, with a booster built to land on a ship and fly again.', spec: [['Height', '98 m'], ['First flight', '2025']] },
+  ];
+  RIVALS.forEach(r => r.a = 0);
+  // Who flew on what: shown as a Crew list on each vehicle's card
+  const CREW = {
+    'Mercury-Redstone': [['1961', 'Alan Shepard: first American in space, a 15-minute hop'], ['1961', 'Gus Grissom: Liberty Bell 7']],
+    'Mercury-Atlas': [['1962', 'John Glenn: first American to orbit, three times around'], ['1963', 'Gordon Cooper: 22 orbits, the last Mercury flight']],
+    'Gemini-Titan II': [['1965', 'Ed White: first American spacewalk'], ['1966', 'Neil Armstrong, David Scott: first docking in orbit'], ['1966', 'Buzz Aldrin: proves people can work outside']],
+    'Saturn V': [['1968', 'Borman, Lovell, Anders: first people to circle the Moon'], ['1969', 'Armstrong and Aldrin walk on the Moon; Collins waits in orbit'], ['1970', 'Apollo 13: Lovell, Swigert, Haise make it home'], ['1972', 'Gene Cernan: last to walk on the Moon, so far']],
+    'Space Shuttle': [['1981', 'John Young, Bob Crippen: first flight'], ['1983', 'Sally Ride: first American woman in space'], ['1983', 'Guion Bluford: first African American in space'], ['1992', 'Mae Jemison: first African American woman in space'], ['1999', 'Eileen Collins: first woman to command a Shuttle']],
+    'Falcon 9': [['2020', 'Bob Behnken, Doug Hurley: first crew to orbit on a commercial spacecraft'], ['2021', 'Inspiration4: first all-civilian crew in orbit'], ['2024', 'Polaris Dawn: first commercial spacewalk']],
+    'SLS': [['2026', 'Artemis II: Wiseman, Glover, Koch and Hansen fly around the Moon. Firsts for a woman, a Black astronaut and a Canadian']],
+    'Vostok-K': [['1961', 'Yuri Gagarin: first human in space, one orbit in 108 minutes'], ['1961', 'Gherman Titov: a full day in orbit'], ['1963', 'Valentina Tereshkova: first woman in space']],
+    'Voskhod': [['1964', 'Komarov, Feoktistov, Yegorov: first crew of three'], ['1965', 'Alexei Leonov: first spacewalk']],
+    'Soyuz': [['1975', 'Alexei Leonov: Soyuz 19 meets Apollo, a handshake with Tom Stafford in orbit'], ['1984', 'Svetlana Savitskaya: first woman to spacewalk'], ['1995', 'Valeri Polyakov: home after 437 days, the longest single flight'], ['2000', 'Shepherd, Gidzenko, Krikalev: first crew to live on the Station']],
+    'Long March 2F': [['2003', 'Yang Liwei: China’s first astronaut'], ['2008', 'Zhai Zhigang: China’s first spacewalk'], ['2012', 'Liu Yang: China’s first woman in space']],
+  };
+  VEHICLES.concat(RIVALS).forEach(v => { if (CREW[v.name]) v.crew = CREW[v.name]; });
+
+  // Landmarks and worlds along the way
+  const INFO = {
+    sputnik: { name: 'Sputnik 1', kick: 'USSR · 1957', body: 'The first artificial satellite. A 58 cm polished sphere that beeped on two radio frequencies for 21 days and started the space race.', spec: [['Mass', '83.6 kg'], ['Orbit', '96 min']] },
+    iss: { name: 'Space Station', kick: 'NASA · Roscosmos · ESA · JAXA · CSA · 1998–', body: 'Crewed without a break since November 2000. About the size of a football field, circling Earth every 90 minutes at 400 km.', spec: [['Mass', '~420 t'], ['Crewed since', '2000']],
+      next: [['~2030', 'Retirement, then a controlled deorbit by a SpaceX-built vehicle']] },
+    moon: { name: 'The Moon', kick: 'Earth’s moon', spec: [['From Earth', '384,400 km'], ['Diameter', '3,474 km'], ['Gravity', '0.17 g'], ['Day', '29.5 Earth days']],
+      past: [['1959', 'Luna 2: first spacecraft to reach another world'], ['1966', 'Luna 9: first soft landing'], ['1969', 'Apollo 11: first people on the Moon'], ['1972', 'Apollo 17: last crewed landing so far'], ['2019', 'Chang’e 4: first landing on the far side'], ['2023', 'Chandrayaan-3: first landing near the south pole'], ['2026', 'Artemis II: first crew around the Moon since 1972']],
+      next: [['2027', 'Artemis III: crew tests docking with the new landers in Earth orbit'], ['2027', 'Chang’e 7: south pole survey for water ice'], ['2028', 'Artemis IV: crewed landing near the south pole'], ['by 2030', 'China’s first crewed landing']] },
+    mars: { name: 'Mars', kick: 'Planet · 4th from the Sun', spec: [['From Sun', '228M km · 1.5 AU'], ['Diameter', '6,779 km'], ['Gravity', '0.38 g'], ['Day', '24 h 37 min']],
+      past: [['1965', 'Mariner 4: first close-up photos'], ['1971', 'Mars 3: first landing, silent after 20 s'], ['1976', 'Viking 1: first long-lived lander'], ['1997', 'Sojourner: first rover'], ['2012', 'Curiosity lands in Gale Crater'], ['2021', 'Perseverance, and Ingenuity: first powered flight on another planet'], ['2021', 'Zhurong: China’s first rover']],
+      next: [['2030', 'Rosalind Franklin (ESA) lands: a rover that drills 2 m down'], ['~2031', 'Tianwen-3 (China) brings Mars samples home'], ['TBD', 'SpaceX Starship: Mars on hold while the Moon comes first']] },
+    belt: { name: 'Asteroid belt', kick: 'Between Mars and Jupiter', spec: [['Where', '2.2–3.3 AU'], ['Largest', 'Ceres, 940 km'], ['Total mass', '~3% of the Moon'], ['Spacing', 'Usually ~1M km apart']],
+      past: [['1972', 'Pioneer 10: first to cross it'], ['2011', 'Dawn orbits Vesta'], ['2015', 'Dawn orbits Ceres: first dwarf planet visited'], ['2025', 'Lucy flies past Donaldjohanson']],
+      next: [['2029', 'Psyche reaches the metal-rich asteroid 16 Psyche']] },
+    jupiter: { name: 'Jupiter', kick: 'Planet · 5th from the Sun', spec: [['From Sun', '778M km · 5.2 AU'], ['Diameter', '139,820 km'], ['Gravity', '2.53 g'], ['Day', '9 h 56 min']],
+      past: [['1973', 'Pioneer 10: first flyby'], ['1979', 'Voyager 1 & 2: rings, and volcanoes on Io'], ['1995', 'Galileo: first orbiter, drops a probe into the clouds'], ['2016', 'Juno: first polar orbiter']],
+      next: [['2030', 'Europa Clipper arrives to study Europa’s ocean'], ['2031', 'JUICE (ESA) arrives, later orbits Ganymede']] },
+    saturn: { name: 'Saturn', kick: 'Planet · 6th from the Sun', spec: [['From Sun', '1.43B km · 9.5 AU'], ['Diameter', '116,460 km'], ['Gravity', '1.07 g'], ['Day', '10 h 33 min']],
+      past: [['1979', 'Pioneer 11: first flyby'], ['1980', 'Voyager 1, then Voyager 2 in 1981'], ['2004', 'Cassini arrives'], ['2005', 'Huygens lands on Titan'], ['2017', 'Cassini’s Grand Finale dive']],
+      next: [['2034', 'Dragonfly: a rotorcraft lander for Titan']] },
+    uranus: { name: 'Uranus', kick: 'Planet · 7th from the Sun', spec: [['From Sun', '2.87B km · 19.2 AU'], ['Diameter', '50,724 km'], ['Gravity', '0.89 g'], ['Tilt', '98°, rolls on its side']],
+      past: [['1986', 'Voyager 2, the only visit: 10 new moons, 2 new rings']],
+      next: [['TBD', 'Uranus Orbiter and Probe: NASA’s top flagship priority, not yet funded']] },
+    neptune: { name: 'Neptune', kick: 'Planet · 8th from the Sun', spec: [['From Sun', '4.5B km · 30.1 AU'], ['Diameter', '49,244 km'], ['Gravity', '1.14 g'], ['Winds', 'up to 2,100 km/h']],
+      past: [['1989', 'Voyager 2, the only visit: the Great Dark Spot and geysers on Triton']],
+      next: [['TBD', 'No mission funded yet']] },
+  };
+  INFO.mmu = { name: 'Bruce McCandless II', kick: 'NASA · February 1984', body: 'Flew a jet-powered backpack, the Manned Maneuvering Unit, out to about 98 m (320 ft) from Shuttle Challenger: the first spacewalk with no tether.', spec: [['Mission', 'STS-41-B'], ['Farthest', '~98 m out']] };
+  const spots = {};
+  let colBox = []; // text panel boxes, page coordinates
+
+  // A rival rocket in side view, nose along +x, tail at 0
+  function paintCraft(k, L) {
+    const D = L * k.d, r = D / 2, cl = L * k.core;
+    const fl = L * (.16 + Math.random() * .04), fg = ctx.createLinearGradient(0, 0, -fl, 0);
+    fg.addColorStop(0, '#fff3c9'); fg.addColorStop(.4, '#ffb35c'); fg.addColorStop(1, 'rgba(255,122,74,0)');
+    const flame = (y, h) => { ctx.fillStyle = fg; ctx.beginPath(); ctx.ellipse(-fl / 2, y, fl / 2, h, 0, 0, 6.283); ctx.fill(); };
+    flame(0, r * .8);
+    if (k.straps) {
+      const s = k.straps, bl = L * s.len, bd = L * s.d;
+      [-1, 1].forEach(sd => {
+        const y0 = sd * r, y1 = sd * (r + bd), ym = (y0 + y1) / 2;
+        flame(ym, bd * .45);
+        ctx.fillStyle = s.c; ctx.beginPath();
+        if (s.cone) { ctx.moveTo(0, y0); ctx.lineTo(0, y1); ctx.lineTo(bl * .2, y1); ctx.lineTo(bl, y0); }
+        else { ctx.moveTo(0, y0); ctx.lineTo(0, y1); ctx.lineTo(bl * .82, y1); ctx.lineTo(bl, ym); ctx.lineTo(bl * .82, y0); }
+        ctx.fill();
+      });
+    }
+    ctx.fillStyle = k.c; ctx.fillRect(0, -r, cl, D);
+    const fr = r * (k.fairD || 1), fx = k.fairD ? cl + (L - cl) * .35 : cl;
+    ctx.beginPath(); ctx.moveTo(cl, -r); ctx.lineTo(cl, -fr); ctx.lineTo(fx, -fr);
+    ctx.bezierCurveTo(L - (L - fx) * .4, -fr, L, -fr * .3, L, 0); ctx.bezierCurveTo(L, fr * .3, L - (L - fx) * .4, fr, fx, fr);
+    ctx.lineTo(cl, fr); ctx.lineTo(cl, r); ctx.fill();
+    (k.bands || []).forEach(b => { ctx.fillStyle = k.bandC; ctx.fillRect(cl * b, -r, D * .35, D); });
+    const sh = ctx.createLinearGradient(0, -r, 0, r);
+    sh.addColorStop(0, 'rgba(255,255,255,.3)'); sh.addColorStop(.45, 'rgba(255,255,255,0)'); sh.addColorStop(1, 'rgba(0,0,0,.22)');
+    ctx.fillStyle = sh; ctx.fillRect(0, -r, cl, D);
+    if (k.tower) { ctx.strokeStyle = '#e0533c'; ctx.lineWidth = Math.max(1, L * .008); ctx.beginPath(); ctx.moveTo(L, 0); ctx.lineTo(L * 1.07, 0); ctx.stroke(); }
+    if (k.orbiter) {
+      const oh = L * .075, oy = -r - oh;
+      ctx.fillStyle = '#f4f3ef'; roundRect(L * .3, oy, L * .5, oh, oh / 2); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(L * .3, oy); ctx.lineTo(L * .37, oy); ctx.lineTo(L * .3, oy - L * .07); ctx.fill();
+      ctx.fillStyle = '#23262f'; ctx.fillRect(L * .3, -r - oh * .25, L * .46, oh * .25);
+      ctx.beginPath(); ctx.ellipse(L * .78, oy + oh / 2, oh * .5, oh * .5, 0, -1.6, 1.6); ctx.fill();
+    }
+  }
+
+  const backOut = k => 1 + 2.6 * (k - 1) ** 3 + 1.6 * (k - 1) ** 2;
+
+  const dot = document.querySelector('.gauge .dot');
+  const zoneLis = [...document.querySelectorAll('.gauge li')];
+  const lbl = document.querySelector('.readout .lbl');
+  const val = document.querySelector('.readout .val');
+  const sections = [...document.querySelectorAll('main section')];
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const root = document.documentElement.style;
+
+  let W, H, DPR, SW = 90, lastTint = '';
+  let layout = [];
+  const MAX = sections.length - 1;
+
+  // Per-zone sky: [top, bottom, tint]
+  const ZONES = [
+    ['#2c3f7a', '#f2a98a', '#ffe1d6'],  // coast at sunrise
+    ['#3563b0', '#86b6ea', '#ffe1d6'],  // sky
+    ['#13265c', '#3a5fae', '#c9d8ff'],  // stratosphere
+    ['#0a0c26', '#141a44', '#c9b8ff'],  // orbit
+    ['#0b0a20', '#16133a', '#c9b8ff'],  // moon
+    ['#120a2a', '#2a1250', '#ff9ac1'],  // deep space
+    ['#1a0b33', '#3b1460', '#ffc27a'],  // stars
+  ];
+  const HOLD = {};
+
+  const hex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+  const mix = (a, b, t) => a.map((v, i) => Math.round(v + (b[i] - v) * t));
+  const rgb = (c, a = 1) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
+  const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+  const band = (s, a, b) => clamp((s - a) / (b - a));
+  const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  // Gravity turn: a slow pitch-over that starts just after liftoff and settles level well into the first panel
+  const pitch = s => { const k = band(s, .06, 1.1); return k * k * k * (k * (k * 6 - 15) + 10); };
+
+  function zoneColors(s) {
+    const i = Math.min(Math.floor(s), MAX - 1);
+    let t = s - i;
+    if (HOLD[i] !== undefined) t = t < HOLD[i] ? 0 : (t - HOLD[i]) / (1 - HOLD[i]);
+    return [0, 1, 2].map(k => mix(hex(ZONES[i][k]), hex(ZONES[i + 1][k]), ease(t)));
+  }
+
+  // Seeded field of stars, plankton, embers
+  let seed = 7;
+  const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const stars = Array.from({ length: 420 }, () => ({ x: rnd(), y: rnd(), r: rnd() ** 3 * 1.6 + .25, p: rnd() * 6.28, d: rnd() * .6 + .2 }));
+  const motes = Array.from({ length: 140 }, () => ({ x: rnd(), y: rnd(), r: rnd() * 1.6 + .4, v: rnd() * .5 + .2, glow: rnd() < .16, h: rnd() }));
+  const clouds = Array.from({ length: 26 }, () => ({ x: rnd(), y: rnd() * 1.6, w: rnd() * .5 + .25, h: rnd() * .08 + .04, v: rnd() * .8 + .6 }));
+  const strata = Array.from({ length: 18 }, (_, i) => ({ y: i / 18, h: rnd() * .05 + .02, c: rnd(), a: rnd() * 6.28 }));
+  const parts = [];
+  let lastPhase = -1;
+  const meteors = [];
+  const fish = Array.from({ length: 14 }, () => ({ x: rnd(), y: rnd(), r: rnd(), v: rnd() * .8 + .4, dir: rnd() < .5 ? -1 : 1, c: ['#ffb37a', '#ff8f87', '#ffd36b', '#9fe3d4', '#c9a8ff'][rnd() * 5 | 0], kind: ['plain', 'plain', 'stripe', 'puffer'][rnd() * 4 | 0] }));
+  const jellies = Array.from({ length: 7 }, () => ({ x: rnd() * .5 + .45, y: rnd(), r: rnd(), p: rnd() * 6.28, h: [300, 190, 330, 170][rnd() * 4 | 0] }));
+
+  const comets = Array.from({ length: 3 }, () => ({ x: rnd() * .5 + .6, v: rnd() * .6 + .5, o: rnd() * 1.4 }));
+  const sats = Array.from({ length: 3 }, () => ({ x: rnd(), y: rnd() * .7 + .1, v: rnd() * .6 + .4, a: rnd() * 6.28, sc: rnd() * .5 + .7 }));
+  const flocks = Array.from({ length: 4 }, () => ({ x: rnd(), y: rnd() * .7 + .2, v: rnd() * .6 + .6, n: 3 + (rnd() * 5 | 0), sc: rnd() * .5 + .8 }));
+  const school = Array.from({ length: 40 }, () => ({ a: rnd() * 6.28, r: rnd() * .8 + .2 }));
+  const turtles = Array.from({ length: 3 }, () => ({ x: rnd(), y: rnd(), dir: rnd() < .5 ? -1 : 1, sc: rnd() * .4 + .8 }));
+  const fossils = Array.from({ length: 8 }, () => ({ x: rnd() * .5 + .45, y: rnd(), r: rnd(), a: rnd() * 6.28 }));
+  const floorDeco = Array.from({ length: 28 }, () => ({ x: rnd(), k: ['kelp', 'kelp', 'coral', 'rock', 'star', 'shell'][rnd() * 6 | 0], h: 50 + rnd() * 80, p: rnd() * 6.28, sc: .7 + rnd() * .6, c: ['#ff8a74', '#ff9ac1', '#ffd36b'][rnd() * 3 | 0] }));
+  const climbers = [[.46, .3, '#ff7f6e'], [.66, .44, '#5d7fd6'], [.54, .6, '#ffd36b'], [.74, .22, '#8fd6a8'], [.42, .8, '#ff9ac1'], [.6, .72, '#fffaf2']].map(([u, v, c]) => ({ u, v, c }));
+
+  // Pre-rendered sprites: soft clouds, a textured moon, and a planet surface.
+  const sprite = (w, h, fn) => { const c = document.createElement('canvas'); c.width = w; c.height = h; fn(c.getContext('2d'), w, h); return c; };
+  const cloudSprites = [0, 1, 2, 3].map(() => sprite(640, 260, (c, w, h) => {
+    c.filter = 'blur(16px)';
+    for (let i = 0; i < 22; i++) {
+      const x = w * (.18 + rnd() * .64), y = h * (.45 + (rnd() - .5) * .3), r = h * (.12 + rnd() * .2);
+      const g = c.createRadialGradient(x, y - r * .3, 0, x, y, r);
+      g.addColorStop(0, 'rgba(255,255,255,.95)'); g.addColorStop(1, 'rgba(225,236,250,.0)');
+      c.fillStyle = g; c.beginPath(); c.arc(x, y, r, 0, 6.283); c.fill();
+    }
+  }));
+  const moonSprite = sprite(800, 800, (c, w) => {
+    const r = w / 2;
+    const g = c.createRadialGradient(r * .7, r * .65, r * .05, r, r, r);
+    g.addColorStop(0, '#f1efe8'); g.addColorStop(.75, '#c4c1b8'); g.addColorStop(1, '#8c8a85');
+    c.fillStyle = g; c.beginPath(); c.arc(r, r, r, 0, 6.283); c.fill();
+    c.save(); c.clip();
+    c.filter = 'blur(14px)';
+    [[.38, .34, .2], [.6, .3, .14], [.55, .52, .17], [.32, .6, .1], [.7, .62, .09]].forEach(([x, y, m]) => {
+      c.fillStyle = 'rgba(92,92,98,.32)'; c.beginPath(); c.ellipse(x * w, y * w, m * w, m * w * .75, x * 3, 0, 6.283); c.fill();
+    });
+    c.filter = 'none';
+    for (let i = 0; i < 2600; i++) {
+      c.fillStyle = `rgba(${rnd() < .5 ? '255,255,255' : '40,40,44'},${rnd() * .06})`;
+      c.fillRect(rnd() * w, rnd() * w, 2 + rnd() * 3, 2 + rnd() * 3);
+    }
+    for (let i = 0; i < 46; i++) {
+      const x = rnd() * w, y = rnd() * w, cr = (rnd() ** 2.4) * w * .05 + 3;
+      c.strokeStyle = 'rgba(255,255,255,.16)'; c.lineWidth = Math.max(1, cr * .18);
+      c.beginPath(); c.arc(x - cr * .12, y - cr * .12, cr, 0, 6.283); c.stroke();
+      c.fillStyle = 'rgba(60,60,66,.18)'; c.beginPath(); c.arc(x, y, cr * .9, 0, 6.283); c.fill();
+    }
+    const sh = c.createLinearGradient(w * .2, w * .1, w, w * .9);
+    sh.addColorStop(0, 'rgba(2,3,10,0)'); sh.addColorStop(.55, 'rgba(2,3,10,.08)'); sh.addColorStop(1, 'rgba(2,3,10,.85)');
+    c.fillStyle = sh; c.fillRect(0, 0, w, w);
+    c.restore();
+  });
+  const earthSprite = sprite(1600, 520, (c, w, h) => {
+    const g = c.createLinearGradient(0, 0, 0, h);
+    g.addColorStop(0, '#2f7cc4'); g.addColorStop(1, '#0f3f78');
+    c.fillStyle = g; c.fillRect(0, 0, w, h);
+    c.filter = 'blur(10px)';
+    for (let i = 0; i < 9; i++) {
+      const x = rnd() * w, y = rnd() * h, rx = 80 + rnd() * 220, ry = 40 + rnd() * 90;
+      c.fillStyle = rnd() < .6 ? 'rgba(70,110,82,.75)' : 'rgba(150,132,100,.6)';
+      c.beginPath(); c.ellipse(x, y, rx, ry, rnd() * 3, 0, 6.283); c.fill();
+      for (let k = 0; k < 5; k++) { c.beginPath(); c.ellipse(x + (rnd() - .5) * rx * 1.6, y + (rnd() - .5) * ry * 1.6, rx * .4, ry * .4, rnd() * 3, 0, 6.283); c.fill(); }
+    }
+    c.filter = 'blur(6px)';
+    for (let i = 0; i < 70; i++) {
+      c.fillStyle = `rgba(255,255,255,${.35 + rnd() * .4})`;
+      c.beginPath(); c.ellipse(rnd() * w, rnd() * h, 30 + rnd() * 120, 4 + rnd() * 10, (rnd() - .5) * .5, 0, 6.283); c.fill();
+    }
+  });
+  // White limestone sea cliff, Mallorca style: tufa streaks, bedding lines, an overhang, pines on top
+  const cliff = sprite(900, 1500, (c, w, h) => {
+    const top = 60;
+    const edge = y => { const v = y / h; return w * (.2 + .05 * Math.sin(v * 9) + .03 * Math.sin(v * 31 + 1) - (v > .52 && v < .68 ? .1 * Math.sin((v - .52) / .16 * Math.PI) : 0)); };
+    c.beginPath(); c.moveTo(w, top);
+    for (let y = top; y <= h; y += 10) c.lineTo(edge(y), y);
+    c.lineTo(w, h); c.closePath();
+    const g = c.createLinearGradient(0, 0, w, 0);
+    g.addColorStop(0, '#fff8ec'); g.addColorStop(.45, '#f0e4cf'); g.addColorStop(1, '#d6c5aa');
+    c.fillStyle = g; c.fill();
+    c.save(); c.clip();
+    c.filter = 'blur(5px)';
+    for (let i = 0; i < 34; i++) {
+      c.fillStyle = rnd() < .55 ? 'rgba(214,150,92,.2)' : 'rgba(120,114,108,.18)';
+      const x = rnd() * w, y = top + rnd() * h * .7, sw = 6 + rnd() * 26;
+      c.beginPath(); c.roundRect(x, y, sw, 120 + rnd() * 420, sw / 2); c.fill();
+    }
+    c.filter = 'none';
+    c.strokeStyle = 'rgba(150,126,96,.2)'; c.lineWidth = 2;
+    for (let i = 0; i < 16; i++) {
+      const y = top + 40 + i * (h - top) / 16 + rnd() * 20;
+      c.beginPath(); for (let x = 0; x <= w; x += 30) c.lineTo(x, y + Math.sin(x * .01 + i) * 6); c.stroke();
+    }
+    for (let i = 0; i < 180; i++) {
+      c.fillStyle = `rgba(110,88,66,${.12 + rnd() * .2})`;
+      c.beginPath(); c.ellipse(rnd() * w, top + rnd() * h, 2 + rnd() * 7, 1.5 + rnd() * 4, 0, 0, 6.283); c.fill();
+    }
+    const sh = c.createLinearGradient(0, h * .68, 0, h * .68 + 110);
+    sh.addColorStop(0, 'rgba(70,56,48,.35)'); sh.addColorStop(1, 'rgba(70,56,48,0)');
+    c.fillStyle = sh; c.fillRect(0, h * .68, w, 110);
+    const wet = c.createLinearGradient(0, h - 140, 0, h);
+    wet.addColorStop(0, 'rgba(60,90,100,0)'); wet.addColorStop(1, 'rgba(60,90,100,.4)');
+    c.fillStyle = wet; c.fillRect(0, h - 140, w, 140);
+    c.restore();
+    c.strokeStyle = 'rgba(255,255,255,.7)'; c.lineWidth = 3;
+    c.beginPath(); for (let y = top; y <= h; y += 10) c.lineTo(edge(y), y); c.stroke();
+    for (let i = 0; i < 40; i++) {
+      c.fillStyle = rnd() < .5 ? '#6f8f52' : '#58773f';
+      const x = edge(top) + rnd() * (w - edge(top));
+      c.beginPath(); c.ellipse(x, top + 4, 14 + rnd() * 22, 9 + rnd() * 10, 0, 0, 6.283); c.fill();
+    }
+    [[.42, 1], [.66, 1.25], [.86, .9]].forEach(([u, k]) => {
+      const x = u * w;
+      c.strokeStyle = '#6b4a34'; c.lineWidth = 6 * k; c.beginPath(); c.moveTo(x, top); c.quadraticCurveTo(x + 10, top - 30 * k, x + 4, top - 55 * k); c.stroke();
+      c.fillStyle = '#4f6e3a'; c.beginPath(); c.ellipse(x + 4, top - 58 * k, 46 * k, 15 * k, 0, 0, 6.283); c.fill();
+      c.fillStyle = '#66884a'; c.beginPath(); c.ellipse(x - 4, top - 64 * k, 30 * k, 9 * k, 0, 0, 6.283); c.fill();
+    });
+  });
+  const nebula = sprite(1000, 700, (c, w, h) => {
+    c.filter = 'blur(40px)';
+    for (let i = 0; i < 26; i++) {
+      const x = w * (.15 + rnd() * .7), y = h * (.2 + rnd() * .6), r = 60 + rnd() * 160;
+      const g = c.createRadialGradient(x, y, 0, x, y, r);
+      const col = ['255,140,190', '160,130,255', '110,230,210', '255,190,140'][rnd() * 4 | 0];
+      g.addColorStop(0, `rgba(${col},.35)`); g.addColorStop(1, `rgba(${col},0)`);
+      c.fillStyle = g; c.beginPath(); c.arc(x, y, r, 0, 6.283); c.fill();
+    }
+  });
+  // Planets, pre-rendered as banded spheres lit from the Sun on the left
+  const planetSprite = (r, paint) => sprite(r * 2, r * 2, (c, w) => {
+    c.save(); c.beginPath(); c.arc(r, r, r, 0, 6.283); c.clip();
+    paint(c, w);
+    const sh = c.createRadialGradient(r * .55, r * .75, r * .1, r * .8, r, r * 1.3);
+    sh.addColorStop(0, 'rgba(255,255,255,.14)'); sh.addColorStop(.55, 'rgba(10,8,30,0)'); sh.addColorStop(1, 'rgba(10,8,30,.78)');
+    c.fillStyle = sh; c.fillRect(0, 0, w, w);
+    c.restore();
+  });
+  const bands = (c, w, cols) => {
+    c.filter = 'blur(4px)';
+    cols.forEach((col, i) => { c.fillStyle = col; c.fillRect(-10, i * w / cols.length - 3, w + 20, w / cols.length + 6); });
+    c.filter = 'none';
+  };
+  const ringArc = (r, cols, front, asp = .24) => {
+    cols.forEach(([k, wd, col]) => {
+      ctx.strokeStyle = col; ctx.lineWidth = r * wd;
+      ctx.beginPath(); ctx.ellipse(0, 0, r * k, r * k * asp, 0, front ? 0 : Math.PI, front ? Math.PI : 6.283); ctx.stroke();
+    });
+  };
+  const PLANETS = [
+    { id: 'mars', at: 3.9, y: .3, r: .11, moons: [[1.7, 2, 0, 3], [2.4, 1.6, 2, 2]], img: planetSprite(200, (c, w) => {
+      c.fillStyle = '#d9744a'; c.fillRect(0, 0, w, w);
+      c.filter = 'blur(10px)';
+      for (let i = 0; i < 12; i++) { c.fillStyle = rnd() < .5 ? 'rgba(150,70,40,.5)' : 'rgba(240,160,110,.4)'; c.beginPath(); c.ellipse(rnd() * w, w * .2 + rnd() * w * .6, 20 + rnd() * 60, 10 + rnd() * 26, rnd() * 3, 0, 6.283); c.fill(); }
+      c.fillStyle = 'rgba(255,250,244,.9)'; c.beginPath(); c.ellipse(w * .5, 0, w * .3, w * .1, 0, 0, 6.283); c.fill();
+      c.filter = 'none';
+    }) },
+    { id: 'jupiter', at: 4.8, y: .66, r: .3, moons: [[1.4, 2.6, 0, 2.2], [1.8, 2.2, 1.5, 1.6], [2.3, 3, 3, 1.1], [2.9, 2.6, 4.5, .8]], img: planetSprite(300, (c, w) => {
+      bands(c, w, ['#e9d3b4', '#c99b72', '#f1e2c8', '#b9825a', '#ead2ae', '#c79a74', '#f0dfc4', '#b5835d', '#e8d0ad', '#cfa47c']);
+      c.filter = 'blur(2px)'; c.fillStyle = '#c8553d'; c.beginPath(); c.ellipse(w * .6, w * .64, w * .1, w * .055, 0, 0, 6.283); c.fill();
+      c.fillStyle = 'rgba(255,230,210,.5)'; c.beginPath(); c.ellipse(w * .6, w * .64, w * .06, w * .03, 0, 0, 6.283); c.fill(); c.filter = 'none';
+    }) },
+    { id: 'saturn', at: 5.18, y: .3, r: .17, tilt: -.35, ring: [[1.95, .14, 'rgba(240,210,160,.85)'], [1.58, .07, 'rgba(200,160,120,.6)']], img: planetSprite(220, (c, w) => bands(c, w, ['#f0d9a8', '#e3c08a', '#f5e3bc', '#d9ad74', '#efd29c', '#e2bb83', '#f3dfb4'])) },
+    { id: 'uranus', at: 5.48, y: .68, r: .12, tilt: 1.35, ring: [[1.7, .03, 'rgba(200,240,245,.6)']], img: planetSprite(180, (c, w) => bands(c, w, ['#b6eef0', '#a3e2e6', '#b2ecee', '#9ed9df'])) },
+    { id: 'neptune', at: 5.74, y: .33, r: .12, img: planetSprite(180, (c, w) => {
+      bands(c, w, ['#5b8ee8', '#4a78d6', '#5f93ec', '#4470cc', '#5a8be4']);
+      c.filter = 'blur(3px)'; c.fillStyle = '#2d4fa6'; c.beginPath(); c.ellipse(w * .4, w * .42, w * .09, w * .05, 0, 0, 6.283); c.fill(); c.filter = 'none';
+    }) },
+  ];
+  const rocks = Array.from({ length: 46 }, (_, i) => ({ x: rnd(), y: i ? rnd() : .5, v: rnd() * .6 + .7, sz: i ? rnd() * .8 + .3 : 1.3, a: rnd() * 6, c: ['#8c7d6e', '#a08f7c', '#6f655c'][rnd() * 3 | 0], pts: Array.from({ length: 9 }, () => .7 + rnd() * .4) }));
+  rocks[0].x = .66; rocks[0].v = 1;
+  const roundRect = (x, y, w, h, r) => { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); };
+  // Fine grain, so long gradients dither instead of banding
+  const grain = sprite(160, 160, (c, w, h) => {
+    const d = c.createImageData(w, h);
+    for (let i = 0; i < d.data.length; i += 4) { const v = rnd() * 255; d.data[i] = d.data[i + 1] = d.data[i + 2] = v; d.data[i + 3] = 12; }
+    c.putImageData(d, 0, 0);
+  });
+  document.querySelector('.grain').style.backgroundImage = `url(${grain.toDataURL()})`;
+
+  function resize() {
+    DPR = Math.min(devicePixelRatio || 1, 2);
+    W = innerWidth; H = innerHeight;
+    cvs.width = W * DPR; cvs.height = H * DPR;
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    SW = ship.offsetWidth;
+    layout = sections.map(el => [el.offsetTop, el.offsetHeight]);
+  }
+
+  // The pinned hero covers liftoff (s 0 to .5); every other section maps one-to-one
+  function targetS() {
+    const mid = scrollY + H / 2, [t0, h0] = layout[0];
+    if (mid < t0 + h0) return clamp(.5 * (mid - t0 - H / 2) / (h0 - H / 2), 0, .5);
+    for (let i = 1; i < sections.length; i++) {
+      const [top, h] = layout[i];
+      if (mid < top + h || i === MAX) return clamp(i + (mid - top) / h - .5, 0, MAX);
+    }
+    return MAX;
+  }
+
+  function shipPos(t, s = 0) {
+    const mobile = W < 760, sw = SW, k = ease(band(s, 0, .4)), turn = pitch(s);
+    // On desktop, once the rocket lies flat, park it (and its flame) in the open sky right of the text panels
+    const clear = colBox.reduce((m, b) => Math.max(m, b[2]), 0) + sw * (.9 + .7 * turn) + 18;
+    const dx = Math.min(Math.max(W * .7, clear), W - 84 - sw * (.5 + .45 * turn));
+    const x = (mobile ? W - sw * .62 : W * .7 + (dx - W * .7) * turn) - sw / 2 + Math.sin(t * .0007) * (mobile ? 2 : 18) * k;
+    const y = (mobile ? H * (.62 - .46 * k) : H * .5 - sw) + Math.sin(t * .0011) * 8 * k;
+    return { x, y, cx: x + sw / 2, top: y, sw };
+  }
+
+
+  function draw(s, t) {
+    const [top, bot, tint] = zoneColors(s);
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, rgb(top)); g.addColorStop(1, rgb(bot));
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    const tc = rgb(tint.map(v => v >> 3 << 3)), key = tc + top.map(v => v >> 3);
+    if (key !== lastTint) {
+      root.setProperty('--tint', tc); lastTint = key;
+      const d = mix(top, [6, 6, 20], .45);
+      root.setProperty('--panel', `rgba(${d[0]},${d[1]},${d[2]},.74)`);
+    }
+    const M = Math.min(W, H);
+
+    // Stars come out as the sky thins, drifting past as we fly
+    const sa = band(s, 1.9, 2.7);
+    const warp = band(s, 5.45, 6);
+    if (sa > 0) {
+      const wx = W * .95, wy = H * .5;
+      for (const st of stars) {
+        const x = ((st.x - s * .05 * st.d) % 1 + 1) % 1 * W, y = st.y * H;
+        const tw = reduce ? 1 : .65 + .35 * Math.sin(t * .002 * st.d + st.p);
+        ctx.fillStyle = `rgba(235,240,255,${sa * tw * (.4 + st.d)})`;
+        if (warp > 0) {
+          const dx = x - wx, dy = y - wy, L = warp * st.d * .5;
+          ctx.strokeStyle = ctx.fillStyle; ctx.lineWidth = st.r;
+          ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + dx * L, y + dy * L); ctx.stroke();
+        } else ctx.fillRect(x, y, st.r * 1.4, st.r * 1.4);
+        if (st.r > 1.5 && !warp) {
+          const L = st.r * 4 * tw;
+          ctx.fillRect(x - L + st.r * .7, y + st.r * .5, L * 2, .8);
+          ctx.fillRect(x + st.r * .5, y - L + st.r * .7, .8, L * 2);
+        }
+      }
+    }
+
+    // Aurora curtains along the top of the atmosphere
+    const au = band(s, 1.8, 2.1) * (1 - band(s, 2.5, 2.8));
+    if (au > 0) {
+      ctx.save(); ctx.globalCompositeOperation = 'lighter';
+      [['120,255,190', .1, 0], ['150,120,255', .16, 2.1], ['110,230,210', .06, 4.2]].forEach(([c, yy, ph]) => {
+        const top = x => H * yy + Math.sin(x * .004 + t * (reduce ? 0 : .0004) + ph) * H * .035 + Math.sin(x * .011 + ph) * H * .012, h = H * .2;
+        const g = ctx.createLinearGradient(0, H * yy - H * .05, 0, H * yy + h);
+        g.addColorStop(0, `rgba(${c},0)`); g.addColorStop(.25, `rgba(${c},${.32 * au})`); g.addColorStop(1, `rgba(${c},0)`);
+        ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(0, top(0));
+        for (let x = 0; x <= W; x += 24) ctx.lineTo(x, top(x));
+        for (let x = W; x >= 0; x -= 24) ctx.lineTo(x, top(x) + h);
+        ctx.fill();
+      });
+      ctx.restore();
+    }
+    if (sa > .5 && !warp && !reduce && Math.random() < .005) meteors.push({ x: W * (.3 + Math.random() * .7), y: H * Math.random() * .4, vx: -(6 + Math.random() * 6), vy: 2 + Math.random() * 3, l: 1 });
+    for (let i = meteors.length - 1; i >= 0; i--) {
+      const m = meteors[i]; m.x += m.vx; m.y += m.vy; m.l -= .02;
+      if (m.l <= 0) { meteors.splice(i, 1); continue; }
+      const g = ctx.createLinearGradient(m.x, m.y, m.x - m.vx * 9, m.y - m.vy * 9);
+      g.addColorStop(0, `rgba(255,255,255,${m.l * sa})`); g.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.strokeStyle = g; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(m.x, m.y); ctx.lineTo(m.x - m.vx * 9, m.y - m.vy * 9); ctx.stroke();
+    }
+
+    // The launch pad at sunrise, dropping away as we lift off
+    if (s < .5) {
+      const p0 = shipPos(0, 0), sw = p0.sw, cx = p0.cx, mob = W < 760;
+      const deck = p0.top + sw * 1.78 + ease(band(s, .04, .4)) * H * 1.15;
+      const hz = deck - H * .07;
+      const sg = ctx.createRadialGradient(W * .42, hz, 0, W * .42, hz, M * .7);
+      sg.addColorStop(0, 'rgba(255,236,190,.85)'); sg.addColorStop(.25, 'rgba(255,200,150,.4)'); sg.addColorStop(1, 'rgba(255,170,130,0)');
+      ctx.fillStyle = sg; ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = '#fff2d2'; ctx.beginPath(); ctx.arc(W * .42, hz, M * .14, Math.PI, 0); ctx.fill();
+      ctx.fillStyle = '#4f8fbe'; ctx.fillRect(0, hz, W, deck - hz + 40);
+      ctx.fillStyle = 'rgba(255,230,190,.45)';
+      for (let i = 0; i < 6; i++) ctx.fillRect(W * .42 - 50 + Math.sin(i * 7.3 + t * .001) * 30, hz + 5 + i * 6, 30 + (i % 3) * 26, 2);
+      const lg = ctx.createLinearGradient(0, deck - 30, 0, deck + H * .5);
+      lg.addColorStop(0, '#b9c28e'); lg.addColorStop(1, '#6f8f5a');
+      ctx.fillStyle = lg;
+      ctx.beginPath(); ctx.moveTo(0, deck + H);
+      for (let x = 0; x <= W; x += 20) ctx.lineTo(x, deck - 14 + Math.sin(x * .004 + 1) * 10 - Math.max(0, 1 - Math.abs(x - cx) / 260) * 8);
+      ctx.lineTo(W, deck + H); ctx.closePath(); ctx.fill();
+
+      // fuel tank and blockhouse
+      const tx = cx + sw * 2.2, tr = sw * .42;
+      ctx.strokeStyle = '#8c7d6e'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(tx - tr * .6, deck - tr); ctx.lineTo(tx - tr * .8, deck); ctx.moveTo(tx + tr * .6, deck - tr); ctx.lineTo(tx + tr * .8, deck); ctx.stroke();
+      ctx.fillStyle = '#fffaf2'; ctx.beginPath(); ctx.arc(tx, deck - tr * 1.6, tr, 0, 6.283); ctx.fill();
+      ctx.fillStyle = 'rgba(0,0,0,.12)'; ctx.beginPath(); ctx.arc(tx, deck - tr * 1.6, tr, -.6, 1.9); ctx.fill();
+      ctx.fillStyle = '#ff8a74'; ctx.fillRect(tx - tr, deck - tr * 1.7, tr * 2, tr * .2);
+      if (!mob) {
+        const bx = cx - sw * 3.4;
+        ctx.fillStyle = '#e8dccb'; roundRect(bx - 34, deck - 30, 68, 32, 6); ctx.fill();
+        ctx.fillStyle = '#7fd0e6'; for (let k = 0; k < 3; k++) ctx.fillRect(bx - 24 + k * 18, deck - 22, 10, 7);
+        ['#ff7f6e', '#5d7fd6', '#ffd36b', '#8fd6a8'].forEach((c, k) => {
+          const px = bx + 48 + k * 13, wave = Math.sin(t * .008 + k * 1.3) * 4;
+          ctx.strokeStyle = '#2b2f45'; ctx.lineWidth = 2; ctx.lineCap = 'round';
+          ctx.beginPath(); ctx.moveTo(px, deck - 6); ctx.lineTo(px - 2, deck); ctx.moveTo(px, deck - 6); ctx.lineTo(px + 2, deck); ctx.stroke();
+          ctx.strokeStyle = c; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(px, deck - 14); ctx.lineTo(px, deck - 6); ctx.stroke();
+          ctx.strokeStyle = '#e9b48a'; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(px, deck - 13); ctx.lineTo(px + 4, deck - 21 + wave); ctx.stroke();
+          ctx.fillStyle = '#5a3d2b'; ctx.beginPath(); ctx.arc(px, deck - 17, 2.6, 0, 6.283); ctx.fill();
+        });
+      }
+
+      // gantry: a red lattice tower whose arms swing away at ignition
+      const gx = cx - sw * .78, gw = sw * .3, gt = deck - sw * 1.9, swing = ease(band(s, .01, .06));
+      ctx.strokeStyle = '#e5584c'; ctx.lineWidth = 2.4;
+      ctx.strokeRect(gx - gw, gt, gw, deck - gt);
+      ctx.beginPath();
+      for (let y = gt; y < deck - 2; y += gw) { ctx.moveTo(gx - gw, y); ctx.lineTo(gx, y + gw); ctx.moveTo(gx, y); ctx.lineTo(gx - gw, y + gw); }
+      ctx.stroke();
+      ctx.lineWidth = 4;
+      [[.35, 1], [.75, .8]].forEach(([v, len]) => {
+        const ay = gt + (deck - gt) * v, a = -swing * 1.3;
+        ctx.beginPath(); ctx.moveTo(gx, ay); ctx.lineTo(gx + Math.cos(a) * sw * .42 * len, ay + Math.sin(a) * sw * .42 * len); ctx.stroke();
+      });
+      const blink = (t * .002 | 0) % 2;
+      ctx.fillStyle = blink ? '#ff5a4a' : 'rgba(255,90,74,.35)'; ctx.beginPath(); ctx.arc(gx - gw / 2, gt - 5, 3.5, 0, 6.283); ctx.fill();
+
+      // pad and flame trench
+      ctx.fillStyle = '#d9cbb8'; roundRect(cx - sw * 1.3, deck - 4, sw * 2.6, 16, 4); ctx.fill();
+      ctx.fillStyle = '#6b5f54'; ctx.fillRect(cx - sw * .28, deck - 4, sw * .56, 16);
+      ctx.fillStyle = '#b8a890'; ctx.fillRect(cx - sw * 1.3, deck + 8, sw * 2.6, 4);
+
+      // exhaust smoke billowing out of the trench
+      const sm = band(s, .01, .05) * (1 - band(s, .3, .45));
+      if (sm > 0) {
+        for (let i = 0; i < 9; i++) {
+          const side = i % 2 ? 1 : -1, d = (i >> 1) + 1, grow = .6 + band(s, .01, .3) * 1.2;
+          const w = sw * (1.6 + d * .5) * grow, h = w * 260 / 640;
+          const x = cx + side * d * sw * .7 * grow + Math.sin(t * .0007 + i) * 6, y = deck - h * .25 - d * 4;
+          ctx.globalAlpha = sm * .95;
+          ctx.drawImage(cloudSprites[i % 4], x - w / 2, y - h / 2, w, h);
+        }
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    // Clouds streaming past, thinner over the text column
+    const ca = band(s, .3, .6) * (1 - band(s, 1.8, 2.15));
+    if (ca > 0) {
+      clouds.forEach((c, i) => {
+        const cx = ((c.x - (s - .3) * c.v * .9 - t * .000004 * c.v) % 1.6 + 1.6) % 1.6 * W - W * .3, y = c.y / 1.6 * H * .9 + H * .05;
+        const cw = c.w * W * 1.4, ch = cw * 260 / 640;
+        const side = W < 760 ? .4 : .1 + .9 * clamp((cx / W - .42) / .25);
+        ctx.globalAlpha = .85 * ca * side;
+        ctx.drawImage(cloudSprites[i % 4], cx - cw / 2, y - ch / 2, cw, ch);
+      });
+      ctx.globalAlpha = 1;
+    }
+
+    // Birds by the cliffs, a hot-air balloon, and an airliner with its contrail
+    const fla = 1 - band(s, .9, 1.2);
+    if (fla > 0) {
+      ctx.strokeStyle = `rgba(40,40,70,${.75 * fla})`; ctx.lineWidth = 1.8; ctx.lineCap = 'round';
+      flocks.forEach(f => {
+        const fx = ((f.x + t * .000035 * f.v - s * .9) % 1.3 + 1.3) % 1.3 * W - W * .15, fy = (f.y * .6 + band(s, 0, .35) * .5) * H;
+        for (let b = 0; b < f.n; b++) {
+          const side = b % 2 ? 1 : -1, row = Math.ceil(b / 2);
+          const x = fx - row * 16, y = fy + side * row * 10, flap = Math.sin(t * .012 + b * .9 + f.x * 9), w = 7 * f.sc;
+          ctx.beginPath(); ctx.moveTo(x - w, y - 3 * flap * f.sc); ctx.quadraticCurveTo(x - w * .45, y - 4 * f.sc, x, y);
+          ctx.quadraticCurveTo(x + w * .45, y - 4 * f.sc, x + w, y - 3 * flap * f.sc); ctx.stroke();
+        }
+      });
+    }
+    const ba = band(s, .3, .5) * (1 - band(s, 1.2, 1.4));
+    if (ba > 0) {
+      ctx.globalAlpha = ba;
+      const bx = W * (1.15 - band(s, .3, 1.3) * 1.4) + Math.sin(t * .0004) * 24, by = H * .3;
+      ctx.strokeStyle = '#8c7d6e'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(bx - 14, by + 22); ctx.lineTo(bx - 7, by + 46); ctx.moveTo(bx + 14, by + 22); ctx.lineTo(bx + 7, by + 46); ctx.stroke();
+      ctx.fillStyle = '#a8794e'; roundRect(bx - 8, by + 44, 16, 11, 3); ctx.fill();
+      ctx.save(); ctx.beginPath(); ctx.ellipse(bx, by, 28, 31, 0, 0, 6.283); ctx.clip();
+      ['#ff8a74', '#fffaf2', '#ffd36b', '#fffaf2', '#ff8a74'].forEach((c, i) => { ctx.fillStyle = c; ctx.fillRect(bx - 28 + i * 11.2, by - 32, 11.4, 64); });
+      ctx.fillStyle = 'rgba(0,0,0,.12)'; ctx.fillRect(bx + 8, by - 32, 22, 64);
+      ctx.restore();
+      ctx.globalAlpha = 1;
+    }
+    const pa = band(s, .75, .95) * (1 - band(s, 1.7, 1.9));
+    if (pa > 0) {
+      const u = (t * .00004) % 1.5, x = u * W * 1.3 - W * .15, y = H * .22;
+      ctx.globalAlpha = pa;
+      const cg = ctx.createLinearGradient(x - 380, 0, x - 30, 0);
+      cg.addColorStop(0, 'rgba(255,255,255,0)'); cg.addColorStop(1, 'rgba(255,255,255,.75)');
+      ctx.fillStyle = cg; ctx.fillRect(x - 380, y - 2, 350, 3);
+      ctx.fillStyle = '#fffaf2'; ctx.beginPath(); ctx.ellipse(x, y, 30, 6.5, 0, 0, 6.283); ctx.fill();
+      ctx.fillStyle = '#5d7fd6'; ctx.beginPath(); ctx.moveTo(x - 24, y - 3); ctx.lineTo(x - 32, y - 17); ctx.lineTo(x - 22, y - 17); ctx.lineTo(x - 14, y - 3); ctx.fill();
+      ctx.fillStyle = '#d9cbb8'; ctx.beginPath(); ctx.moveTo(x - 4, y + 1); ctx.lineTo(x - 14, y + 14); ctx.lineTo(x - 6, y + 14); ctx.lineTo(x + 8, y + 1); ctx.fill();
+      ctx.fillStyle = '#5d7fd6'; for (let k = 0; k < 6; k++) { ctx.beginPath(); ctx.arc(x - 10 + k * 5, y - 1.5, 1.2, 0, 6.283); ctx.fill(); }
+      ctx.globalAlpha = 1;
+    }
+
+    // Earth below: a curved horizon that shrinks into a globe and slides away behind us
+    if (s > 1.85 && s < 4.2) {
+      const k = ease(band(s, 1.9, 3.6));
+      const R = W * 2.6 * (1 - k) + M * .34 * k;
+      const ty = H * (.86 - k * .12);
+      const ey = ty + R, ex = W * .5 - ease(band(s, 3.0, 3.9)) * W * 1.3;
+      ctx.globalAlpha = band(s, 1.85, 2.15);
+      const atm = ctx.createRadialGradient(ex, ey, R * .985, ex, ey, R * 1.06);
+      atm.addColorStop(0, 'rgba(130,195,255,.6)'); atm.addColorStop(1, 'rgba(130,195,255,0)');
+      ctx.fillStyle = atm; ctx.beginPath(); ctx.arc(ex, ey, R * 1.06, 0, 6.283); ctx.fill();
+      ctx.save(); ctx.beginPath(); ctx.arc(ex, ey, R, 0, 6.283); ctx.clip();
+      const tw = R * 2.2, th = tw * 520 / 1600, off = (t * .004 + s * 260) % tw;
+      for (let row = 0; row * th < R * 2; row++) {
+        ctx.drawImage(earthSprite, ex - R * 1.1 - off, ey - R + row * th, tw, th);
+        ctx.drawImage(earthSprite, ex - R * 1.1 - off + tw, ey - R + row * th, tw, th);
+      }
+      const limb = ctx.createRadialGradient(ex, ey, R * .7, ex, ey, R);
+      limb.addColorStop(0, 'rgba(6,20,50,0)'); limb.addColorStop(.85, 'rgba(120,180,240,.12)'); limb.addColorStop(1, 'rgba(170,215,255,.55)');
+      ctx.fillStyle = limb; ctx.fillRect(0, 0, W, H);
+      ctx.restore();
+      ctx.globalAlpha = 1;
+    }
+
+    // Two landmarks of the orbital age: Sputnik 1, then the Space Station
+    spots.sputnik = spots.iss = null;
+    if (s > 1.35 && s < 2.5) {
+      const x = W * (1.1 - (s - 1.35) * 1.1), y = H * .2, R = Math.max(5, M * .011);
+      ctx.strokeStyle = 'rgba(214,220,228,.9)'; ctx.lineWidth = 1; ctx.beginPath();
+      [[5, 1.3], [4.4, .5], [4.4, -.5], [5, -1.3]].forEach(([a, b]) => { ctx.moveTo(x, y); ctx.lineTo(x + R * a, y + R * b); });
+      ctx.stroke();
+      const sg = ctx.createRadialGradient(x - R * .35, y - R * .35, R * .1, x, y, R);
+      sg.addColorStop(0, '#ffffff'); sg.addColorStop(.6, '#b9c0ca'); sg.addColorStop(1, '#6f7682');
+      ctx.fillStyle = sg; ctx.beginPath(); ctx.arc(x, y, R, 0, 6.283); ctx.fill();
+      spots.sputnik = [INFO.sputnik, x + R * 2, y, R * 8, R * 5, R * 2.5 + 6];
+    }
+    if (s > 1.85 && s < 3.1) {
+      const x = W * (1.15 - (s - 1.85) * 1.05), y = H * .7, S = Math.max(.9, M * .0016);
+      ctx.save(); ctx.translate(x, y); ctx.rotate(-.12);
+      for (const side of [-1, 1]) for (let i = 0; i < 4; i++) {
+        const px = side * (24 + i * 9) * S - 4 * S;
+        for (const up of [-1, 1]) {
+          ctx.fillStyle = '#b8823a'; ctx.fillRect(px, up < 0 ? -36 * S : 2 * S, 8 * S, 34 * S);
+          ctx.fillStyle = 'rgba(40,30,20,.35)'; ctx.fillRect(px + 3.6 * S, up < 0 ? -36 * S : 2 * S, .8 * S, 34 * S);
+        }
+      }
+      ctx.fillStyle = '#c9ced6'; ctx.fillRect(-62 * S, -2 * S, 124 * S, 4 * S);
+      ctx.fillStyle = '#eef0f2'; roundRect(-5 * S, -14 * S, 10 * S, 40 * S, 4 * S); ctx.fill();
+      roundRect(-16 * S, 6 * S, 32 * S, 7 * S, 3 * S); ctx.fill();
+      ctx.fillStyle = '#f7f7f5'; ctx.fillRect(-12 * S, -10 * S, 6 * S, 12 * S); ctx.fillRect(6 * S, -10 * S, 6 * S, 12 * S);
+      ctx.restore();
+      spots.iss = [INFO.iss, x, y, 130 * S, 76 * S, 40 * S + 6];
+    }
+
+    // A spacewalker drifts by on his jetpack, no tether
+    spots.mmu = null;
+    if (s > 2.45 && s < 3.35) {
+      const x = W * (1.08 - (s - 2.45) * 1.15), y = H * .17 + Math.sin(t * .0007) * 6, S = Math.max(.8, M * .0014);
+      ctx.save(); ctx.translate(x, y); ctx.rotate(Math.sin(t * .0004) * .35 - .2); ctx.scale(S, S);
+      ctx.fillStyle = '#d9dde3'; roundRect(-11, -14, 22, 26, 4); ctx.fill();
+      ctx.fillStyle = '#c4c9d1'; ctx.fillRect(-15, -6, 4, 12); ctx.fillRect(11, -6, 4, 12);
+      ctx.fillStyle = '#f4f5f7';
+      roundRect(-8, -10, 16, 22, 6); ctx.fill();
+      roundRect(-14, -6, 6, 13, 3); ctx.fill(); roundRect(8, -6, 6, 13, 3); ctx.fill();
+      roundRect(-7, 10, 6, 13, 3); ctx.fill(); roundRect(1, 10, 6, 13, 3); ctx.fill();
+      ctx.beginPath(); ctx.arc(0, -16, 8, 0, 6.283); ctx.fill();
+      const vg = ctx.createLinearGradient(-5, -21, 5, -12);
+      vg.addColorStop(0, '#ffe39a'); vg.addColorStop(1, '#b07a26');
+      ctx.fillStyle = vg; ctx.beginPath(); ctx.ellipse(1, -16, 5.5, 4.5, 0, 0, 6.283); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,.7)'; ctx.beginPath(); ctx.arc(-1, -18, 1.4, 0, 6.283); ctx.fill();
+      if (Math.sin(t * .003) > .6) { ctx.fillStyle = 'rgba(220,230,255,.75)'; ctx.beginPath(); ctx.arc(-17, 8, 2.2, 0, 6.283); ctx.arc(17, 8, 2.2, 0, 6.283); ctx.fill(); }
+      ctx.restore();
+      spots.mmu = [INFO.mmu, x, y, 44 * S, 50 * S, 26 * S + 6];
+    }
+
+    // Orbit traffic: satellites, and another rocket heading up with us
+    const spa = band(s, 2.5, 2.8) * (1 - band(s, 3.7, 4.0));
+    if (spa > 0) {
+      ctx.globalAlpha = spa;
+      sats.forEach(o => {
+        const x = ((o.x - (s - 2.5) * .8 + t * .000006 * o.v) % 1.2 + 1.2) % 1.2 * W - W * .1, y = o.y * H;
+        ctx.save(); ctx.translate(x, y); ctx.rotate(o.a + t * .0002 * o.v); ctx.scale(o.sc, o.sc);
+        ctx.fillStyle = '#5d7fd6'; ctx.fillRect(-34, -7, 22, 14); ctx.fillRect(12, -7, 22, 14);
+        ctx.strokeStyle = 'rgba(200,220,255,.5)'; ctx.lineWidth = 1;
+        for (const px of [-27, -19, 19, 27]) { ctx.beginPath(); ctx.moveTo(px, -7); ctx.lineTo(px, 7); ctx.stroke(); }
+        ctx.fillStyle = '#9aa3b2'; ctx.fillRect(-12, -1, 24, 2);
+        ctx.fillStyle = '#ffd36b'; roundRect(-9, -9, 18, 18, 4); ctx.fill();
+        ctx.strokeStyle = '#e8e2d6'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(0, -9); ctx.lineTo(0, -18); ctx.stroke();
+        ctx.fillStyle = '#e8e2d6'; ctx.beginPath(); ctx.arc(0, -19, 2.5, 0, 6.283); ctx.fill();
+        ctx.restore();
+      });
+      const u = (t * .00006) % 1.6;
+      if (u < 1) {
+        const x = W * (.05 + u * .5), y = H * (1.05 - u * 1.2), ang = Math.atan2(-1.2 * H, .5 * W);
+        ctx.strokeStyle = 'rgba(255,200,140,.45)'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - Math.cos(ang) * 140, y - Math.sin(ang) * 140); ctx.stroke();
+        ctx.save(); ctx.translate(x, y); ctx.rotate(ang + Math.PI / 2);
+        ctx.fillStyle = '#fffaf2'; ctx.beginPath(); ctx.ellipse(0, 0, 5, 12, 0, 0, 6.283); ctx.fill();
+        ctx.fillStyle = '#ff7f6e'; ctx.beginPath(); ctx.ellipse(0, -9, 4, 5, 0, Math.PI, 0); ctx.fill();
+        ctx.restore();
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    // The Moon slides past on our left as we leave Earth behind
+    spots.moon = null;
+    if (s > 2.3 && s < 3.75) {
+      const r = M * .3, mx = W * (.72 + (3 - s) * 1.6), my = H * .3;
+      spots.moon = [INFO.moon, mx, my, r * 2, r * 2, r + 10];
+      const halo = ctx.createRadialGradient(mx, my, r * .95, mx, my, r * 1.5);
+      halo.addColorStop(0, 'rgba(200,210,255,.09)'); halo.addColorStop(1, 'rgba(200,210,255,0)');
+      ctx.fillStyle = halo; ctx.beginPath(); ctx.arc(mx, my, r * 1.5, 0, 6.283); ctx.fill();
+      ctx.drawImage(moonSprite, mx - r, my - r, r * 2, r * 2);
+    }
+
+    // The Sun, behind us on the left, shrinking as we go
+    const sun = band(s, 2.2, 2.8);
+    if (sun > 0) {
+      const sr = M * .045 * (1.5 - band(s, 2.5, 5.9)), sx = W * .01, sy = H * .07;
+      const sg = ctx.createRadialGradient(sx, sy, 0, sx, sy, W * .55);
+      sg.addColorStop(0, `rgba(255,226,170,${.22 * sun})`); sg.addColorStop(1, 'rgba(255,226,170,0)');
+      ctx.fillStyle = sg; ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = `rgba(255,246,220,${sun})`; ctx.beginPath(); ctx.arc(sx, sy, sr, 0, 6.283); ctx.fill();
+    }
+
+    // A faint nebula far beyond the planets
+    const na = band(s, 4.4, 5);
+    if (na > 0) {
+      ctx.save(); ctx.globalAlpha = na * .6; ctx.globalCompositeOperation = 'lighter';
+      const nw = Math.max(W, H) * 1.3, nh = nw * nebula.height / nebula.width;
+      ctx.drawImage(nebula, W * .5 - nw / 2 - (s - 4.4) * W * .3, -nh * .15, nw, nh);
+      ctx.restore();
+    }
+
+    // The planets, passing right to left, each one beside a part of the story
+    const passX = sp => W * .72 + (sp - s) * W * 1.6;
+    const orbiters = (x, y, r, list) => list.forEach(([d, sz, ph, sp]) => {
+      const a = t * .0004 * sp + ph, ox = x + Math.cos(a) * r * d, oy = y + Math.sin(a) * r * d * .3;
+      if (Math.sin(a) < 0 && Math.hypot(ox - x, (oy - y) / .3) < r * 1.05) return;
+      ctx.fillStyle = '#d9d2c6'; ctx.beginPath(); ctx.arc(ox, oy, sz, 0, 6.283); ctx.fill();
+    });
+    PLANETS.forEach(pl => {
+      spots[pl.id] = null;
+      const r = M * pl.r, x = passX(pl.at), y = H * pl.y;
+      if (x < -r * 2.2 || x > W + r * 2.2) return;
+      spots[pl.id] = [INFO[pl.id], x, y, r * 2, r * 2, r * (pl.ring ? 1.25 : 1) + 10];
+      ctx.save(); ctx.translate(x, y);
+      // Rings swing open as we fly past
+      const pass = clamp((s - pl.at + .35) / .7, 0, 1), tilt = pl.tilt + (pass - .5) * .3, asp = pl.id === 'saturn' ? .1 + .22 * pass : .24;
+      if (pl.ring) { ctx.rotate(tilt); ringArc(r, pl.ring, false, asp); ctx.rotate(-tilt); }
+      ctx.drawImage(pl.img, -r, -r, r * 2, r * 2);
+      if (pl.id === 'jupiter') {
+        // Cloud belts sliding along at their own speeds
+        ctx.save(); ctx.beginPath(); ctx.arc(0, 0, r * .98, 0, 6.283); ctx.clip();
+        for (let i = 0; i < 7; i++) {
+          const yy = -r * .8 + i * r * .27, sp = (i % 2 ? 1 : -1) * (.6 + i * .13), ox = ((t * .00003 * sp + i * .29) % 1 + 1) % 1;
+          ctx.fillStyle = i % 2 ? 'rgba(120,70,40,.13)' : 'rgba(255,240,220,.13)';
+          for (const k of [-1, 0, 1]) { ctx.beginPath(); ctx.ellipse((ox + k) * r * 2.4 - r * 1.2, yy, r * .5, r * .05, 0, 0, 6.283); ctx.fill(); }
+        }
+        ctx.restore();
+      }
+      if (pl.ring) { ctx.rotate(tilt); ringArc(r, pl.ring, true, asp); }
+      ctx.restore();
+      if (pl.moons) orbiters(x, y, r, pl.moons);
+    });
+
+    // The asteroid belt, and one rock that comes straight at us
+    const ab = band(s, 4.0, 4.15) * (1 - band(s, 4.55, 4.7));
+    spots.belt = ab > .5 ? [INFO.belt, W * .6, H * .1, 0, 0, 0] : null;
+    if (ab > 0) {
+      ctx.globalAlpha = ab;
+      rocks.forEach(k => {
+        const x = W * (k.x * 1.4 - .2) + (4.35 - s) * W * 3 * k.v, y = k.y * H, sz = k.sz * M * .03;
+        if (x < -40 || x > W + 40) return;
+        ctx.save(); ctx.translate(x, y); ctx.rotate(t * .001 * k.v + s * 3 + k.a);
+        ctx.fillStyle = k.c; ctx.beginPath();
+        k.pts.forEach((q, i) => { const a = i / k.pts.length * 6.283; ctx.lineTo(Math.cos(a) * sz * q, Math.sin(a) * sz * q); });
+        ctx.closePath(); ctx.fill();
+        ctx.fillStyle = 'rgba(255,240,220,.18)'; ctx.beginPath(); ctx.arc(-sz * .25, -sz * .25, sz * .35, 0, 6.283); ctx.fill();
+        ctx.restore();
+      });
+      ctx.globalAlpha = 1;
+    }
+
+    // Warp glow at the end of the climb
+    if (warp > 0) {
+      ctx.save(); ctx.globalCompositeOperation = 'lighter';
+      const wg = ctx.createRadialGradient(W * .95, H * .5, 0, W * .95, H * .5, M * .9);
+      wg.addColorStop(0, `rgba(255,240,220,${.55 * warp})`); wg.addColorStop(.3, `rgba(201,184,255,${.3 * warp})`); wg.addColorStop(1, 'rgba(143,240,220,0)');
+      ctx.fillStyle = wg; ctx.fillRect(0, 0, W, H);
+      ctx.restore();
+    }
+
+    // The vehicle rebuilds itself part by part at each stage of the climb
+    const p = shipPos(t, s);
+    // Phones keep the rocket upright in the right margin, above the text
+    const heading = (W < 760 ? 0 : pitch(s)) * 90, hr = heading * Math.PI / 180, dx = Math.sin(hr), dy = -Math.cos(hr);
+    const ccx = p.cx, ccy = p.top + p.sw;
+    const dodge = -Math.sin(band(s, 4.27, 4.43) * Math.PI) * p.sw * .7;
+    const ms = MORPH.map(([a, b]) => band(s, a, b));
+    let mi = 0;
+    for (let i = ms.length - 1; i > 0; i--) if (ms[i] > 0) { mi = i; break; }
+    const A = RIG[mi], B = RIG[mi + 1], m = ms[mi];
+    const busy = m > 0 && m < 1;
+    PARTS.forEach((id, i) => {
+      const k = clamp((m - i * .02) / .52);
+      const kb = backOut(k), a = A[id], b = B[id], el = rig[id];
+      const x = a[0] + (b[0] - a[0]) * kb, y = a[1] + (b[1] - a[1]) * kb;
+      const r = a[2] + (b[2] - a[2]) * kb + (SPIN[id] || 0) * ease(k);
+      const sx = a[3] + (b[3] - a[3]) * kb, sy = a[4] + (b[4] - a[4]) * kb;
+      const tr = `translate(${x.toFixed(2)} ${y.toFixed(2)}) rotate(${r.toFixed(1)}) scale(${sx.toFixed(3)} ${sy.toFixed(3)})`;
+      if (tr !== el.tr) { el.g.setAttribute('transform', tr); el.tr = tr; }
+      let o = a[5] + (b[5] - a[5]) * k;
+      if (id.startsWith('flame')) o *= .25 + .75 * band(s, .005, .05);
+      o = o.toFixed(3);
+      if (o !== el.o) { el.g.style.opacity = o; el.o = o; }
+      if (a[6]) {
+        const c = rgb(mix(hex(a[6]), hex(b[6]), k));
+        if (c !== el.c) { el.fill.forEach(f => f.setAttribute('fill', c)); el.c = c; }
+      }
+    });
+    const phase = ms.filter(v => v >= .5).length;
+    if (phase !== lastPhase && lastPhase !== -1 && !reduce) {
+      if (phase > lastPhase && phase <= 7) {
+        // Staging: the spent stage splits and tumbles away behind us
+        const c = (RIG[lastPhase].body || [])[6] || '#e8e6e0', px = -dy, py = dx;
+        [-1, 1].forEach(sd => parts.push({ k: 'stage', x: ccx - dx * p.sw * .7 + px * sd * p.sw * .15, y: ccy + dodge - dy * p.sw * .7 + py * sd * p.sw * .15,
+          vx: -dx * 2.4 + px * sd * 1.3, vy: -dy * 2.4 + py * sd * 1.3, rot: hr + Math.PI / 2, vr: sd * (.02 + Math.random() * .03), w: p.sw * .95, h: p.sw * .2, c, l: 1 }));
+      }
+      for (let i = 0; i < 46; i++) {
+        const a = Math.random() * 6.283, v = Math.random() * 4 + 1.5;
+        parts.push({ x: ccx, y: ccy + dodge, vx: Math.cos(a) * v, vy: Math.sin(a) * v, r: Math.random() * 3 + 1.5, l: 1, k: s < 2.4 ? 'puff' : 'spark' });
+      }
+    }
+    lastPhase = phase;
+
+    // Rival rockets of the same years, flying alongside, a little above and ahead
+    const rx0 = Math.min(ccx + Math.min(W * .08, 120), W - p.sw * 1.6), ry0 = Math.max(H * .14, ccy - Math.min(H * .26, 230)), RL = p.sw * 1.3;
+    spots.rival = null;
+    // Phones have no room to draw the rival, but its card still goes in the dock
+    if (W < 700 && s > .22) { const rv = RIVALS.find(r => r.ph.includes(phase)); if (rv) spots.rival = [rv, 0, 0, 0, 0, 0]; }
+    RIVALS.forEach(rv => {
+      const on = W >= 700 && rv.ph.includes(phase) && s > .22;
+      rv.a = reduce || STILL ? +on : rv.a + (+on - rv.a) * .05;
+      if (rv.a < .01) return;
+      const x = rx0 + (1 - rv.a) * W * .12 + Math.sin(t * .0005) * 10, y = ry0 + Math.sin(t * .0008 + 1) * 8;
+      ctx.save(); ctx.globalAlpha = rv.a; ctx.translate(x, y); ctx.rotate((heading - 90) * Math.PI / 180); ctx.translate(-RL / 2, 0);
+      paintCraft(rv.k, RL); ctx.restore();
+      if (rv.a > .6) spots.rival = [rv, x, y, RL * (.3 + .7 * pitch(s)), RL * (1 - .7 * pitch(s)), RL * (.5 - .32 * pitch(s)) + 6];
+    });
+    if (busy && !reduce && Math.random() < .35) parts.push({ x: ccx + (Math.random() - .5) * p.sw, y: ccy + dodge + (Math.random() - .5) * p.sw, vx: (Math.random() - .5) * 4, vy: (Math.random() - .5) * 4, r: 1.4, l: .8, k: 'spark' });
+    const jolt = busy ? Math.sin(t * .06) * 1.6 * (1 - Math.abs(m - .5) * 2) : 0;
+    const pop = busy ? 1 + .07 * (1 - Math.abs(m - .5) * 2) : 1;
+
+    // Contrail puffs in the air, a sparkle wake in space
+    const tx = ccx - dx * p.sw * .8, ty = ccy + dodge - dy * p.sw * .8, j = () => (Math.random() - .5);
+    if (!reduce && s > .012 && s < 2.4 && Math.random() < .6) parts.push({ x: tx + j() * p.sw * .3 * -dy, y: ty + j() * p.sw * .3 * dx, vx: -dx * 3 + j() * .8, vy: -dy * 3 + j() * .8, r: Math.random() * 4 + 4, l: 1, k: 'puff' });
+    if (!reduce && s > 2.4 && phase < 8 && Math.random() < .5) parts.push({ x: tx + j() * p.sw * .4 * -dy, y: ty + j() * p.sw * .4 * dx, vx: -dx * 4 + j() * 1.5, vy: -dy * 4 + j() * 1.5, r: Math.random() * 1.6 + .8, l: 1, k: 'spark' });
+    for (let i = parts.length - 1; i >= 0; i--) {
+      const b = parts[i];
+      b.x += b.vx; b.y += b.vy; b.vx *= .96;
+      if (b.k === 'stage') {
+        b.rot += b.vr; b.l -= .006; if (s < 2.4) b.vy += .06;
+        if (b.l <= 0 || b.y > H + 60) { parts.splice(i, 1); continue; }
+        ctx.save(); ctx.globalAlpha = Math.min(1, b.l * 1.6); ctx.translate(b.x, b.y); ctx.rotate(b.rot);
+        ctx.fillStyle = b.c; roundRect(-b.w / 2, -b.h / 2, b.w, b.h, b.h * .3); ctx.fill();
+        ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(-b.w / 2, b.h * .1, b.w, b.h * .4);
+        ctx.fillStyle = '#3a3d45'; ctx.fillRect(-b.w / 2, -b.h / 2, b.h * .5, b.h);
+        ctx.restore(); continue;
+      }
+      if (b.k === 'puff') { b.r += .25; b.l -= .014; } else b.l -= .02;
+      if (b.l <= 0 || b.y > H + 20 || b.x < -20) { parts.splice(i, 1); continue; }
+      ctx.fillStyle = b.k === 'puff' ? `rgba(255,250,244,${.5 * b.l})` : (s > 3.6 ? `rgba(190,200,255,${b.l})` : `rgba(255,${190 + Math.random() * 60 | 0},130,${b.l})`);
+      ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, 6.283); ctx.fill();
+    }
+
+    ship.style.transform = `translate(${p.x + jolt}px, ${p.y + dodge}px) scale(${pop}) rotate(${heading + Math.sin(t * .0009) * 3 * band(s, 0, .3) + dodge * -.15 + (warp > 0 ? Math.sin(t * .08) * .6 * warp : 0)}deg)`;
+
+
+    // Tags: the vehicle first, then whatever else is in view
+    const turn = pitch(s), shy = ccy + dodge;
+    const hw = p.sw * (.5 + 1.1 * turn), hh = p.sw * (1.9 - 1.3 * turn);
+    placeTag('main', VEHICLES[phase], ccx, shy, hw, hh, p.sw * (1.08 - .62 * turn) + 6);
+    for (const key of ['rival', 'sputnik', 'iss', 'mmu', 'moon', 'belt', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune']) {
+      const sp = spots[key];
+      if (sp) placeTag(key, ...sp); else placeTag(key, null);
+    }
+  }
+
+  // Altitude, then distance from Earth, in meters
+  const ALT = [[0, 2], [.5, 900], [1, 3e3], [2, 4e5], [3, 3.844e8], [3.9, 7.8e10], [4.8, 6.3e11], [5.18, 1.28e12], [5.48, 2.7e12], [5.74, 4.35e12], [6, 4e16]];
+  function altitude(s) {
+    for (let i = 0; i < ALT.length - 1; i++) {
+      const [s0, a0] = ALT[i], [s1, a1] = ALT[i + 1];
+      if (s <= s1) return Math.exp(Math.log(a0) + (Math.log(a1) - Math.log(a0)) * clamp((s - s0) / (s1 - s0)));
+    }
+    return ALT[ALT.length - 1][1];
+  }
+  const fmt = m => m >= 9.46e14 ? `${(m / 9.461e15).toFixed(m < 9.46e15 ? 2 : 1)} ly` : m >= 1.5e11 ? `${(m / 1.496e11).toFixed(1)} AU` : m >= 1000 ? `${Math.round(m / 1000).toLocaleString()} km` : `${Math.round(m)} m`;
+
+  if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+  resize();
+  const STILL = location.hash === '#still';
+  let idle = false;
+  if (STILL) addEventListener('scroll', () => { if (idle) { idle = false; last = performance.now(); requestAnimationFrame(frame); } });
+  let s = targetS(), last = performance.now(), lastZone = -1;
+  function frame(now) {
+    const dt = Math.min(64, now - last); last = now;
+    const tgt = targetS();
+    s = (reduce || STILL) ? tgt : s + (tgt - s) * (1 - Math.pow(.88, dt / 16.7));
+    draw(s, now);
+    dot.style.top = `${(s / MAX) * 100}%`;
+    const z = Math.round(s);
+    if (z !== lastZone) { zoneLis.forEach((li, i) => li.classList.toggle('on', i === z)); lastZone = z; }
+    const a = altitude(s);
+    lbl.textContent = s < 2.5 ? 'ALT' : 'FROM EARTH';
+    val.textContent = fmt(a);
+    if (!STILL || Math.abs(tgt - s) > .001) requestAnimationFrame(frame); else idle = true;
+  }
+
+  addEventListener('resize', resize);
+  // Info tags for the vehicle, its rivals, and the worlds we pass; all open one shared fact card
+  const tagTpl = document.querySelector('.craft'), card = document.getElementById('craft-card'), dock = document.querySelector('.dock');
+  const tags = {};
+  let active = null, pinned = false, hideT = 0;
+  const measureCols = () => { colBox = [...document.querySelectorAll('section:not(.hero) .col')].map(c => {
+    // Layout box, ignoring the entrance offset
+    let x = 0, y = 0;
+    for (let e = c; e; e = e.offsetParent) { x += e.offsetLeft; y += e.offsetTop; }
+    return [x, y, x + c.offsetWidth, y + c.offsetHeight];
+  }); };
+  const rows = (title, list) => list ? `<div class="cc-list"><h5>${title}</h5><ul>${list.map(([y, x]) => `<li><b>${y}</b><span>${x}</span></li>`).join('')}</ul></div>` : '';
+  const fillCard = d => {
+    card.querySelector('.cc-kick').textContent = d.kick;
+    card.querySelector('.cc-name').textContent = d.name;
+    const b = card.querySelector('.cc-body'); b.textContent = d.body || ''; b.hidden = !d.body;
+    card.querySelector('.cc-spec').innerHTML = d.spec.map(([k, x]) => `<div><dt>${k}</dt><dd>${x}</dd></div>`).join('');
+    card.querySelector('.cc-lists').innerHTML = rows('Crew', d.crew) + rows('Missions', d.past) + rows('Next', d.next);
+    card.classList.toggle('wide', !!(d.crew || d.past || d.next));
+  };
+  const placeCard = () => {
+    if (!active) return;
+    if (W < 760) {
+      // Phones: open as a sheet just above the dock
+      const dockTop = dock.getBoundingClientRect().top;
+      card.style.transform = `translate(12px, ${Math.max(12, dockTop - card.offsetHeight - 6).toFixed(1)}px)`;
+      return;
+    }
+    const [x, ly, top, lx] = active.geo, cw = card.offsetWidth, ch = card.offsetHeight, tw = active.w || 120;
+    let cx = Math.min(Math.max(x - cw / 2, 12), W - cw - 12), cy;
+    if (ly + 40 + ch < H - 12) cy = ly + 40;
+    else if (top - ch - 12 > 12) cy = top - ch - 12;
+    else {
+      // Too tall for either side vertically: open beside the tag instead of over it
+      cx = lx - cw - 12 > 12 ? lx - cw - 12 : Math.min(lx + tw + 12, W - cw - 12);
+      cy = Math.min(Math.max(ly + 14 - ch / 2, 12), H - ch - 12);
+    }
+    card.style.transform = `translate(${cx.toFixed(1)}px, ${cy.toFixed(1)}px)`;
+  };
+  const showCard = (t, on) => {
+    clearTimeout(hideT);
+    if (!on && pinned) return;
+    if (active && active !== t) active.el.setAttribute('aria-expanded', false);
+    active = on ? t : null; card.hidden = !on;
+    t.el.setAttribute('aria-expanded', on);
+    if (on) { fillCard(t.d); placeCard(); }
+  };
+  const close = () => { pinned = false; if (active) showCard(active, false); };
+  const wire = t => {
+    const el = t.el;
+    el.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse' && !pinned) showCard(t, true); });
+    el.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') hideT = setTimeout(() => active === t && showCard(t, false), 180); });
+    el.addEventListener('focus', () => { if (!pinned) showCard(t, true); });
+    el.addEventListener('blur', () => { if (active === t) close(); });
+    el.addEventListener('click', () => { const open = active === t && pinned; pinned = !open; showCard(t, !open); });
+  };
+  const makeTag = key => {
+    const el = key === 'main' ? tagTpl : tagTpl.cloneNode(true);
+    if (el !== tagTpl) { el.classList.add('aux'); el.hidden = true; tagTpl.after(el); }
+    const t = { el, name: el.querySelector('.craft-name'), d: null, w: 0, geo: [0, 0, 0] };
+    wire(t); return (tags[key] = t);
+  };
+  card.addEventListener('pointerenter', () => clearTimeout(hideT));
+  card.addEventListener('pointerleave', () => { hideT = setTimeout(() => { if (!pinned && active) showCard(active, false); }, 180); });
+  addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+  addEventListener('pointerdown', e => { if (pinned && !e.target.closest('.craft, .craft-card')) close(); });
+  // Put a tag under (x, y); hit is the hover box around the object; aux tags step aside for text panels
+  function placeTag(key, d, x, y, hw, hh, below) {
+    const t = tags[key] || makeTag(key);
+    if (!d) { if (!t.el.hidden) { t.el.hidden = true; if (active === t) close(); } return; }
+    const fresh = t.d !== d;
+    if (fresh) { t.d = d; t.name.textContent = d.name; t.w = 0; if (active === t) fillCard(d); }
+    if (W < 760) {
+      if (t.el.hidden) t.el.hidden = false;
+      if (active === t) placeCard();
+      return;
+    }
+    const ly = y + below;
+    let lx = x - (t.w || 120) / 2;
+    // Keep clear of the altitude gauge on the right edge
+    lx = Math.min(Math.max(lx, 12), W - (t.w || 120) - (key !== 'main' && W >= 700 ? 84 : 12));
+    let blocked = false;
+    if (key !== 'main') {
+      const tw = t.w || 120;
+      // Slide out from under a text panel to the part of the object still showing, or stay hidden
+      for (const [l, tp, r, b] of colBox) {
+        if (lx < r + 8 && lx + tw > l - 8 && ly < b - scrollY && ly + 30 > tp - scrollY) {
+          if (x + hw / 2 > r + 40 && r + 12 + tw < W - 12) lx = r + 12; else blocked = true;
+        }
+      }
+      blocked = blocked || ly < 8 || ly > H - 44;
+    }
+    if (t.el.hidden !== blocked) { t.el.hidden = blocked; if (blocked && active === t) close(); }
+    if (blocked) return;
+    if (!t.w) t.w = t.el.offsetWidth;
+    t.el.style.transform = `translate(${lx.toFixed(1)}px, ${ly.toFixed(1)}px)`;
+    t.el.style.setProperty('--hx', (x - hw / 2 - lx).toFixed(1) + 'px');
+    t.el.style.setProperty('--hy', (y - hh / 2 - ly).toFixed(1) + 'px');
+    t.el.style.setProperty('--hw', hw.toFixed(1) + 'px');
+    t.el.style.setProperty('--hh', hh.toFixed(1) + 'px');
+    t.geo = [x, ly, y - hh / 2, lx];
+    if (active === t) placeCard();
+  }
+  addEventListener('load', measureCols);
+  addEventListener('resize', measureCols);
+  measureCols();
+  document.fonts && document.fonts.ready.then(measureCols);
+
+
+  requestAnimationFrame(frame);
+
+  const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { rootMargin: '0px 0px -12% 0px' });
+  document.querySelectorAll('.reveal, section:not(.hero) .col').forEach(el => io.observe(el));
+  document.querySelectorAll('section:not(.hero) .col').forEach(c => c.querySelectorAll('li').forEach((li, i) => li.style.setProperty('--i', Math.min(i, 8))));
+})();
+</script>
+</body>
+</html>
