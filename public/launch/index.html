@@ -5,6 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Bill Huang</title>
 <meta name="description" content="Bill Huang: engineer, founder, and operator. Co-Founder and Chief AI Officer at Capsule.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://billhuang.me/launch/">
+<meta property="og:title" content="Bill Huang">
+<meta property="og:description" content="Engineer, founder, operator. A resume that launches from the pad to deep space.">
+<meta property="og:image" content="https://billhuang.me/launch/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="A rocket flying past Mars through the asteroid belt, with the name Bill Huang">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -80,6 +89,12 @@
     color: var(--ink-2); font-variant-numeric: tabular-nums; text-align: right; text-shadow: 0 1px 6px rgba(0, 0, 0, .5);
   }
   .readout b { font-weight: 500; color: var(--ink); }
+  /* The year rolls forward with the rockets; the line under it names that year's milestone */
+  .readout .yr { display: block; margin-bottom: 10px; }
+  .readout .year { display: block; font-size: 26px; line-height: 1; letter-spacing: .02em; }
+  .readout .moment { display: block; margin: 6px 0 0 auto; max-width: 250px; font-size: 12.5px; line-height: 1.35; color: var(--ink-2); }
+  .readout .moment.fresh { animation: moment .6s var(--ease); }
+  @keyframes moment { from { opacity: 0; translate: 0 4px; } }
 
   @media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
   /* Content */
@@ -209,7 +224,10 @@
     .dock::-webkit-scrollbar { display: none; }
     .dock .craft { position: static; flex: none; transform: none !important; pointer-events: auto; min-height: 36px; font-size: 13px; box-shadow: 0 6px 18px rgba(0, 0, 0, .35); }
     .dock .craft::before { display: none; }
-    .readout { bottom: calc(62px + env(safe-area-inset-bottom)); }
+    .readout { bottom: calc(62px + env(safe-area-inset-bottom)); z-index: 4; padding: 7px 11px; border-radius: 12px; background: rgba(14, 13, 34, .72); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+    .readout .yr { display: inline; margin: 0 .6em 0 0; }
+    .readout .year { display: inline; font-size: 13px; }
+    .readout .moment { display: none; }
     .craft-card, .craft-card.wide { width: calc(100vw - 24px); max-height: calc(100vh - 100px); }
     section { min-height: 70vh; padding: 4vh 12px; }
     .col { max-width: none; padding: 22px; }
@@ -223,7 +241,7 @@
     .ship .flame, .ship .prop, .ship .bit, .ship .puff { animation: none; }
     .js .reveal { transition: opacity .4s linear; transform: none; }
     .js section:not(.hero) .col, .js section:not(.hero) .col li { translate: 0 0; scale: 1; transition: opacity .4s linear; transition-delay: 0s; }
-    .craft-card, .craft.aux { animation: none; }
+    .craft-card, .craft.aux, .readout .moment.fresh { animation: none; }
   }
 </style>
 </head>
@@ -296,7 +314,7 @@
   </ol>
   <div class="track"><div class="dot"></div></div>
 </nav>
-<div class="readout" aria-hidden="true"><span class="lbl">ALT</span> <b class="val">2 m</b></div>
+<div class="readout" aria-hidden="true"><span class="yr"><b class="year">1961</b><span class="moment"></span></span><span class="lbl">ALT</span> <b class="val">2 m</b></div>
 
 <main>
   <section id="top" class="hero" data-zone="0">
@@ -595,6 +613,20 @@
   const zoneLis = [...document.querySelectorAll('.gauge li')];
   const lbl = document.querySelector('.readout .lbl');
   const val = document.querySelector('.readout .val');
+  const yearEl = document.querySelector('.readout .year'), momentEl = document.querySelector('.readout .moment');
+  // Scroll position to calendar year: holds through each rocket's era, rolls on through the changeovers
+  const YEARS = [[0, 1961], [.55, 1961], [.75, 1962], [1.05, 1963], [1.25, 1965], [1.55, 1966], [1.75, 1968], [2.05, 1972], [2.25, 1981], [2.55, 2011], [2.75, 2012], [3.0, 2021], [3.2, 2022], [3.45, 2022], [3.65, 2023], [4.3, 2026]];
+  const MOMENTS = [[1961, 'Alan Shepard becomes the first American in space'], [1962, 'John Glenn orbits Earth three times'], [1965, 'Ed White makes the first American spacewalk'],
+    [1968, 'Apollo 8 carries the first crew around the Moon'], [1969, 'Apollo 11 lands on the Moon'], [1972, 'Apollo 17, the last Moon walk so far'], [1981, 'The first Space Shuttle flight'],
+    [1990, 'Hubble goes up aboard Discovery'], [1998, 'Space Station construction begins'], [2011, 'The last Shuttle flight'], [2015, 'A Falcon 9 booster lands for the first time'],
+    [2020, 'Crew Dragon flies its first astronauts'], [2022, 'Artemis I flies around the Moon, uncrewed'], [2023, 'Starship’s first flight test'], [2026, 'Artemis II takes a crew around the Moon']];
+  const yearAt = s => {
+    if (s >= YEARS[YEARS.length - 1][0]) return YEARS[YEARS.length - 1][1];
+    let i = 0; while (YEARS[i + 1][0] < s) i++;
+    const [s0, y0] = YEARS[i], [s1, y1] = YEARS[i + 1];
+    return Math.floor(y0 + (y1 - y0) * (s - s0) / (s1 - s0) + .001);
+  };
+  let shownYear = 0, shownMoment = '';
   const sections = [...document.querySelectorAll('main section')];
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const root = document.documentElement.style;
@@ -1350,6 +1382,11 @@
     const a = altitude(s);
     lbl.textContent = s < 2.5 ? 'ALT' : 'FROM EARTH';
     val.textContent = fmt(a);
+    const yr = yearAt(s);
+    if (yr !== shownYear) yearEl.textContent = shownYear = yr;
+    // Past the last rocket the page is about the planets, so the milestone line steps aside
+    const m = s < 4.45 ? (MOMENTS.filter(([y]) => y <= yr).pop() || [0, ''])[1] : '';
+    if (m !== shownMoment) { momentEl.textContent = shownMoment = m; momentEl.classList.remove('fresh'); void momentEl.offsetWidth; momentEl.classList.add('fresh'); }
     if (!STILL || Math.abs(tgt - s) > .001) requestAnimationFrame(frame); else idle = true;
   }
 
