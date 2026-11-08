@@ -243,12 +243,57 @@
     .js section:not(.hero) .col, .js section:not(.hero) .col li { translate: 0 0; scale: 1; transition: opacity .4s linear; transition-delay: 0s; }
     .craft-card, .craft.aux, .readout .moment.fresh { animation: none; }
   }
+
+  /* Phones: one continuous launch. The rocket holds the top of the screen, each chapter's sheet rises
+     from below and dissolves into the sky before it can reach the rocket */
+  #cover { display: none; }
+  @media (max-width: 760px) {
+    #scene { height: 100lvh; }
+    main { z-index: 2; }
+    #cover { display: block; position: fixed; left: 0; top: 0; width: 100%; height: 44lvh; z-index: 3; pointer-events: none; opacity: 0; }
+    .ship { width: 84px; z-index: 4; }
+    .hero { height: 280vh; }
+    .hero .pin { justify-content: flex-start; padding: 9vh 24px 0; }
+    .hero .col { will-change: opacity, transform; transform-origin: 0 0; }
+    .hero h1 { font-size: clamp(56px, 18vw, 76px); line-height: 1; }
+    .hero .lede { font-size: 22px; margin-top: 16px; }
+    .hero .role { font-size: 15px; margin-top: 16px; }
+    .hero .cue { position: fixed; left: 24px; bottom: calc(24px + env(safe-area-inset-bottom)); margin: 0; }
+    section:not(.hero) { display: block; min-height: 0; padding: 0; }
+    section:not(.hero)::before {
+      content: attr(data-place); display: flex; align-items: flex-end; height: 125vh; padding: 0 24px 7vh;
+      font-size: clamp(64px, 21vw, 92px); line-height: 1; font-weight: 800; letter-spacing: -.01em; text-shadow: 0 2px 24px rgba(10, 10, 40, .55);
+    }
+    .js section:not(.hero) .col, .js section:not(.hero) .col li { opacity: 1; translate: 0 0; scale: 1; transition: none; }
+    section:not(.hero) .col {
+      max-width: none; width: 100%; padding: 32px 24px 64px; border-radius: 28px; background: #14123a; box-shadow: 0 -12px 50px rgba(6, 6, 30, .4);
+      -webkit-backdrop-filter: none; backdrop-filter: none; text-shadow: none; border: 0;
+    }
+    section:last-of-type .col { background: rgba(20, 18, 58, .72); box-shadow: none; border-radius: 28px 28px 0 0; padding: 24px 24px 88px; }
+    .craft-card, .craft-card.wide { max-height: calc(67lvh - 62px); }
+    /* Flight readout, top left beside the rocket */
+    .readout {
+      left: 16px; right: auto; top: calc(14px + env(safe-area-inset-top)); bottom: auto; width: calc(50vw - 72px); padding: 0; z-index: 4;
+      background: none; -webkit-backdrop-filter: none; backdrop-filter: none; text-align: left; text-shadow: 0 1px 8px rgba(10, 10, 40, .7); line-height: 1.3;
+    }
+    .readout .yr { display: block; margin: 0 0 6px; }
+    .readout .year { display: block; font-size: 24px; }
+    .readout .moment { display: block; margin: 5px 0 0; max-width: none; font-size: 11.5px; }
+    /* Facts sit under the rocket, at the bottom edge of the sky */
+    .dock { top: 33lvh; bottom: auto; padding: 0 12px; }
+    .dock .craft { background: rgba(14, 13, 34, .82); -webkit-backdrop-filter: none; backdrop-filter: none; }
+    .readout, .dock { transition: opacity .35s linear; }
+    .prelaunch .readout, .prelaunch .dock { opacity: 0; pointer-events: none; }
+    .prelaunch .dock .craft { pointer-events: none; }
+  }
+  @media (max-width: 760px) and (prefers-reduced-motion: reduce) { .hero { height: 100vh; } }
 </style>
 </head>
 <body>
 <script>document.documentElement.classList.add('js')</script>
 <canvas id="scene" aria-hidden="true"></canvas>
 <div class="grain" aria-hidden="true"></div>
+<canvas id="cover" aria-hidden="true"></canvas>
 
 <div class="ship" aria-hidden="true">
   <svg class="rig" viewBox="0 0 100 200">
@@ -476,7 +521,7 @@
     off({ // Starship: stainless steel, black heat shield on one side, four flaps, methane-blue exhaust
       body: [50, 114, 0, 1.1, 1, 1, '#eef1f5'], ogive: [50, 64, 0, 1.1, 1.25, 1, '#eef1f5'], tile: [50, 114, 0, 1.1, 1, .45],
       fwdL: [39, 76, 0, 1, 1, 1, '#6b717d'], fwdR: [61, 76, 0, -1, 1, 1, '#6b717d'],
-      finL: [39, 156, 0, 1.1, 1.1, 1, '#6b717d'], finR: [61, 156, 0, -1.1, 1.1, 1, '#6b717d'], blue: [50, 168, 0, 1.1, 1.3, 1],
+      finL: [39, 156, 0, 1.1, 1.1, 1, '#6b717d'], finR: [61, 156, 0, -1.1, 1.1, 1, '#6b717d'], blue: [50, 158, 0, 1.1, 1.3, 1],
     }),
     off({ // Juno: three long solar wings around a dark hexagonal bus, small dish on top
       body: [50, 100, 0, .8, .13, 1, '#4a4d55'], dish: [50, 93, 0, .38, .6, 1, '#f2f0ea'],
@@ -855,6 +900,29 @@
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
     SW = ship.offsetWidth;
     layout = sections.map(el => [el.offsetTop, el.offsetHeight]);
+    if (W < 760) { coverH = Math.round(cvs.height * .44); cover.width = cvs.width; cover.height = coverH; }
+  }
+
+  // Phones: repaint the sky above the text, fading out at its lower edge, so chapters dissolve before they reach the rocket
+  const cover = document.getElementById('cover'), cctx = cover.getContext('2d');
+  let coverH = 0, coverOn = -1;
+  const heroCol = document.querySelector('.hero .col'), heroCue = document.querySelector('.hero .cue');
+  function paintPhone(s) {
+    const a = band(s, .4, .5), pre = s < .42;
+    if (pre !== coverOn) { document.documentElement.classList.toggle('prelaunch', pre); coverOn = pre; }
+    cover.style.opacity = a;
+    const k = ease(band(s, .03, .24));
+    heroCol.style.opacity = 1 - k;
+    heroCol.style.transform = reduce ? '' : `translateY(${-k * H * .12}px) scale(${1 - k * .06})`;
+    heroCue.style.opacity = 1 - band(s, 0, .05);
+    if (!a) return;
+    cctx.globalCompositeOperation = 'source-over';
+    cctx.clearRect(0, 0, cover.width, coverH);
+    cctx.drawImage(cvs, 0, 0, cvs.width, coverH, 0, 0, cvs.width, coverH);
+    const g = cctx.createLinearGradient(0, coverH * .84, 0, coverH);
+    g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,1)');
+    cctx.globalCompositeOperation = 'destination-out';
+    cctx.fillStyle = g; cctx.fillRect(0, coverH * .84, cover.width, coverH * .16);
   }
 
   // The pinned hero covers liftoff (s 0 to .5); every other section maps one-to-one
@@ -873,8 +941,8 @@
     // On desktop, once the rocket lies flat, park it (and its flame) in the open sky right of the text panels
     const clear = colBox.reduce((m, b) => Math.max(m, b[2]), 0) + sw * (.9 + .7 * turn) + 18;
     const dx = Math.min(Math.max(W * .7, clear), W - 84 - sw * (.5 + .45 * turn));
-    const x = (mobile ? W - sw * .62 : W * .7 + (dx - W * .7) * turn) - sw / 2 + Math.sin(t * .0007) * (mobile ? 2 : 18) * k;
-    const y = (mobile ? H * (.62 - .46 * k) : H * .5 - sw) + Math.sin(t * .0011) * 8 * k;
+    const x = (mobile ? W / 2 : W * .7 + (dx - W * .7) * turn) - sw / 2 + Math.sin(t * .0007) * (mobile ? 2 : 18) * k;
+    const y = (mobile ? H * (.6 - .57 * k) : H * .5 - sw) + Math.sin(t * .0011) * 8 * k;
     return { x, y, cx: x + sw / 2, top: y, sw };
   }
 
@@ -954,7 +1022,7 @@
       lg.addColorStop(0, '#b9c28e'); lg.addColorStop(1, '#6f8f5a');
       ctx.fillStyle = lg;
       ctx.beginPath(); ctx.moveTo(0, deck + H);
-      for (let x = 0; x <= W; x += 20) ctx.lineTo(x, deck - 14 + Math.sin(x * .004 + 1) * 10 - Math.max(0, 1 - Math.abs(x - cx) / 260) * 8);
+      for (let x = 0; x < W + 20; x += 20) ctx.lineTo(x, deck - 14 + Math.sin(x * .004 + 1) * 10 - Math.max(0, 1 - Math.abs(x - cx) / 260) * 8);
       ctx.lineTo(W, deck + H); ctx.closePath(); ctx.fill();
 
       // fuel tank and blockhouse
@@ -1026,7 +1094,7 @@
     }
 
     // Birds by the cliffs, a hot-air balloon, and an airliner with its contrail
-    const fla = 1 - band(s, .9, 1.2);
+    const fla = (1 - band(s, .9, 1.2)) * (W < 760 ? band(s, .08, .22) : 1);
     if (fla > 0) {
       ctx.strokeStyle = `rgba(40,40,70,${.75 * fla})`; ctx.lineWidth = 1.8; ctx.lineCap = 'round';
       flocks.forEach(f => {
@@ -1183,7 +1251,7 @@
     // The Sun, behind us on the left, shrinking as we go
     const sun = band(s, 2.2, 2.8);
     if (sun > 0) {
-      const sr = M * .045 * (1.5 - band(s, 2.5, 5.9)), sx = W * .01, sy = H * .07;
+      const sr = M * .045 * (1.5 - band(s, 2.5, 5.9)), sx = W * .01, sy = H * (W < 760 ? .3 : .07);
       const sg = ctx.createRadialGradient(sx, sy, 0, sx, sy, W * .55);
       sg.addColorStop(0, `rgba(255,226,170,${.22 * sun})`); sg.addColorStop(1, 'rgba(255,226,170,0)');
       ctx.fillStyle = sg; ctx.fillRect(0, 0, W, H);
@@ -1376,6 +1444,7 @@
     const tgt = targetS();
     s = (reduce || STILL) ? tgt : s + (tgt - s) * (1 - Math.pow(.88, dt / 16.7));
     draw(s, now);
+    if (W < 760) paintPhone(s);
     dot.style.top = `${(s / MAX) * 100}%`;
     const z = Math.round(s);
     if (z !== lastZone) { zoneLis.forEach((li, i) => li.classList.toggle('on', i === z)); lastZone = z; }
@@ -1390,7 +1459,7 @@
     if (!STILL || Math.abs(tgt - s) > .001) requestAnimationFrame(frame); else idle = true;
   }
 
-  addEventListener('resize', resize);
+  addEventListener('resize', () => { if (innerWidth !== W || innerWidth >= 760) resize(); });
   // Info tags for the vehicle, its rivals, and the worlds we pass; all open one shared fact card
   const tagTpl = document.querySelector('.craft'), card = document.getElementById('craft-card'), dock = document.querySelector('.dock');
   const tags = {};
@@ -1413,9 +1482,8 @@
   const placeCard = () => {
     if (!active) return;
     if (W < 760) {
-      // Phones: open as a sheet just above the dock
-      const dockTop = dock.getBoundingClientRect().top;
-      card.style.transform = `translate(12px, ${Math.max(12, dockTop - card.offsetHeight - 6).toFixed(1)}px)`;
+      // Phones: a sheet along the bottom, leaving the rocket in view
+      card.style.transform = `translate(12px, ${(H - card.offsetHeight - 12).toFixed(1)}px)`;
       return;
     }
     const [x, ly, top, lx] = active.geo, cw = card.offsetWidth, ch = card.offsetHeight, tw = active.w || 120;
@@ -1499,6 +1567,8 @@
   document.fonts && document.fonts.ready.then(measureCols);
 
 
+  ['', 'Sky', 'Orbit', 'Moon', 'Mars', 'Jupiter', 'Beyond'].forEach((w, i) => { if (w && sections[i]) sections[i].dataset.place = w; });
+  resize();
   requestAnimationFrame(frame);
 
   const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { rootMargin: '0px 0px -12% 0px' });
