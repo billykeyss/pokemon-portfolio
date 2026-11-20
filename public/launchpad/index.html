@@ -155,6 +155,18 @@
   .roles .what { grid-column: 1 / -1; font-size: 16px; color: var(--ink-3); }
   .roles p { grid-column: 1 / -1; font-size: 17px; line-height: 1.55; color: var(--ink-2); margin-top: .35rem; max-width: 60ch; }
 
+  .shots { list-style: none; padding: 0; margin-top: 2.4rem; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2.4rem 2rem; }
+  .shots .frame { position: relative; display: block; padding: 0 9% 7% 0; }
+  .shots img { display: block; width: 100%; height: auto; background: #15142c; box-shadow: 0 0 0 1px var(--rule), 0 14px 30px -12px rgba(4, 3, 20, .7); }
+  .shots .desk { border-radius: 8px; transition: translate .5s var(--ease); }
+  .shots .phone { position: absolute; right: 0; bottom: 0; width: 22%; border-radius: 10px; transition: translate .5s var(--ease); }
+  .shots a.frame:hover .desk { translate: 0 -3px; }
+  .shots a.frame:hover .phone { translate: 0 -7px; }
+  .shots h3 { font-size: 1.2rem; font-weight: 600; letter-spacing: -0.01em; display: flex; gap: .6rem; align-items: baseline; margin-top: 1rem; }
+  .shots h3 span { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 12px; font-weight: 400; color: var(--ink-3); }
+  .shots p { font-size: 16.5px; line-height: 1.5; color: var(--ink-2); margin-top: .25rem; }
+  @media (max-width: 760px) { .shots { grid-template-columns: minmax(0, 1fr); gap: 2rem; } }
+  @media (prefers-reduced-motion: reduce) { .shots .desk, .shots .phone { transition: none; translate: none !important; } }
   .projects { list-style: none; padding: 0; margin-top: 2.6rem; columns: 2 16rem; column-gap: 2.5rem; }
   .projects li { break-inside: avoid; padding: 0 0 1.5rem; }
   .projects h3 { font-size: 1.2rem; font-weight: 600; letter-spacing: -0.01em; display: flex; gap: .6rem; align-items: baseline; }
@@ -424,13 +436,17 @@
   <section id="projects" data-zone="4">
     <div class="col">
       <h2 class="reveal">Side projects.</h2>
+      <ul class="shots">
+        <li><a class="frame" href="https://chronicle.billhuang.me" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true"><img class="desk" src="/projects/shots/chronicles-desktop.webp" alt="" width="1280" height="800" loading="lazy" decoding="async"><img class="phone" src="/projects/shots/chronicles-mobile.webp" alt="" width="390" height="844" loading="lazy" decoding="async"></a><h3><a href="https://chronicle.billhuang.me" target="_blank" rel="noopener">Chronicles</a><span>2026</span></h3><p>A historical events trivia game.</p></li>
+        <li><a class="frame" href="https://crag.billhuang.me" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true"><img class="desk" src="/projects/shots/sesh-map-desktop.webp" alt="" width="1280" height="800" loading="lazy" decoding="async"><img class="phone" src="/projects/shots/sesh-snow-mobile.webp" alt="" width="390" height="844" loading="lazy" decoding="async"></a><h3><a href="https://crag.billhuang.me" target="_blank" rel="noopener">Sesh app</a><span>2025</span></h3><p>A crag map for Reno and Tahoe, with a Mt Rose snow dashboard. Invite only.</p></li>
+        <li><a class="frame" href="/game/" tabindex="-1" aria-hidden="true"><img class="desk" src="/projects/shots/arcade-desktop.webp" alt="" width="1280" height="800" loading="lazy" decoding="async"><img class="phone" src="/projects/shots/arcade-mobile.webp" alt="" width="390" height="844" loading="lazy" decoding="async"></a><h3><a href="/game/">Arcade</a><span>2026</span></h3><p>Nine small games in pixel cabinets.</p></li>
+        <li><a class="frame" href="https://sno.billhuang.me" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true"><img class="desk" src="/projects/shots/tahoe-snow-desktop.webp" alt="" width="1280" height="800" loading="lazy" decoding="async"><img class="phone" src="/projects/shots/tahoe-snow-mobile.webp" alt="" width="390" height="844" loading="lazy" decoding="async"></a><h3><a href="https://sno.billhuang.me" target="_blank" rel="noopener">Tahoe Snow</a><span>2024</span></h3><p>Ski resort conditions, at a glance.</p></li>
+        <li><a class="frame" href="https://mushroom.billhuang.me" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true"><img class="desk" src="/projects/shots/mushroom-desktop.webp" alt="" width="1280" height="800" loading="lazy" decoding="async"><img class="phone" src="/projects/shots/mushroom-mobile.webp" alt="" width="390" height="844" loading="lazy" decoding="async"></a><h3><a href="https://mushroom.billhuang.me" target="_blank" rel="noopener">Mushroom Weather</a><span>2024</span></h3><p>When and where to forage, on a map.</p></li>
+        <li><a class="frame" href="/palette/" tabindex="-1" aria-hidden="true"><img class="desk" src="/projects/shots/palette-desktop.webp" alt="" width="1280" height="800" loading="lazy" decoding="async"><img class="phone" src="/projects/shots/palette-mobile.webp" alt="" width="390" height="844" loading="lazy" decoding="async"></a><h3><a href="/palette/">Palette</a><span>2019</span></h3><p>Pull a color palette from any photo.</p></li>
+      </ul>
       <ul class="projects">
-        <li><h3><a href="https://chronicle.billhuang.me" target="_blank" rel="noopener">Chronicles</a><span>2026</span></h3><p>A historical events trivia game.</p><p class="stack">Next.js, TypeScript, Wikipedia API</p></li>
-        <li><h3><a href="https://sno.billhuang.me" target="_blank" rel="noopener">Tahoe Snow</a><span>2024</span></h3><p>Ski resort conditions, at a glance.</p><p class="stack">React, Node.js</p></li>
-        <li><h3><a href="https://mushroom.billhuang.me" target="_blank" rel="noopener">Mushroom Weather</a><span>2024</span></h3><p>When and where to forage, on a map.</p><p class="stack">React, AWS S3, Mapbox</p></li>
         <li><h3>Unreal Sensor Sim<span>2018</span></h3><p>Sensor simulation for autonomous vehicles. Best Presentation Award.</p><p class="stack">Unreal Engine, C++, Python, CUDA</p></li>
         <li><h3><a href="https://github.com/billykeyss/home.ly" target="_blank" rel="noopener">Home.ly</a><span>2017</span></h3><p>A smart home IoT network.</p><p class="stack">Node.js, Azure IoT, DynamoDB, React</p></li>
-        <li><h3>Palette<span>2019</span></h3><p>Pull a color palette from your camera.</p><p class="stack">Kotlin, Android, Room</p></li>
         <li><h3>RapBot<span>2017</span></h3><p>Rap battle Alexa. Hackathon winner.</p><p class="stack">AWS Lambda, Node.js</p></li>
         <li><h3>Pong Neural Net<span>2016</span></h3><p>Teaching a paddle to play.</p><p class="stack">Unity, C#, ML-Agents</p></li>
       </ul>
