@@ -4,7 +4,12 @@ import { CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import { useTheme } from "next-themes";
 import { Moon, Sun } from "lucide-react";
 import "./dossier.css";
-import { resumeData, type Experience, type Hobby } from "@/data/resume-data";
+import {
+  resumeData,
+  type Experience,
+  type Hobby,
+  type Project,
+} from "@/data/resume-data";
 import { GEN1_POKEMON } from "@/utils/pokemon";
 // import ScrollTrainer from "@/components/ScrollTrainer"; // Cycling Road rail — disabled for now
 
@@ -390,6 +395,123 @@ const TRAINER_STATS: Array<{
 
 /* ──────────────────────── React component ─────────────────────────── */
 
+const isExternal = (link: string) => /^https?:/.test(link);
+const linkProps = (link: string) =>
+  isExternal(link) ? { target: "_blank", rel: "noopener" } : {};
+const linkVerb = (link: string) =>
+  /github\.com/.test(link) ? "Code" : isExternal(link) ? "Visit" : "Open";
+
+/** A showcase card: desktop capture with the phone capture overlapping it. */
+function ShotCard({
+  project: p,
+  size,
+  ball,
+}: {
+  project: Project;
+  size: "is-lead" | "is-half" | "is-third";
+  ball: string;
+}) {
+  const views = p.shots ?? [];
+  const [view, setView] = useState(0);
+  const lead = size === "is-lead";
+  const which = (label: string) =>
+    views.length > 1 ? `${label.toLowerCase()} ` : "";
+  const stage = views.map((v, n) => (
+    <span key={v.label} className="shot-view" hidden={n !== view}>
+      <span className="shot-desktop">
+        <img
+          src={v.desktop}
+          alt={`${p.title} ${which(v.label)}on a desktop screen`}
+          width={1280}
+          height={800}
+          loading="lazy"
+          decoding="async"
+        />
+      </span>
+      <span className="shot-phone">
+        <img
+          src={v.mobile}
+          alt={`${p.title} ${which(v.label)}on a phone`}
+          width={390}
+          height={844}
+          loading="lazy"
+          decoding="async"
+        />
+      </span>
+    </span>
+  ));
+  return (
+    <article className={`project shot ${size}`}>
+      <span className={`pokeball-corner ${ball}`} aria-hidden="true">
+        <span className="pball-top" />
+        <span className="pball-band" />
+        <span className="pball-button" />
+        <span className="pball-shine" />
+      </span>
+      <div className="shot-stage">
+        {p.link ? (
+          <a
+            className="shot-stage-link"
+            href={p.link}
+            {...linkProps(p.link)}
+            tabIndex={-1}
+          >
+            {stage}
+          </a>
+        ) : (
+          stage
+        )}
+        {views.length > 1 && (
+          <div className="shot-switch" role="group" aria-label={`${p.title} screens`}>
+            {views.map((v, n) => (
+              <button
+                key={v.label}
+                type="button"
+                aria-pressed={n === view}
+                onClick={() => setView(n)}
+              >
+                {v.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+      <div className="shot-body">
+        <div className="ptag">
+          <span>
+            {p.year} · {p.category.toUpperCase()}
+          </span>
+        </div>
+        <h3>
+          {p.link ? (
+            <a href={p.link} {...linkProps(p.link)}>
+              {p.title}
+            </a>
+          ) : (
+            p.title
+          )}
+        </h3>
+        <p>{lead ? p.details : p.description}</p>
+        <div className="stack">
+          {p.techStack.slice(0, lead ? 6 : 4).map((t) => (
+            <span key={t}>{t}</span>
+          ))}
+        </div>
+        {p.link && (
+          <a
+            className="project-cta"
+            href={p.link}
+            {...linkProps(p.link)}
+            aria-label={`${linkVerb(p.link)} ${p.title}`}
+          >
+            {linkVerb(p.link)} →
+          </a>
+        )}
+      </div>
+    </article>
+  );
+}
+
 export default function V2DossierPage() {
   const rootRef = useRef<HTMLDivElement>(null);
   const entries = useMemo(buildEntries, []);
@@ -760,147 +882,59 @@ export default function V2DossierPage() {
           <span className="count">SELECTED PROJECTS</span>
         </div>
         {(() => {
-          // First featured project becomes the hero; remainder fills the grid.
-          const hero = projects.find((p) => p.featured) ?? projects[0];
-          const rest = projects.filter((p) => p !== hero);
+          // Projects with real captures lead; the rest are filed in a compact list.
+          const showcase = projects.filter((p) => p.shots);
+          const filed = projects
+            .filter((p) => !p.shots)
+            .sort((x, y) => Number(y.year) - Number(x.year));
+          // After the lead card: pairs first, and a row of three when the count is odd.
+          const pairs = showcase.length - 1 - ((showcase.length - 1) % 2 ? 3 : 0);
           return (
             <>
-              {hero && (
-                <article className="project-hero">
-                  <span className="hero-badge">★ Featured Project</span>
-                  <div className="hero-top">
-                    {hero.image && !hero.image.includes("placeholder") && (
-                      hero.link ? (
-                        <a
-                          href={hero.link}
-                          target="_blank"
-                          rel="noopener"
-                          className="hero-logo-link"
-                          aria-label={`Open ${hero.title}`}
-                        >
-                          <img
-                            className="hero-logo"
-                            src={hero.image}
-                            alt={`${hero.title} logo`}
-                          />
-                        </a>
-                      ) : (
-                        <img
-                          className="hero-logo"
-                          src={hero.image}
-                          alt={`${hero.title} logo`}
-                        />
-                      )
-                    )}
-                    <div className="hero-top-text">
-                      <div className="hero-meta">
-                        <span>{hero.year}</span>
-                        <span>·</span>
-                        <span>{hero.category.toUpperCase()}</span>
-                        {hero.award && (
-                          <>
-                            <span>·</span>
-                            <span className="hero-award">
-                              🏆 {hero.award.split(/[—-]/)[0].trim()}
-                            </span>
-                          </>
-                        )}
-                      </div>
-                      <h3 className="hero-title">
-                        {hero.link ? (
-                          <a
-                            href={hero.link}
-                            target="_blank"
-                            rel="noopener"
-                            style={{ color: "inherit", textDecoration: "none" }}
-                          >
-                            {hero.title}
-                          </a>
-                        ) : (
-                          hero.title
-                        )}
-                      </h3>
-                      <p className="hero-tagline">{hero.description}</p>
-                    </div>
-                  </div>
-                  <p className="hero-detail">{hero.details}</p>
-                  <div className="stack">
-                    {hero.techStack.map((t) => (
-                      <span key={t}>{t}</span>
-                    ))}
-                  </div>
-                  {hero.link && (
-                    <a
-                      className="hero-cta"
-                      href={hero.link}
-                      target="_blank"
-                      rel="noopener"
-                    >
-                      Visit Project →
-                    </a>
-                  )}
-                </article>
-              )}
-
-              <div className="project-grid">
-                {rest.map((p) => (
-                  <article key={p.title} className="project">
-                    <span
-                      className={`pokeball-corner ${pokeballMap[p.title] ?? pokeballForTitle(p.title)}`}
-                      aria-hidden="true"
-                    >
-                      <span className="pball-top" />
-                      <span className="pball-band" />
-                      <span className="pball-button" />
-                      <span className="pball-shine" />
-                    </span>
-                    <div className="ptag">
-                      <span>
-                        {p.year} · {p.category.toUpperCase()}
-                      </span>
-                      {p.award ? (
-                        <span className="award">
-                          ★ {p.award.split(/[—-]/)[0].trim()}
-                        </span>
-                      ) : p.featured ? (
-                        <span className="award">★ Featured</span>
-                      ) : (
-                        <span />
-                      )}
-                    </div>
-                    <h3>
-                      {p.link ? (
-                        <a
-                          href={p.link}
-                          target="_blank"
-                          rel="noopener"
-                          style={{ color: "inherit", textDecoration: "none" }}
-                        >
-                          {p.title}
-                        </a>
-                      ) : (
-                        p.title
-                      )}
-                    </h3>
-                    <p>{p.description}</p>
-                    <div className="stack">
-                      {p.techStack.slice(0, 4).map((t) => (
-                        <span key={t}>{t}</span>
-                      ))}
-                    </div>
-                    {p.link && (
-                      <a
-                        className="project-cta"
-                        href={p.link}
-                        target="_blank"
-                        rel="noopener"
-                      >
-                        Visit →
-                      </a>
-                    )}
-                  </article>
+              <div className="showcase">
+                {showcase.map((p, i) => (
+                  <ShotCard
+                    key={p.title}
+                    project={p}
+                    size={i === 0 ? "is-lead" : i <= pairs ? "is-half" : "is-third"}
+                    ball={pokeballMap[p.title] ?? pokeballForTitle(p.title)}
+                  />
                 ))}
               </div>
+
+              {filed.length > 0 && (
+                <div className="filed">
+                  <h3 className="filed-title">Also on file</h3>
+                  <ul className="filed-list">
+                    {filed.map((p) => (
+                      <li key={p.title} className="filed-row">
+                        <span className="filed-year">{p.year}</span>
+                        <div className="filed-main">
+                          <span className="filed-name">
+                            {p.title}
+                            {p.award && (
+                              <span className="filed-award">
+                                {p.award.split(/[—-]/)[0].trim()}
+                              </span>
+                            )}
+                          </span>
+                          <span className="filed-desc">{p.description}</span>
+                        </div>
+                        {p.link && (
+                          <a
+                            className="filed-link"
+                            href={p.link}
+                            {...linkProps(p.link)}
+                            aria-label={`${linkVerb(p.link)} ${p.title}`}
+                          >
+                            {linkVerb(p.link)} →
+                          </a>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </>
           );
         })()}

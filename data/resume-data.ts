@@ -67,6 +67,8 @@ export interface Project {
   details: string;
   link?: string;
   image?: string;
+  /** Real captures of the live project. Having these puts it in the showcase. */
+  shots?: { label: string; desktop: string; mobile: string }[];
   techStack: string[];
 }
 
@@ -660,7 +662,52 @@ export const resumeData: ResumeData = {
         "A wiki-driven trivia game that challenges players to identify when notable historical events occurred. Pulls event data from public sources to build daily and themed rounds covering everything from ancient history to the modern era.",
       link: "https://chronicle.billhuang.me/",
       image: "/projects/chronicles.svg",
+      shots: [{ label: "App", desktop: "/projects/shots/chronicles-desktop.webp", mobile: "/projects/shots/chronicles-mobile.webp" }],
       techStack: ["Next.js", "TypeScript", "Tailwind", "Wikipedia API"],
+    },
+    {
+      title: "Sesh",
+      description: "Crag map, climbing conditions and a snow dashboard for Reno and Tahoe",
+      year: "2025",
+      category: "web",
+      details:
+        "An invite-only companion for days out around Reno and Tahoe: a map of boulders and crags, a daily call on whether to climb, and a Mt Rose snow dashboard with resort cams and road reports.",
+      link: "https://crag.billhuang.me",
+      shots: [
+        {
+          label: "Map",
+          desktop: "/projects/shots/sesh-map-desktop.webp",
+          mobile: "/projects/shots/sesh-map-mobile.webp",
+        },
+        {
+          label: "Snow",
+          desktop: "/projects/shots/sesh-snow-desktop.webp",
+          mobile: "/projects/shots/sesh-snow-mobile.webp",
+        },
+      ],
+      techStack: ["React Router", "TypeScript", "Fastify", "Postgres", "Mapbox"],
+    },
+    {
+      title: "Arcade",
+      description: "Nine small games in pixel cabinets, playable offline",
+      year: "2026",
+      category: "game",
+      details:
+        "A shelf of nine browser games, each drawn as its own arcade cabinet. Built phone-first, and installable so the games keep working without a connection.",
+      link: "/game/",
+      shots: [{ label: "App", desktop: "/projects/shots/arcade-desktop.webp", mobile: "/projects/shots/arcade-mobile.webp" }],
+      techStack: ["Next.js", "TypeScript", "PWA"],
+    },
+    {
+      title: "Launchpad",
+      description: "A resume that launches from the pad to deep space",
+      year: "2026",
+      category: "web",
+      details:
+        "A scroll-driven version of this resume: the page starts on the launch pad and climbs through sky, orbit and the planets as the career history goes by.",
+      link: "/launchpad/",
+      shots: [{ label: "App", desktop: "/projects/shots/launchpad-desktop.webp", mobile: "/projects/shots/launchpad-mobile.webp" }],
+      techStack: ["HTML", "CSS", "JavaScript"],
     },
     {
       title: "Tahoe Snow Conditions",
@@ -673,6 +720,7 @@ export const resumeData: ResumeData = {
         "A comprehensive ski conditions monitoring platform that aggregates real-time data from ski resorts across California and British Columbia/Alberta. Features live snow reports, weather conditions, trail status, and lift operations. Built with modern web technologies to provide skiers and snowboarders with up-to-date resort information for trip planning.",
       link: "https://sno.billhuang.me/",
       image: "/projects/tahoe-snow.png",
+      shots: [{ label: "App", desktop: "/projects/shots/tahoe-snow-desktop.webp", mobile: "/projects/shots/tahoe-snow-mobile.webp" }],
       techStack: [
         "React",
         "Node.js",
@@ -693,6 +741,7 @@ export const resumeData: ResumeData = {
         "Developed an interactive weather dashboard that helps foragers determine potential mushroom locations based on historical and forecasted weather conditions. Users can select locations via map interface or coordinates to analyze 10-day historical and future weather patterns optimal for mushroom growth.",
       link: "https://mushroom.billhuang.me/",
       image: "/projects/mushroom-weather.png",
+      shots: [{ label: "App", desktop: "/projects/shots/mushroom-desktop.webp", mobile: "/projects/shots/mushroom-mobile.webp" }],
       techStack: [
         "React",
         "AWS S3",
@@ -726,6 +775,7 @@ export const resumeData: ResumeData = {
         "A climbing shoe repair service that extends the life of climbers' gear through dropoff/pickup locations or mail-in shipping. Built on Shopify, it offers a simple three-step ordering flow, standardized pricing by repair type and region, membership discounts, and partnerships with climbing gyms and events.",
       link: "https://v12resole.com/",
       image: "/placeholder.svg?height=200&width=300",
+      shots: [{ label: "App", desktop: "/projects/shots/v12-resole-desktop.webp", mobile: "/projects/shots/v12-resole-mobile.webp" }],
       techStack: ["Shopify", "E-commerce"],
     },
     {
@@ -774,6 +824,7 @@ export const resumeData: ResumeData = {
         "Analyzes an image/camera feed and extracts a custom color palette from it using advanced computer vision algorithms. Developed using Kotlin on Android, implementing modern best practices for MVVM Architecture and using Room database to cache data and maintain history.",
       link: "/palette/",
       image: "/placeholder.svg?height=200&width=300",
+      shots: [{ label: "App", desktop: "/projects/shots/palette-desktop.webp", mobile: "/projects/shots/palette-mobile.webp" }],
       techStack: [
         "Kotlin",
         "Android",
