@@ -762,6 +762,18 @@ export const resumeData: ResumeData = {
         "A climber-owned gear brand selling chalk buckets, brushes, training blocks, and bundled kits — all tested at the gym and on the rock and backed by a lifetime guarantee. The storefront features product collections, multiple colorways, savings bundles, global shipping, and a blog with climbing guides.",
       link: "https://climbingsesh.com/",
       image: "/placeholder.svg?height=200&width=300",
+      shots: [
+        {
+          label: "Store",
+          desktop: "/projects/shots/sesh-gear-home-desktop.webp",
+          mobile: "/projects/shots/sesh-gear-home-mobile.webp",
+        },
+        {
+          label: "Product",
+          desktop: "/projects/shots/sesh-gear-product-desktop.webp",
+          mobile: "/projects/shots/sesh-gear-product-mobile.webp",
+        },
+      ],
       techStack: ["Shopify", "E-commerce", "TypeScript"],
     },
     {
@@ -867,6 +879,33 @@ export const resumeData: ResumeData = {
       link: "https://github.com/billykeyss/Casty",
       image: "/projects/casty.png",
       techStack: ["Node.js", "Raspberry Pi", "React", "Express", "WebRTC"],
+    },
+    {
+      title: "AR Assistant Prototype",
+      description: "Early AR device prototype built during contract R&D at Meta",
+      year: "2017",
+      category: "ai",
+      details:
+        "An early-stage augmented reality prototype device, built as contract research and development at Meta's Building 8. Details are under NDA.",
+      techStack: ["Augmented Reality", "Applied AI", "Hardware Prototyping"],
+    },
+    {
+      title: "Flappy Bird Agent",
+      description: "A learning agent that taught itself to play Flappy Bird",
+      year: "2016",
+      category: "ai",
+      details:
+        "A machine learning agent that learns to play Flappy Bird from its own attempts, getting further through the pipes the longer it trains.",
+      techStack: ["Machine Learning", "Reinforcement Learning"],
+    },
+    {
+      title: "Cart-Pole Balancer",
+      description: "A learning agent that keeps a pole upright on a moving cart",
+      year: "2016",
+      category: "ai",
+      details:
+        "The classic control problem: an agent learns, by trial and error, to move a cart left and right so the pole on top of it stays balanced.",
+      techStack: ["Machine Learning", "Reinforcement Learning"],
     },
     {
       title: "Pong Neural Network",
