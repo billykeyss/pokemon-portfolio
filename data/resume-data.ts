@@ -892,20 +892,20 @@ export const resumeData: ResumeData = {
     {
       title: "Flappy Bird Agent",
       description: "A learning agent that taught itself to play Flappy Bird",
-      year: "2016",
+      year: "2017",
       category: "ai",
       details:
-        "A machine learning agent that learns to play Flappy Bird from its own attempts, getting further through the pipes the longer it trains.",
-      techStack: ["Machine Learning", "Reinforcement Learning"],
+        "A reinforcement learning agent, trained with PPO, that learns to play Flappy Bird from its own attempts, getting further through the pipes the longer it trains.",
+      techStack: ["Reinforcement Learning", "PPO"],
     },
     {
       title: "Cart-Pole Balancer",
       description: "A learning agent that keeps a pole upright on a moving cart",
-      year: "2016",
+      year: "2017",
       category: "ai",
       details:
-        "The classic control problem: an agent learns, by trial and error, to move a cart left and right so the pole on top of it stays balanced.",
-      techStack: ["Machine Learning", "Reinforcement Learning"],
+        "The classic control problem: an agent trained with PPO learns, by trial and error, to move a cart left and right so the pole on top of it stays balanced.",
+      techStack: ["Reinforcement Learning", "PPO"],
     },
     {
       title: "Pong Neural Network",
